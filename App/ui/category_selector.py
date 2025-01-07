@@ -351,7 +351,7 @@ class CategorySelector(ttk.LabelFrame):
             messagebox.showwarning("Gawat...!", "Waduh databasenya hilang! (o_O)")
             messagebox.showinfo("Hehehe...", "Tenang jangan panik, aku buatin dulu nih")
             self.create_csv_if_not_exists()
-            messagebox.showerror("Tolong diingat...!", "Baiklah database sudah aku buatin, jangan dihapus lagi, aku tau kamu sengaja!")
+            messagebox.showinfo("Tolong diingat...!", "Database dapat berisi file penting seperti Daftar Pustaka, Template dan Daftar Kategori!")
         except Exception as e:
             messagebox.showerror("Error", f"Terjadi kesalahan: {e}")
 
