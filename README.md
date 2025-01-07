@@ -94,7 +94,7 @@ Terima kasih atas dukungan Anda! Setiap donasi, sekecil apapun, sangat berharga 
 
 Untuk pertanyaan atau masukan lebih lanjut, silakan hubungi:
 
-WhatsApp : [6285172230405](https://wwww.wa.me/6285172230405)  
+WhatsApp : [6285172230405](https://www.wa.me/6285172230405)  
 Email : [mudrikulh@gmail.com](mailto:mudrikulh@gmail.com)  
 Facebook : [Mudrikul Hikam](https://www.facebook.com/M.Mudrikul.hikam)
 
