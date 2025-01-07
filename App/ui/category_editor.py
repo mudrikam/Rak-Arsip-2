@@ -1,17 +1,31 @@
-# Copyright (C) 2025 Mudrikul Hikam
-
-# This program is free software: you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation, either version 3 of the License, or
-# (at your option) any later version.
-
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
-
-# You should have received a copy of the GNU General Public License
-# along with this program.  If not, see <https://www.gnu.org/licenses/>.
+# ---------------------------------------------------------------
+# Hak Cipta (C) 2025 M. Mudrikul Hikam
+# ---------------------------------------------------------------
+# Program ini adalah perangkat lunak bebas: Anda dapat 
+# mendistribusikan ulang dan/atau memodifikasinya di bawah 
+# ketentuan Lisensi Publik Umum GNU (GNU GPL v3) sebagaimana 
+# diterbitkan oleh Free Software Foundation, baik versi 3 dari 
+# Lisensi, atau (sesuai pilihan Anda) versi yang lebih baru.
+# 
+# Program ini didistribusikan dengan harapan bahwa itu akan 
+# berguna, tetapi TANPA JAMINAN; bahkan tanpa jaminan tersirat
+# tentang DIPERDAGANGKAN atau KESESUAIAN UNTUK TUJUAN TERTENTU. 
+# Lihat Lisensi Publik Umum GNU untuk lebih jelasnya.
+# 
+# Anda seharusnya telah menerima salinan Lisensi Publik Umum GNU
+# bersama dengan program ini. Jika tidak, lihat 
+# <https://www.gnu.org/licenses/>.
+# 
+# ---------------------------------------------------------------
+# Mohon untuk tidak menghapus header ini.
+# Jika ingin berkontribusi, tuliskan namamu di sini.
+# ---------------------------------------------------------------
+# | Nama Kontributor       | Fitur yang Ditambahkan atau Ubah   |
+# |------------------------|------------------------------------|
+# |                        |                                    |
+# |                        |                                    |
+# |                        |                                    |
+# ---------------------------------------------------------------
 
 import os
 import threading
