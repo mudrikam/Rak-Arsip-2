@@ -122,10 +122,10 @@ A: Untuk membuat arsip baru, ikuti langkah-langkah berikut pada tab **Buat Arsip
 
 1.  **Pilih Disk:** Pertama, pilih disk yang akan digunakan untuk menyimpan arsip Anda. Aplikasi akan memindai (scan) disk yang tersedia di komputer Anda dan menampilkannya dalam daftar.
 
-2.  **Nama Proyek:** Ketikkan nama proyek yang ingin Anda buat. _Perhatikan hal-hal berikut:_
+2.  **Nama Arsip:** Ketikkan nama Arsip yang ingin Anda buat. _Perhatikan hal-hal berikut:_
 
     - **Karakter Spesial:** Berhati-hatilah saat menggunakan karakter spesial, karena sistem Windows mungkin tidak menerimanya. Sebaiknya hindari karakter seperti `\ / : * ? " < > |`.
-    - **Spasi:** Spasi dalam nama proyek akan secara otomatis diganti dengan garis bawah (`_`). Hal ini dilakukan untuk mempermudah pengelolaan dan akses folder, terutama dari _command line_ atau aplikasi lain. Contoh: "Proyek Arsip" akan menjadi "Proyek_Arsip".
+    - **Spasi:** Spasi dalam nama Arsip akan secara otomatis diganti dengan garis bawah (`_`). Hal ini dilakukan untuk mempermudah pengelolaan dan akses folder, terutama dari _command line_ atau aplikasi lain. Contoh: "Arsip Arsip" akan menjadi "Arsip_Arsip".
 
 3.  **Kategori dan Sub Kategori:** Pilih kategori dan sub kategori yang sesuai untuk arsip Anda.
 
@@ -134,9 +134,9 @@ A: Untuk membuat arsip baru, ikuti langkah-langkah berikut pada tab **Buat Arsip
 
 4.  **Konfirmasi dan Opsi Tambahan:** Periksa kembali semua data yang telah Anda masukkan untuk memastikan semuanya benar. Kemudian, pilih folder utama tempat arsip akan disimpan. Anda juga memiliki dua opsi tambahan yang dapat dipilih dengan mencentang kotak _checkbox_:
 
-    - **Sertakan Tanggal:** Opsi ini akan menambahkan tanggal pada nama folder arsip, misalnya "Proyek_Arsip_20241027".
+    - **Sertakan Tanggal:** Opsi ini akan menambahkan tanggal pada nama folder arsip, misalnya "Arsip_Arsip_20241027".
     - **Sertakan File MD:** Opsi ini akan membuat sebuah _file_ Markdown (`.md`) yang berisi detail lokasi folder yang telah digenerate. _File_ ini dapat dikelola dan dibuka menggunakan aplikasi seperti Obsidian dan Logseq.
-    - **Implikasi Tanpa Template:** _Jika Anda tidak memilih template apapun pada dropdown, maka **Rak Arsip** hanya akan membuat folder utama dan folder proyek tanpa sub folder tambahan_. Contohnya, jika Anda memilih folder utama `D:\Dokumen` dan nama proyek `Proyek_Arsip`, maka hanya folder `D:\Dokumen\Kategori\Sub_Kategori\2025\January\10\Proyek_Arsip\` yang akan dibuat. Tidak akan ada sub folder seperti `D:\Dokumen\Kategori\Sub_Kategori\2025\January\10\Proyek_Arsip\Sub1, Sub2, Sub3`, dst.
+    - **Implikasi Tanpa Template:** _Jika Anda tidak memilih template apapun pada dropdown, maka **Rak Arsip** hanya akan membuat folder utama dan folder Arsip tanpa sub folder tambahan_. Contohnya, jika Anda memilih folder utama `D:\Dokumen` dan nama Arsip `Arsip_Arsip`, maka hanya folder `D:\Dokumen\Kategori\Sub_Kategori\2025\January\10\Arsip_Arsip\` yang akan dibuat. Tidak akan ada sub folder seperti `D:\Dokumen\Kategori\Sub_Kategori\2025\January\10\Arsip_Arsip\Sub1, Sub2, Sub3`, dst.
     - **Folder Utama:** Pilih folder utama tempat arsip akan disimpan. _Folder utama ini berupa daftar dropdown yang berisi folder tingkat pertama yang ada di disk yang telah Anda pilih sebelumnya._ Misalnya, jika Anda memilih disk `D:` dan di disk tersebut terdapat folder `Dokumen`, `Kerja`, dan `Data`, maka ketiga folder tersebut (`Dokumen`, `Kerja`, dan `Data`) akan muncul di _dropdown_ folder utama. Anda kemudian dapat memilih salah satu dari folder tersebut sebagai lokasi penyimpanan arsip.
     - **Mengapa menggunakan _dropdown_ folder utama?** Penggunaan _dropdown_ ini bertujuan untuk:
       - **Keamanan:** Membatasi akses penulisan hanya ke folder tingkat pertama yang sudah ada di disk. Ini mencegah aplikasi secara tidak sengaja membuat folder di lokasi yang tidak diinginkan, yang berpotensi menimbulkan masalah keamanan atau kerusakan data.
@@ -158,14 +158,11 @@ _Made with love and care to help you._
 
 ---
 
-## Changelog
+## Catatan Perubahan
 
-### Version 2.0
-
-- Initial release of Rak Arsip 2.0
-- Added project creation with customizable templates
-- Included Markdown file generation option
-- Added CSV file update for project tracking
-- Improved user interface with additional customization options
-- Added support for opening project folder in file explorer
-- Enhanced template management and loading
+| Versi | Tanggal    | Perubahan                                                            |
+| ----- | ---------- | -------------------------------------------------------------------- |
+| 1.0   | 01-01-2023 | Rilis awal aplikasi Rak Arsip                                        |
+| 1.1   | 15-02-2023 | Penambahan fitur pencarian dokumen                                   |
+| 1.2   | 10-03-2023 | Perbaikan bug pada pembuatan folder massal                           |
+| 2.0   | 20-10-2023 | Pembaruan antarmuka pengguna dan penambahan fitur pembuatan file CSV |
