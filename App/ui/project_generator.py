@@ -200,15 +200,13 @@ class ProjectGenerator(ttk.LabelFrame):
                 self.folder_combobox['values'] = []
                 self.folder_combobox.set("")  # Tetap kosong jika ada error
 
-
-
     def create_project(self):
         """
         Metode untuk membuat proyek berdasarkan input yang diberikan.
         """
         # Validasi input
         if not all([self.selected_disk.get(), self.root_folder.get(), self.category.get(), self.sub_category.get(), self.project_name.get()]):
-            messagebox.showwarning("Peringatan", "Semua variabel harus diisi!")
+            messagebox.showinfo("Perhatikan.", "Disk, Nama Proyek, Kategori, Sub Kategori dan Lokasi Proyek harus diisi!")
             return
 
         base_project_path = self.project_label.cget("text")
@@ -269,11 +267,9 @@ class ProjectGenerator(ttk.LabelFrame):
             subprocess.Popen(f'explorer "{last_created_folder}"')
             print(f"Explorer dibuka di {last_created_folder}.")
 
-        messagebox.showinfo("Sukses", "Proyek telah dibuat dengan sukses!")
-
     def update_csv(self, project_folder):
         """
-        Update the CSV file with the new project details.
+        Perbarui file CSV dengan detail proyek baru.
         """
         csv_file_path = os.path.join(self.BASE_DIR, "Database", "Library", "project_library.csv")
         if not os.path.exists(csv_file_path):
@@ -293,13 +289,12 @@ class ProjectGenerator(ttk.LabelFrame):
             new_row = [new_no, date.today().strftime("%Y_%B_%d"), self.project_name.get(), project_folder]
             writer.writerow(new_row)
 
-        
     def load_templates(self):
-        """Load template files into the combobox and set a default selection."""
+        """Muat file template ke dalam combobox dan set pilihan default."""
         self.check_and_load_templates()  # Panggil metode untuk memeriksa dan memuat template
 
     def check_and_load_templates(self):
-        """Check for template files, ensure template_0 exists, and refresh combobox if template_0 is missing."""
+        """Periksa file template, pastikan template_0 ada, dan refresh combobox jika template_0 hilang."""
         try:
             # Path ke folder Template
             template_folder = os.path.join(self.BASE_DIR, "Database", "Template")
@@ -349,7 +344,7 @@ class ProjectGenerator(ttk.LabelFrame):
 
     def load_selected_template(self):
         """
-        Load the selected template file into the folders_to_make variable.
+        Muat file template yang dipilih ke dalam variabel folders_to_make.
         """
         selected_template = self.template_var.get()
         if selected_template:
@@ -372,7 +367,7 @@ class ProjectGenerator(ttk.LabelFrame):
 
     def track_template_changes(self):
         """
-        Track changes in the template combobox and print the folders_to_make variable.
+        Lacak perubahan di combobox template dan cetak variabel folders_to_make.
         """
         current_template = self.template_var.get()
         if current_template != self.template_combobox.get():
@@ -386,19 +381,19 @@ class ProjectGenerator(ttk.LabelFrame):
 
     def _update_template_var(self, event):
         """
-        Update template_var when a new template is selected from the combobox.
-        Reset subfolders when a new template is selected.
+        Perbarui template_var saat template baru dipilih dari combobox.
+        Reset subfolders saat template baru dipilih.
         """
         selected_template = self.template_combobox.get()
         self.template_var.set(selected_template)
         self.subfolders = []  # Reset subfolders
-        self.load_selected_template()  # Load the selected template
+        self.load_selected_template()  # Muat template yang dipilih
         print(f"Selected template: {selected_template}")
         print(f"Folders to make: {self.folders_to_make.get()}")
 
     def generate_markdown_file(self, project_folder):
         """
-        Generate a Markdown file in the specified project folder.
+        Buat file Markdown di folder proyek yang ditentukan.
         """
         markdown_file_path = os.path.join(project_folder, f"{self.project_name.get()}.md")
         with open(markdown_file_path, "w") as f:

@@ -37,13 +37,13 @@ from App.ui.core_scan import forbidden_words
 class TemplateCreator(ttk.LabelFrame):
     def __init__(self, parent, x, y, width, height, BASE_DIR, main_window):
         """
-        Initialize the TemplateCreator class to manage file viewing, content editing, and folder generation.
+        Inisialisasi kelas TemplateCreator untuk mengelola tampilan file, pengeditan konten, dan pembuatan folder.
         """
         super().__init__(parent, text="Buat template untuk sub folder :", padding=10)
-        self.place(x=x, y=y, width=width, height=height)  # Set position and size
+        self.place(x=x, y=y, width=width, height=height)  # Atur posisi dan ukuran
         self.main_window = main_window
         
-        # Ensure that the 'Database' folder exists inside the BASE_DIR
+        # Pastikan folder 'Database' ada di dalam BASE_DIR
         self.BASE_DIR = os.path.join(BASE_DIR, "Database", "Template")
         self.file_mapping = {}
         self.forbidden_words = forbidden_words
@@ -52,17 +52,17 @@ class TemplateCreator(ttk.LabelFrame):
         self.warning_messages = [
             ("Aduh....!", "Ada kata '{}' di template, kamu yakin itu gak papa?"),
             ("Maaf kalau salah...", "Sebenarnya aku harap kita pakai aplikasi ini secara aman sih..."),
-            ("","Sepertinya kata '{}' kurang aman kalau mau pakai aplikasi ini"),
-            ("","Sebenernya gapapa sih kalau kamu maksa, tapi kalau bisa tolong pakai kata yang aman saja ya"),
-            ("","Aku udah ingetin berkali-kali loh, seriusan aku nggak suka kalau aplikasi ini dipakai untuk hal jelek"),
-            ("","Kayanya kamu emang tetep pengen pakai kata '{}' ya?"),
-            ("","Plis banget pakai kata lain yang lebih aman ya"),
-            ("","Oke deh untuk kali ini gapapa pakai '{}', tapi ini terakhir ya"),
-            ("","Maaf banget, tapi aku gak bisa toleransi sama kata '{}', kalau belum diubah juga aku pamit undur diri ya"),
-            ("","Makasih atas waktunya saya pamit undur diri"),
+            ("Aku gak yakin nih...","Sepertinya kata '{}' kurang aman kalau mau pakai aplikasi ini"),
+            ("Hem...","Sebenernya gapapa sih kalau kamu maksa, tapi kalau bisa tolong pakai kata yang aman saja ya"),
+            ("Mending ganti","Aku udah ingetin berkali-kali loh, seriusan aku nggak suka kalau aplikasi ini dipakai untuk hal jelek"),
+            ("Seriusan?","Kayanya kamu emang tetep pengen pakai kata '{}' ya?"),
+            ("Pliss....","Plis banget pakai kata lain yang lebih aman ya"),
+            ("Aku kasih kesempatan","Oke deh untuk kali ini gapapa pakai '{}', tapi ini terakhir ya"),
+            ("Maaf nih...","Maaf banget, tapi aku gak bisa toleransi sama kata '{}', kalau belum diubah juga aku pamit undur diri ya"),
+            ("Yasudah...","Makasih atas waktunya saya pamit undur diri"),
         ]
 
-        os.makedirs(self.BASE_DIR, exist_ok=True)  # Create 'Database' if it doesn't exist
+        os.makedirs(self.BASE_DIR, exist_ok=True)  # Buat 'Database' jika belum ada
 
         self.current_file = None
 
@@ -70,60 +70,57 @@ class TemplateCreator(ttk.LabelFrame):
 
     def _create_widgets(self):
         """
-        Create and organize all the widgets used in the template creator.
+        Buat dan atur semua widget yang digunakan dalam template creator.
         """
-        # File Management Section
+        # Bagian Manajemen File
         self.file_frame = ttk.LabelFrame(self, text="Pilih Template")
         self.file_frame.pack(pady=10, fill=tk.X)
 
-        # Dropdown combobox for file selection
+        # Dropdown combobox untuk pemilihan file
         self.combobox = ttk.Combobox(self.file_frame, font= 14)
         self.combobox.pack(side=tk.LEFT, padx=5, pady=10)
         self.combobox.bind("<<ComboboxSelected>>", self.display_file_content)
 
-        # File Content Section (Daftar sub folder)
+        # Bagian Konten File (Daftar sub folder)
         self.text_frame = ttk.LabelFrame(self, text="Daftar sub folder :", padding=10)
         self.text_frame.pack(fill=tk.BOTH, expand=True)
 
-        # Frame for line numbers and text area
+        # Frame untuk nomor baris dan area teks
         frame = ttk.Frame(self.text_frame)
         frame.pack(fill=tk.BOTH, expand=True)
 
-        # Adding the button inside the same frame as the text area
-        save_button = ttk.Button(frame, text="Simpan Template", command=self.save_as_template, padding=10)
-        save_button.pack(side=tk.BOTTOM, anchor='w', pady=10)  # Place it at the bottom inside the frame
+        # Tambahkan tombol di dalam frame yang sama dengan area teks
+        save_button = ttk.Button(frame, text="Tambah Template", command=self.save_as_template, padding=10)
+        save_button.pack(side=tk.BOTTOM, anchor='w', pady=10)  # Tempatkan di bawah dalam frame
 
-
-        # Line numbers display
+        # Tampilan nomor baris
         self.line_numbers = tk.Text(frame, width=4, padx=5, state="disabled", wrap="none", bg="#f0f0f0")
         self.line_numbers.pack(side=tk.LEFT, fill=tk.Y)
 
-        # Text area for file content
+        # Area teks untuk konten file
         self.text_area = tk.Text(frame, wrap=tk.WORD, height=20, width=60)
         self.text_area.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         self.text_area.bind("<Key>", self.replace_special_characters)
         self.text_area.bind("<KeyRelease>", lambda e: (self.save_file_content(e), self.update_line_numbers(), self.check_forbidden_words_dynamically(e)))
 
-        # Scrollbar for text area and line numbers
+        # Scrollbar untuk area teks dan nomor baris
         scrollbar = ttk.Scrollbar(frame, orient="vertical", command=self.on_scroll)
         scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
 
-        # Link the scrollbar to both the text_area and line_numbers
+        # Hubungkan scrollbar ke area teks dan nomor baris
         self.text_area.config(yscrollcommand=scrollbar.set)
         self.line_numbers.config(yscrollcommand=scrollbar.set)
 
-
-
-        # Load files when the application starts
+        # Muat file saat aplikasi dimulai
         self.selected_template = None
         self.load_files()
         
     def load_files(self):
-            """Load file names into the combobox and select template_0 by default."""
-            self.check_and_load_files()  # Panggil metode untuk memeriksa dan memuat file
+        """Muat nama file ke dalam combobox dan pilih template_0 secara default."""
+        self.check_and_load_files()  # Panggil metode untuk memeriksa dan memuat file
 
     def check_and_load_files(self):
-        """Check for .txt files and ensure template_0 exists, reload only if files are updated."""
+        """Periksa file .txt dan pastikan template_0 ada, muat ulang hanya jika file diperbarui."""
         try:
             # Ambil daftar file .txt di direktori
             current_files = [
@@ -176,25 +173,20 @@ class TemplateCreator(ttk.LabelFrame):
         # Jadwalkan pengecekan ulang setelah 1 detik
         self.after(1000, self.check_and_load_files)
 
-
-
     def on_template_selected(self, event):
         """Callback untuk menangani pemilihan template."""
         self.selected_template = self.combobox.get()  # Simpan template yang dipilih
         self.display_file_content(self.selected_template)  # Tampilkan isi template yang dipilih
 
-
-
     def create_template_file(self):
-        """Create an empty template_0.txt file in the BASE_DIR."""
+        """Buat file template_0.txt kosong di BASE_DIR."""
         template_path = os.path.join(self.BASE_DIR, "template_0.txt")
         if not os.path.exists(template_path):
             with open(template_path, "w") as file:
-                file.write("")  # Create an empty file
-
+                file.write("")  # Buat file kosong
 
     def display_file_content(self, event=None, display_nama=None):
-        """Display the content of the selected file in the text area and check for forbidden words."""
+        """Tampilkan konten file yang dipilih di area teks dan periksa kata-kata terlarang."""
         if display_nama is None:
             # Jika dipanggil melalui event (misal, dari Combobox)
             display_nama = self.combobox.get()
@@ -203,7 +195,7 @@ class TemplateCreator(ttk.LabelFrame):
         full_name = self.file_mapping.get(display_nama)
         if not full_name:
             self.text_area.delete("1.0", tk.END)
-            self.text_area.insert(tk.END, "File not found.")
+            self.text_area.insert(tk.END, "File tidak ditemukan.")
             return
 
         file_path = os.path.join(self.BASE_DIR, full_name)
@@ -230,24 +222,22 @@ class TemplateCreator(ttk.LabelFrame):
             except Exception as e:
                 # Tampilkan pesan error di text area
                 self.text_area.delete("1.0", tk.END)
-                self.text_area.insert(tk.END, f"Error reading file: {e}")
+                self.text_area.insert(tk.END, f"Error membaca file: {e}")
         else:
             self.text_area.delete("1.0", tk.END)
-            self.text_area.insert(tk.END, "File not found.")
+            self.text_area.insert(tk.END, "File tidak ditemukan.")
 
-            
-        
     def save_file_content(self, event):
-        """Save the content of the text area back to the file."""
+        """Simpan konten area teks kembali ke file."""
         if self.current_file:
             try:
                 with open(self.current_file, "w") as file:
                     file.write(self.text_area.get("1.0", tk.END).strip())
             except Exception as e:
-                self.text_area.insert(tk.END, f"\nError saving file: {e}")
+                self.text_area.insert(tk.END, f"\nError menyimpan file: {e}")
 
     def save_as_template(self):
-        """Save the content of the text area as a new template file and reload the file list."""
+        """Simpan konten area teks sebagai file template baru dan muat ulang daftar file."""
         if not self.before_save_checks():
             return
 
@@ -271,9 +261,8 @@ class TemplateCreator(ttk.LabelFrame):
 
             index += 1
 
-
     def update_line_numbers(self):
-        """Update the line numbers in the left panel."""
+        """Perbarui nomor baris di panel kiri."""
         self.line_numbers.config(state="normal")
         self.line_numbers.delete("1.0", tk.END)
         row_count = self.text_area.index("end").split(".")[0]
@@ -282,27 +271,27 @@ class TemplateCreator(ttk.LabelFrame):
         self.line_numbers.config(state="disabled")
 
     def on_scroll(self, *args):
-        """Sync the scrollbars of the text area and line numbers."""
+        """Sinkronkan scrollbar area teks dan nomor baris."""
         self.text_area.yview(*args)
         self.line_numbers.yview(*args)
 
     def replace_special_characters(self, event):
-        """Replace space with '_' and tab with '\\'."""
+        """Ganti spasi dengan '_' dan tab dengan '\\'."""
         allowed_chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_\\"
 
-        if event.char == " ":  # If the character is space
+        if event.char == " ":  # Jika karakter adalah spasi
             self.text_area.insert(tk.INSERT, "_")
             return "break"
-        elif event.keysym == "Tab":  # If the key is Tab
+        elif event.keysym == "Tab":  # Jika tombol adalah Tab
             self.text_area.insert(tk.INSERT, "\\")
             return "break"
-        elif event.keysym in ("Return", "BackSpace"):  # Allow Enter and Backspace
+        elif event.keysym in ("Return", "BackSpace"):  # Izinkan Enter dan Backspace
             return
-        elif event.char and event.char not in allowed_chars:  # Block disallowed characters
+        elif event.char and event.char not in allowed_chars:  # Blokir karakter yang tidak diizinkan
             return "break"
         
     def before_save_checks(self):
-        """Perform checks before saving the content."""
+        """Lakukan pemeriksaan sebelum menyimpan konten."""
         content = self.text_area.get("1.0", tk.END).strip()
         if self.check_forbidden_words(content):
             self.display_forbidden_word_warning()
@@ -310,7 +299,7 @@ class TemplateCreator(ttk.LabelFrame):
         return True
     
     def check_forbidden_words(self, content):
-        """Check if the content contains any forbidden words and store the first found word."""
+        """Periksa apakah konten mengandung kata-kata terlarang dan simpan kata pertama yang ditemukan."""
         for word in self.forbidden_words:
             if word.lower() in content.lower():
                 self.last_bad_word = word
@@ -339,7 +328,7 @@ class TemplateCreator(ttk.LabelFrame):
             sys.exit()
         
     def check_forbidden_words_dynamically(self, event=None):
-        """Check dynamically if the content contains any forbidden words."""
+        """Periksa secara dinamis apakah konten mengandung kata-kata terlarang."""
         content = self.text_area.get("1.0", tk.END).strip()
         found_forbidden = False
 

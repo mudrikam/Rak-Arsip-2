@@ -227,7 +227,4 @@ class MainWindow(tk.Tk):
         
         # Editor Kategori
         self.category_editor = CategoryEditor(self.category_editor_tab, x=10, y=10, width=675, height=450, BASE_DIR=self.BASE_DIR, main_window=self)
-   
-        # Perbarui status bar dengan pesan
-        # self.update_status("Selamat bekerja! (^_^)")
 

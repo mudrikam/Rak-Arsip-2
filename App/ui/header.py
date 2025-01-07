@@ -36,19 +36,19 @@ class HeaderImage:
         self.BASE_DIR = BASE_DIR
 
     def add_header_image(self):
-        """Method to load and display header image."""
-        header_path = os.path.join(self.BASE_DIR, "Img", "header.ppm")  # Path to image
+        """Metode untuk memuat dan menampilkan gambar header."""
+        header_path = os.path.join(self.BASE_DIR, "Img", "header.ppm")  # Path ke gambar
 
         try:
             if os.path.isfile(header_path):
-                img = tk.PhotoImage(file=header_path)  # Load the image using PhotoImage
+                img = tk.PhotoImage(file=header_path)  # Muat gambar menggunakan PhotoImage
 
-                # Store the image reference to avoid garbage collection
-                self.img = img  # Prevent garbage collection by saving it as a class attribute
-                label = tk.Label(self.root, image=img)  # Create a label to display the image
-                label.pack()  # Add label to window
+                # Simpan referensi gambar untuk menghindari garbage collection
+                self.img = img  # Cegah garbage collection dengan menyimpannya sebagai atribut kelas
+                label = tk.Label(self.root, image=img)  # Buat label untuk menampilkan gambar
+                label.pack()  # Tambahkan label ke window
             else:
-                print("Error: Image file not found!")
-                print(f"Checked path: {header_path}")
+                print("Error: File gambar tidak ditemukan!")
+                print(f"Path yang diperiksa: {header_path}")
         except Exception as e:
-            print(f"Error loading image: {e}")
+            print(f"Error memuat gambar: {e}")

@@ -37,39 +37,39 @@ from tkhtmlview import HTMLLabel
 class LoadHelpFile(ttk.LabelFrame):
     def __init__(self, parent, x, y, width, height, BASE_DIR, main_window):
         """
-        Initialize the LoadHelpFile class to display the help file content.
+        Inisialisasi kelas LoadHelpFile untuk menampilkan konten file bantuan.
         """
-        super().__init__(parent, text="Bantuan :")  # LabelFrame as the parent widget
-        self.place(x=x, y=y, width=width, height=height)  # Set position and size
+        super().__init__(parent, text="Bantuan :")  # LabelFrame sebagai widget induk
+        self.place(x=x, y=y, width=width, height=height)  # Atur posisi dan ukuran
         self.BASE_DIR = BASE_DIR
         
-        self.main_window = main_window  # Store the reference to MainWindow
+        self.main_window = main_window  # Simpan referensi ke MainWindow
 
-        # Create a frame to hold the HTMLLabel
+        # Buat frame untuk menampung HTMLLabel
         self.html_frame = tk.Frame(self, bg="white")
         self.html_frame.pack(fill='both', expand=True, padx=0, pady=0)
 
-        # Load and display the help.md file
+        # Muat dan tampilkan file README.md
         self.load_help_file()
 
     def load_help_file(self):
         """
-        Load the content of the help.md file, convert it to HTML, and display it.
+        Muat konten file README.md, konversi ke HTML, dan tampilkan.
         """
-        # Set the help file path to be outside the App folder
+        # Set path file bantuan di luar folder App
         help_file_path = os.path.join(os.path.dirname(self.BASE_DIR), "README.md")
         print(help_file_path)
 
         try:
-            # Ensure the file exists
+            # Pastikan file ada
             if os.path.exists(help_file_path):
                 with open(help_file_path, "r", encoding="utf-8") as file:
                     file_content = file.read()
 
-                    # Convert the Markdown content to HTML
+                    # Konversi konten Markdown ke HTML
                     html_content = markdown.markdown(file_content)
 
-                    # Apply styles to specific HTML tags
+                    # Terapkan gaya ke tag HTML tertentu
                     tag_styles = {
                         "p": "font-size: 12px; line-height: 1.5; font-weight: normal; ",
                         "h1": "font-size: 18px; color: #ff7d19; font-weight: normal; ",
@@ -80,30 +80,28 @@ class LoadHelpFile(ttk.LabelFrame):
 
                     new_html_content = self.replace_tags(html_content, tag_styles)
                     
-                    # # Export content to a new HTML file (testing purpose)
+                    # # Ekspor konten ke file HTML baru (untuk tujuan pengujian)
                     # export_path = r"Z:\help_content.html"
                     # with open(export_path, "w", encoding="utf-8") as export_file:
                     #     export_file.write(new_html_content)
-                    # print(f"Content exported to {export_path}")  # Test export message
+                    # print(f"Konten diekspor ke {export_path}")  # Pesan pengujian ekspor
 
-                    # Create an HTMLLabel widget to render the styled HTML content
-                    
+                    # Buat widget HTMLLabel untuk merender konten HTML yang telah diberi gaya
                     html_label = HTMLLabel(self.html_frame, html=new_html_content, background="white", padx=40, pady=40,)
                     html_label.pack(fill="both", expand=True)
                     html_label.config(cursor="hand2")
                     
-                    # Update status bar
+                    # Perbarui status bar
                     self.main_window.update_status("Kalau bingung cara pakainya bisa cek di tab tanda tanya [?] ya (^_-)")
             else:
-                error_message = f"File not found: {help_file_path}"
+                error_message = f"File tidak ditemukan: {help_file_path}"
                 self.show_error(error_message)
         except Exception as e:
-            self.show_error(f"Error loading file: {str(e)}")
-
+            self.show_error(f"Error memuat file: {str(e)}")
 
     def show_error(self, error_message):
         """
-        Display an error message in the label frame if something goes wrong.
+        Tampilkan pesan kesalahan di label frame jika terjadi kesalahan.
         """
         error_label = tk.Label(self.html_frame, text=error_message, fg="red", font=("Arial", 12))
         error_label.pack(padx=10, pady=10)

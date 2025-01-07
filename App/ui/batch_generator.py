@@ -137,6 +137,7 @@ class BatchGenerator(ttk.LabelFrame):
     def check_invalid_characters(self, folder_name):
         """Memeriksa nama folder untuk karakter tidak valid."""
         invalid_chars = r'[<>:"/\\|?*]'
+        self.main_window.update_status(f"Karakter {invalid_chars} tidak diperbolehkan di nama folder.")
         return re.search(invalid_chars, folder_name) is not None
 
     def validate_text_area(self, event=None):
