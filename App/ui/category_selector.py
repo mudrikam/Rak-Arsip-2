@@ -348,7 +348,7 @@ class CategorySelector(ttk.LabelFrame):
                 self.subcategory_dropdown["values"] = ["Pilih kategori dulu"]  # Reset dropdown subkategori
                 self.subcategory_value.set("")  # Reset subkategori yang dipilih
         except FileNotFoundError:
-            messagebox.showwarning("Gawat...!", "Waduh databasenya hilang! (o_O)")
+            messagebox.showwarning("Gawat...!", "Waduh databasenya belum ada! (o_O)")
             messagebox.showinfo("Hehehe...", "Tenang jangan panik, aku buatin dulu nih")
             self.create_csv_if_not_exists()
             messagebox.showinfo("Tolong diingat...!", "Database dapat berisi file penting seperti Daftar Pustaka, Template dan Daftar Kategori!")
