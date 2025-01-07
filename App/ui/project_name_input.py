@@ -39,7 +39,7 @@ class ProjectNameInput(ttk.LabelFrame):
         """
         Inisialisasi kelas ProjectNameInput.
         """
-        super().__init__(parent, text="Masukkan Nama Proyek :")  # LabelFrame sebagai induk komponen
+        super().__init__(parent, text="Masukkan Nama Arsip :")  # LabelFrame sebagai induk komponen
         self.place(x=x, y=y, width=width, height=height)  # Set posisi dan ukuran
         self.BASE_DIR = BASE_DIR
         
@@ -50,9 +50,9 @@ class ProjectNameInput(ttk.LabelFrame):
 
     def _add_project_name_input(self):
         """
-        Metode untuk membuat frame input nama proyek.
+        Metode untuk membuat frame input nama Arsip.
         """
-        # Widget Entry untuk nama proyek
+        # Widget Entry untuk nama Arsip
         self.project_name_entry = ttk.Entry(
             self, 
             font=("Lato Medium", 14), 
@@ -61,7 +61,7 @@ class ProjectNameInput(ttk.LabelFrame):
         )
         self.project_name_entry.place(x=10, y=0, width=445, height=50)
 
-        # Label untuk menampilkan nama proyek yang telah diformat
+        # Label untuk menampilkan nama Arsip yang telah diformat
         self.formatted_project_name_label = ttk.Label(
             self, 
             text=" ", 
@@ -78,7 +78,7 @@ class ProjectNameInput(ttk.LabelFrame):
         self.skip_sanitization_var.trace_add("write", self._on_sanitization_change)
         self.skip_sanitization_checkbox = ttk.Checkbutton(
             self, 
-            text="Sanitasi nama proyek", 
+            text="Sanitasi nama Arsip", 
             variable=self.skip_sanitization_var
         )
         self.skip_sanitization_checkbox.place(x=10, y=55)  # Posisi di bawah label
@@ -89,7 +89,7 @@ class ProjectNameInput(ttk.LabelFrame):
         
     def check_forbidden_words(self, event=None):
         """
-        Memeriksa apakah ada kata terlarang dalam input nama proyek.
+        Memeriksa apakah ada kata terlarang dalam input nama Arsip.
         Menampilkan pesan berbeda pada deteksi pertama dan kedua.
         """
         project_name = self.project_name_value.get().lower()
@@ -107,18 +107,18 @@ class ProjectNameInput(ttk.LabelFrame):
 
             if not self.forbidden_word_detected:
                 # Peringatan pertama
-                messagebox.showinfo("Eh bentar...!", "Sepertinya ada yang salah dengan nama proyek kamu. Tapi kalau itu memang benar, yaudah, abaikan aja deh.")
+                messagebox.showinfo("Eh bentar...!", "Sepertinya ada yang salah dengan nama Arsip kamu. Tapi kalau itu memang benar, yaudah, abaikan aja deh.")
                 self.forbidden_word_detected = True
                 self.main_window.update_status("Peringatan: Kata terlarang terdeteksi!")
             else:
                 # Peringatan kedua
-                messagebox.showwarning("Cek lagi gak sih...?", f"Apa kamu beneran yakin nama proyekmu aman? Soalnya '{found_word}' kayaknya nggak aman deh")
+                messagebox.showwarning("Cek lagi gak sih...?", f"Apa kamu beneran yakin nama Arsipmu aman? Soalnya '{found_word}' kayaknya nggak aman deh")
                 self.main_window.update_status(f"Saran: '{found_word}' Saya anggap kata sensitif! (^_^)")
         else:
             # Reset status jika tidak ada kata terlarang
             if hasattr(self, 'forbidden_word_detected') and self.forbidden_word_detected:
                 self.forbidden_word_detected = False
-                self.main_window.update_status("Nama proyek aman.")
+                self.main_window.update_status("Nama Arsip aman.")
 
 
     def _show_warning(self, title, message):
@@ -227,9 +227,9 @@ class ProjectNameInput(ttk.LabelFrame):
 
     def get_project_name(self):
         """
-        Ambil nama proyek yang telah diformat.
+        Ambil nama Arsip yang telah diformat.
         """
-        # Format nama proyek sebelum mengembalikannya
+        # Format nama Arsip sebelum mengembalikannya
         return self.project_name_value.get()
     
     def _on_sanitization_change(self, *args):
@@ -237,6 +237,6 @@ class ProjectNameInput(ttk.LabelFrame):
         Tangani perubahan pada checkbox sanitasi.
         """
         if self.skip_sanitization_var.get():
-            self.main_window.update_status("Lewati sanitasi, selanjutnya filter nama proyek aku serahkan padamu!")
+            self.main_window.update_status("Lewati sanitasi, selanjutnya filter nama Arsip aku serahkan padamu!")
         else:
-            self.main_window.update_status("Serahkan padaku! nama proyek akan disanitasi supaya aman. (^_-)")
+            self.main_window.update_status("Serahkan padaku! nama Arsip akan disanitasi supaya aman. (^_-)")

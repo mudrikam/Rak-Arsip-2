@@ -76,7 +76,7 @@ class DiskSelector(ttk.LabelFrame):
                 selected_name = selected_drive_info[1]
 
                 # Update label dengan informasi drive yang dipilih
-                self.selected_drive_letter_label.config(text=f"Proyek akan dibuat di :")
+                self.selected_drive_letter_label.config(text=f"Arsip akan dibuat di :")
                 self.selected_drive_name_label.config(text=f"{selected_letter}  {selected_name}")
 
                 # Set selected letter pada StringVar

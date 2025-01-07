@@ -86,7 +86,7 @@ class ProjectGenerator(ttk.LabelFrame):
         self.checkbox.pack(side=tk.TOP, anchor="w", padx=10, pady=5)
 
         # Tambahkan dropdown combobox untuk folder
-        self.folder_label = ttk.Label(self.input_dropdown_frame, text="Pilih lokasi proyek :")
+        self.folder_label = ttk.Label(self.input_dropdown_frame, text="Pilih lokasi Arsip :")
         self.folder_label.pack(side=tk.TOP, anchor="w", padx=10, pady=5)
         
         self.folder_combobox = ttk.Combobox(self.input_dropdown_frame, textvariable=self.root_folder)
@@ -103,7 +103,7 @@ class ProjectGenerator(ttk.LabelFrame):
         # Tambahkan checkbox untuk membuka explorer
         self.open_explorer = tk.BooleanVar(value=True)
         self.explorer_checkbox = ttk.Checkbutton(
-            self.checkbox_frame, text="Buka explorer setelah proyek dibuat", variable=self.open_explorer
+            self.checkbox_frame, text="Buka explorer setelah Arsip dibuat", variable=self.open_explorer
         )
         self.explorer_checkbox.pack(side=tk.TOP, anchor="w", padx=10, pady=5)
 
@@ -122,8 +122,8 @@ class ProjectGenerator(ttk.LabelFrame):
         self.repeat_entry = ttk.Entry(self.input_dropdown_frame)
         self.repeat_entry.pack(side=tk.TOP, fill=tk.X, padx=10, pady=5)
         
-        # Tambahkan tombol "Buat Proyek"
-        self.create_project_button = ttk.Button(self, text="Buat Proyek", command=self.create_project)
+        # Tambahkan tombol "Buat Arsip"
+        self.create_project_button = ttk.Button(self, text="Buat Arsip", command=self.create_project)
         self.create_project_button.pack(side=tk.BOTTOM, fill=tk.X, padx=10, pady=10)
         self.create_project_button.config(style="Custom.TButton")
 
@@ -176,7 +176,7 @@ class ProjectGenerator(ttk.LabelFrame):
         else:  # Jika checkbox tidak diaktifkan (jangan sertakan tanggal)
             project_path = f"{selected_disk_value}\\{root_folder_value}\\{category_value}\\{sub_category_value}\\{project_name_value}"
 
-        self.project_label.config(text=project_path)  # Perbarui label dengan path proyek
+        self.project_label.config(text=project_path)  # Perbarui label dengan path Arsip
 
     def _update_folder_combobox(self, *args):
         """
@@ -202,11 +202,11 @@ class ProjectGenerator(ttk.LabelFrame):
 
     def create_project(self):
         """
-        Metode untuk membuat proyek berdasarkan input yang diberikan.
+        Metode untuk membuat Arsip berdasarkan input yang diberikan.
         """
         # Validasi input
         if not all([self.selected_disk.get(), self.root_folder.get(), self.category.get(), self.sub_category.get(), self.project_name.get()]):
-            messagebox.showinfo("Perhatikan.", "Disk, Nama Proyek, Kategori, Sub Kategori dan Lokasi Proyek harus diisi!")
+            messagebox.showinfo("Perhatikan.", "Disk, Nama Arsip, Kategori, Sub Kategori dan Lokasi Arsip harus diisi!")
             return
 
         base_project_path = self.project_label.cget("text")
@@ -222,7 +222,7 @@ class ProjectGenerator(ttk.LabelFrame):
 
         last_created_folder = None
 
-        # Implementasi pembuatan proyek
+        # Implementasi pembuatan Arsip
         for i in range(repeat_count):
             project_folder = base_project_path
             if i > 0:
@@ -269,7 +269,7 @@ class ProjectGenerator(ttk.LabelFrame):
 
     def update_csv(self, project_folder):
         """
-        Perbarui file CSV dengan detail proyek baru.
+        Perbarui file CSV dengan detail Arsip baru.
         """
         csv_file_path = os.path.join(self.BASE_DIR, "Database", "Library", "project_library.csv")
         if not os.path.exists(csv_file_path):
@@ -393,7 +393,7 @@ class ProjectGenerator(ttk.LabelFrame):
 
     def generate_markdown_file(self, project_folder):
         """
-        Buat file Markdown di folder proyek yang ditentukan.
+        Buat file Markdown di folder Arsip yang ditentukan.
         """
         markdown_file_path = os.path.join(project_folder, f"{self.project_name.get()}.md")
         with open(markdown_file_path, "w") as f:
