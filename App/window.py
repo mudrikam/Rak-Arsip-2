@@ -222,7 +222,6 @@ class MainWindow(tk.Tk):
             "- Sub Kategori Otomatis\n"
             "- Moderasi Teks\n"
             "- Pengenalan Teks (OCR)\n"
-            "- Analisis Sentimen\n"
             "- Pencarian Cerdas\n"
             "- Rekomendasi Arsip\n"
             "- Klasifikasi Dokumen\n"
