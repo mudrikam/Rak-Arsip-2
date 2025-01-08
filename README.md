@@ -160,9 +160,4 @@ _Made with love and care to help you._
 
 ## Catatan Perubahan
 
-| Versi | Tanggal    | Perubahan                                                            |
-| ----- | ---------- | -------------------------------------------------------------------- |
-| 1.0   | 01-01-2023 | Rilis awal aplikasi Rak Arsip                                        |
-| 1.1   | 15-02-2023 | Penambahan fitur pencarian dokumen                                   |
-| 1.2   | 10-03-2023 | Perbaikan bug pada pembuatan folder massal                           |
-| 2.0   | 20-10-2023 | Pembaruan antarmuka pengguna dan penambahan fitur pembuatan file CSV |
+1-8-2025 - Rilis versi beta
