@@ -80,6 +80,7 @@ class CategorySelector(ttk.LabelFrame):
 
         # Mulai memonitor Category.txt untuk perubahan
         self.check_for_updates()
+        self._update_subcategory_state()
 
     def _load_categories(self):
         """
@@ -112,6 +113,7 @@ class CategorySelector(ttk.LabelFrame):
 
         # Bind event <ComboboxSelected> untuk memicu aksi pemilihan kategori
         self.category_dropdown.bind("<<ComboboxSelected>>", self._on_category_selected)
+        self.category_value.trace("w", self._update_subcategory_state)
 
     def _add_category_input(self, parent_frame):
         """
@@ -250,6 +252,8 @@ class CategorySelector(ttk.LabelFrame):
         except FileNotFoundError:
             self.last_subcategory_modified_time = None
 
+        self._update_subcategory_state()
+
     def _add_subcategory_dropdown(self, parent_frame):
         """
         Buat dan tempatkan dropdown subkategori (ComboBox).
@@ -268,6 +272,7 @@ class CategorySelector(ttk.LabelFrame):
 
         # Bind event <ComboboxSelected> untuk memuat daftar subkategori yang sesuai
         self.subcategory_dropdown.bind("<<ComboboxSelected>>", self._on_subcategory_selected)
+        self.subcategory_dropdown.config(state="disabled")
 
     def _add_subcategory_input(self, parent_frame):
         """
@@ -297,8 +302,10 @@ class CategorySelector(ttk.LabelFrame):
         self.new_subcategory_entry.bind("<KeyRelease>", on_key_release)  # Bind event key release
 
         # Tombol untuk menambah subkategori baru
-        add_subcategory_button = ttk.Button(parent_frame, text="Tambah", command=self._add_subcategory)
-        add_subcategory_button.pack(fill=tk.X, pady=(10, 0))
+        self.add_subcategory_button = ttk.Button(parent_frame, text="Tambah", command=self._add_subcategory)
+        self.add_subcategory_button.pack(fill=tk.X, pady=(10, 0))
+        self.add_subcategory_button.config(state="disabled")
+        self.new_subcategory_entry.config(state="disabled")
 
     def _on_subcategory_selected(self, event):
         """
@@ -379,3 +386,16 @@ class CategorySelector(ttk.LabelFrame):
         if not os.path.exists(self.category_file_path):
             with open(self.category_file_path, "w") as file:
                 pass
+
+    def _update_subcategory_state(self, *args):
+        """
+        Update state of subcategory input, dropdown, and button based on category selection.
+        """
+        if self.category_value.get():
+            self.subcategory_dropdown.config(state="readonly")
+            self.new_subcategory_entry.config(state="normal")
+            self.add_subcategory_button.config(state="normal")
+        else:
+            self.subcategory_dropdown.config(state="disabled")
+            self.new_subcategory_entry.config(state="disabled")
+            self.add_subcategory_button.config(state="disabled")
