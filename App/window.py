@@ -40,15 +40,14 @@ from App.ui.help import LoadHelpFile
 from App.ui.project_generator import ProjectGenerator
 from App.ui.project_library import ProjectLibrary
 from App.ui.project_name_input import ProjectNameInput
-from App.ui.loader_bar import LoaderBar
 from App.ui.template_creator import TemplateCreator
-from App.ui.splash_screen import SplashScreen  # Import SplashScreen
+from App.ui.splash_screen import SplashScreen
 
 class MainWindow(tk.Tk):
     def __init__(self):
         super().__init__()
         self.title("Rak Arsip 2.0")
-        self.geometry("700x670")
+        self.geometry("700x600")
         self.resizable(True, True)  # Allow resizing
 
         # Pengaturan direktori dasar
@@ -70,7 +69,7 @@ class MainWindow(tk.Tk):
 
         # Tambahkan gambar header ke jendela
         self.header = HeaderImage(self, BASE_DIR)  # Buat instance HeaderImage
-        self.header.add_header_image()  # Panggil metode untuk menampilkan gambar header
+        self.header.add_header_image()  # Panggil metode untuk menampilkan gambar header tanpa padding dan border
 
         # Inisialisasi splash screen untuk proses pemuatan
         self.splash_screen = SplashScreen(self, BASE_DIR)  # Buat instance SplashScreen
@@ -142,7 +141,7 @@ class MainWindow(tk.Tk):
     def animate_ellipsis(self):
         """Animasi titik-titik pada pesan status."""
         current_text = self.status_message
-        if current_text.endswith("........"):
+        if current_text.endswith("..."):
             self.status_message = "Meluncuuur"
         else:
             self.status_message += "."
@@ -267,20 +266,20 @@ class MainWindow(tk.Tk):
 
         # Pemilih disk
         self.disk_selector = DiskSelector(self.project_tab, BASE_DIR=self.BASE_DIR, main_window=self)
-        self.disk_selector.grid(row=0, column=0, padx=10, pady=10, sticky="nsew")
+        self.disk_selector.grid(row=0, column=0, padx=10, pady=(10,0), sticky="nsew")
         
         # Input nama proyek
         self.project_name_input = ProjectNameInput(self.project_tab, BASE_DIR=self.BASE_DIR, main_window=self)
-        self.project_name_input.grid(row=0, column=1, padx=10, pady=10, sticky="nsew")
+        self.project_name_input.grid(row=0, column=1, padx=10, pady=(10,0), sticky="nsew")
         
         # Pemilih kategori
         self.category_selector = CategorySelector(self.project_tab, BASE_DIR=self.BASE_DIR, main_window=self)
-        self.category_selector.grid(row=1, column=0, padx=10, pady=10, sticky="nsew")
+        self.category_selector.grid(row=1, column=0, padx=10, pady=5, sticky="nsew")
 
         
         # Generator Proyek
         self.project_generator = ProjectGenerator(self.project_tab, BASE_DIR=self.BASE_DIR, main_window=self, selected_disk=self.selected_disk, root_folder=self.root_folder, category=self.category, sub_category=self.sub_category, date_var=self.date_var, project_name=self.project_name)
-        self.project_generator.grid(row=1, column=1, padx=10, pady=10, sticky="nsew")
+        self.project_generator.grid(row=1, column=1, padx=10, pady=5, sticky="nsew")
 
         # File Bantuan
         self.load_help_file = LoadHelpFile(self.help_tab, BASE_DIR=self.BASE_DIR, main_window=self)
@@ -306,7 +305,7 @@ class MainWindow(tk.Tk):
         self.splash_screen.hide()
 
         # Configure grid to be resizable with weight constraints
-        self.project_tab.columnconfigure(0, weight=0, minsize=230)  # Minimum width for "Pilih Disk"
+        self.project_tab.columnconfigure(0, weight=0, minsize=200)  # Minimum width for "Pilih Disk"
         self.project_tab.columnconfigure(1, weight=3)  # More weight for the second column
         self.project_tab.rowconfigure(0, weight=0) # Resizable row for other widgets
         self.project_tab.rowconfigure(1, weight=1) # Resizable row for other widgets

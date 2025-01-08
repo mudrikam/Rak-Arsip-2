@@ -48,10 +48,10 @@ class CategorySelector(ttk.LabelFrame):
         self._load_categories()
 
         # Buat LabelFrames untuk kategori dan subkategori
-        self.category_label_frame = ttk.LabelFrame(self, text="Kategori :", padding="10")
+        self.category_label_frame = ttk.LabelFrame(self, text="Kategori :", padding="10", width=0)  # Set width to 100
         self.category_label_frame.grid(row=0, column=0, padx=10, pady=5, sticky="new")
 
-        self.subcategory_label_frame = ttk.LabelFrame(self, text="Sub Kategori :", padding="10")
+        self.subcategory_label_frame = ttk.LabelFrame(self, text="Sub Kategori :", padding="10", width=0)  # Set width to 100
         self.subcategory_label_frame.grid(row=1, column=0, padx=10, pady=5, sticky="new")
 
         # Tambahkan dropdown kategori dan input field
@@ -126,12 +126,16 @@ class CategorySelector(ttk.LabelFrame):
         """
         Tambahkan input field dan tombol untuk menambah kategori baru.
         """
+        # Buat frame untuk entry dan tombol
+        category_input_frame = ttk.Frame(parent_frame)
+        category_input_frame.grid(row=1, column=0, pady=(10, 0), sticky="ew")
+
         # Buat StringVar baru khusus untuk input kategori
         self.new_category_value = tk.StringVar()
 
         # Entry untuk kategori baru dengan validasi input
-        self.new_category_entry = ttk.Entry(parent_frame, textvariable=self.new_category_value, font=("Arial", 12))
-        self.new_category_entry.grid(row=1, column=0, pady=(10, 0), sticky="ew")
+        self.new_category_entry = ttk.Entry(category_input_frame, textvariable=self.new_category_value, font=("Arial", 12), width=5)  # Set width to 50
+        self.new_category_entry.grid(row=0, column=0, sticky="ew")
         self.new_category_entry.bind("<Return>", lambda event: self._add_new_category())
 
         # Bind event untuk mengganti spasi dengan underscore secara otomatis
@@ -150,11 +154,11 @@ class CategorySelector(ttk.LabelFrame):
         self.new_category_entry.bind("<KeyRelease>", on_key_release)
 
         # Tombol untuk menambah kategori baru
-        add_button = ttk.Button(parent_frame, text="+", command=self._add_new_category, padding=5)
-        add_button.grid(row=2, column=0, pady=(10, 0), sticky="ew")
+        add_button = ttk.Button(category_input_frame, text="+", command=self._add_new_category, width=5)
+        add_button.grid(row=0, column=1, padx=(5, 0), sticky="ew")
 
         # Configure grid to be resizable
-        parent_frame.columnconfigure(0, weight=1)
+        category_input_frame.columnconfigure(0, weight=1)
 
     def _add_new_category(self):
         """
@@ -291,12 +295,16 @@ class CategorySelector(ttk.LabelFrame):
         """
         Tambahkan input field dan tombol untuk menambah subkategori baru.
         """
+        # Buat frame untuk entry dan tombol
+        subcategory_input_frame = ttk.Frame(parent_frame)
+        subcategory_input_frame.grid(row=1, column=0, pady=(10, 0), sticky="ew")
+
         # Buat StringVar baru khusus untuk input subkategori
         self.new_subcategory_value = tk.StringVar()
 
         # Entry untuk subkategori baru dengan validasi input
-        self.new_subcategory_entry = ttk.Entry(parent_frame, textvariable=self.new_subcategory_value, font=("Arial", 12))
-        self.new_subcategory_entry.grid(row=1, column=0, pady=(10, 0), sticky="ew")
+        self.new_subcategory_entry = ttk.Entry(subcategory_input_frame, textvariable=self.new_subcategory_value, font=("Arial", 12), width=5)  # Set width to 50
+        self.new_subcategory_entry.grid(row=0, column=0, sticky="ew")
         self.new_subcategory_entry.bind("<Return>", lambda event: self._add_subcategory())
 
         # Bind event untuk mengganti spasi dengan underscore secara otomatis
@@ -315,13 +323,12 @@ class CategorySelector(ttk.LabelFrame):
         self.new_subcategory_entry.bind("<KeyRelease>", on_key_release)  # Bind event key release
 
         # Tombol untuk menambah subkategori baru
-        self.add_subcategory_button = ttk.Button(parent_frame, text="+", command=self._add_subcategory, padding=5)
-        self.add_subcategory_button.grid(row=2, column=0, pady=(10, 0), sticky="ew")
+        self.add_subcategory_button = ttk.Button(subcategory_input_frame, text="+", command=self._add_subcategory, width=5)
+        self.add_subcategory_button.grid(row=0, column=1, padx=(5, 0), sticky="ew")
         self.add_subcategory_button.config(state="disabled")
-        self.new_subcategory_entry.config(state="disabled")
 
         # Configure grid to be resizable
-        parent_frame.columnconfigure(0, weight=1)
+        subcategory_input_frame.columnconfigure(0, weight=1)
 
     def _on_subcategory_selected(self, event):
         """

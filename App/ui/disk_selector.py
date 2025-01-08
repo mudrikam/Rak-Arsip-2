@@ -58,7 +58,7 @@ class DiskSelector(ttk.LabelFrame):
         display_drives = [drive.replace("|", " ") for drive in self.drives]
 
         # Combobox untuk memilih drive
-        self.disk_selector = ttk.Combobox(self, values=display_drives, state="readonly", font=("Arial", 12), height=10)  # increase height to show more items
+        self.disk_selector = ttk.Combobox(self, values=display_drives, state="readonly", font=("Arial", 12), height=10, width=0)  # increase height to show more items
         self.disk_selector.grid(row=0, column=0, padx=20, pady=10, sticky="new")  # sticky top
 
         # Set awal combobox kosong

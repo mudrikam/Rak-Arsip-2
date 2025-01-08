@@ -37,7 +37,7 @@ class HeaderImage:
 
     def add_header_image(self):
         """Metode untuk memuat dan menampilkan gambar header."""
-        header_path = os.path.join(self.BASE_DIR, "Img", "header.ppm")  # Path ke gambar
+        header_path = os.path.join(self.BASE_DIR, "Img", "header.png")  # Path ke gambar
 
         try:
             if os.path.isfile(header_path):
@@ -45,8 +45,8 @@ class HeaderImage:
 
                 # Simpan referensi gambar untuk menghindari garbage collection
                 self.img = img  # Cegah garbage collection dengan menyimpannya sebagai atribut kelas
-                label = tk.Label(self.root, image=img, anchor="w")  # Buat label dengan anchor ke kiri
-                label.pack(fill=tk.X, anchor="w")  # Tambahkan label ke window dengan anchor ke kiri
+                label = tk.Label(self.root, image=img, anchor="w", background="#ff7d19", borderwidth=0, padx=0, pady=0)  # Buat label tanpa border dan padding
+                label.pack(fill=tk.X, anchor="w", padx=0, pady=0)  # Tambahkan label ke window tanpa padding
             else:
                 print("Error: File gambar tidak ditemukan!")
                 print(f"Path yang diperiksa: {header_path}")
