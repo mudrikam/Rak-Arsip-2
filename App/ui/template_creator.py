@@ -35,12 +35,12 @@ from tkinter import messagebox
 from App.ui.core_scan import forbidden_words
 
 class TemplateCreator(ttk.LabelFrame):
-    def __init__(self, parent, x, y, width, height, BASE_DIR, main_window):
+    def __init__(self, parent, BASE_DIR, main_window):
         """
         Inisialisasi kelas TemplateCreator untuk mengelola tampilan file, pengeditan konten, dan pembuatan folder.
         """
         super().__init__(parent, text="Buat template untuk sub folder :", padding=10)
-        self.place(x=x, y=y, width=width, height=height)  # Atur posisi dan ukuran
+        self.grid(row=0, column=0, padx=10, pady=10, sticky="nsew")
         self.main_window = main_window
         
         # Pastikan folder 'Database' ada di dalam BASE_DIR

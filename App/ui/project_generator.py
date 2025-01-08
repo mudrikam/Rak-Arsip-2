@@ -34,14 +34,15 @@ from datetime import date
 from tkinter import messagebox
 import random
 import csv
+from colorsys import rgb_to_hsv, hsv_to_rgb
 
 class ProjectGenerator(ttk.LabelFrame):
-    def __init__(self, parent, x, y, width, height, BASE_DIR, main_window, selected_disk, root_folder, category, sub_category, date_var, project_name):
+    def __init__(self, parent, BASE_DIR, main_window, selected_disk, root_folder, category, sub_category, date_var, project_name):
         """
         Inisialisasi ProjectGenerator.
         """
         super().__init__(parent, text="Ringkasan :")
-        self.place(x=x, y=y, width=width, height=height)
+        self.grid(row=0, column=0, padx=10, pady=10, sticky="nsew")
 
         self.BASE_DIR = BASE_DIR
         self.main_window = main_window
@@ -76,7 +77,7 @@ class ProjectGenerator(ttk.LabelFrame):
 
         # Frame untuk input dan dropdown (kanan)
         self.input_dropdown_frame = ttk.Frame(self.adjust_frame)
-        self.input_dropdown_frame.pack(side=tk.RIGHT, fill=tk.Y, padx=5, pady=5)
+        self.input_dropdown_frame.pack(side=tk.LEFT, fill=tk.Y, padx=5, pady=5)
 
         # Tambahkan checkbox untuk menyertakan tanggal
         self.include_date = tk.BooleanVar(value=True)  # Variabel untuk checkbox
@@ -117,11 +118,15 @@ class ProjectGenerator(ttk.LabelFrame):
         self.template_combobox.bind("<<ComboboxSelected>>", self._update_template_var)
 
         # Tambahkan Entry untuk jumlah pengulangan
-        self.repeat_label = ttk.Label(self.input_dropdown_frame, text="Ulangi sebanyak :")
-        self.repeat_label.pack(side=tk.TOP, anchor="w", padx=10, pady=5)
-        self.repeat_entry = ttk.Entry(self.input_dropdown_frame)
-        self.repeat_entry.pack(side=tk.TOP, fill=tk.X, padx=10, pady=5)
+        self.repeat_frame = ttk.Frame(self.input_dropdown_frame)
+        self.repeat_frame.pack(side=tk.TOP, fill=tk.X, padx=10, pady=5)
         
+        self.repeat_label = ttk.Label(self.repeat_frame, text="Ulang :")
+        self.repeat_label.pack(side=tk.LEFT, anchor="w")
+        
+        self.repeat_entry = ttk.Entry(self.repeat_frame, font=("Arial", 12))
+        self.repeat_entry.pack(side=tk.LEFT, fill=tk.X, expand=True)
+
         # Tambahkan tombol "Buat Arsip"
         self.create_project_button = ttk.Button(self, text="Buat Arsip", command=self.create_project)
         self.create_project_button.pack(side=tk.BOTTOM, fill=tk.X, padx=10, pady=10)
@@ -150,15 +155,15 @@ class ProjectGenerator(ttk.LabelFrame):
         self.color_box.pack(side=tk.TOP, anchor="w", padx=10, pady=5)
 
         # Bind events untuk mengubah warna label tema dan kotak warna
-        self.theme_label.bind("<Enter>", self._change_theme_color)
-        self.theme_label.bind("<Leave>", self._change_theme_color)
-        self.theme_label.bind("<ButtonRelease>", self._change_theme_color)
-        self.bind("<Motion>", self._change_theme_color)  # Ubah warna saat mouse bergerak di atas frame
+        self.bind("<Motion>", self._change_theme_color, add="+")  # Ubah warna saat mouse bergerak di atas frame
+        self.adjust_frame.bind("<Motion>", self._change_theme_color, add="+")  # Ubah warna saat mouse bergerak di atas frame
 
         self.folders_to_make = tk.StringVar()  # Variabel untuk menyimpan subfolder dari template
 
         # Panggil metode untuk melacak perubahan pada combobox template
         self.track_template_changes()
+
+        self.hue = 0  # Initialize hue
 
     def _create_project_path(self, *args):
         """
@@ -360,8 +365,20 @@ class ProjectGenerator(ttk.LabelFrame):
                     print(f"Error loading template {selected_template}: {e}")
 
     def _change_theme_color(self, event):
-        """Ubah warna tema ke warna acak."""
-        self.theme_color = "#{:06x}".format(random.randint(0, 0xFFFFFF))
+        """Ubah warna tema ke warna dengan hue incremental, tetapi saturasi dan value tetap."""
+        # Tetapkan saturasi dan value tetap
+        saturation = 0.97
+        value = 0.70
+
+        # Increment hue
+        self.hue += 0.01
+        if self.hue > 1:
+            self.hue = 0
+
+        # Konversi dari HSV ke RGB
+        r, g, b = hsv_to_rgb(self.hue, saturation, value)
+        self.theme_color = "#{:02x}{:02x}{:02x}".format(int(r * 255), int(g * 255), int(b * 255))
+
         self.theme_label.config(foreground=self.theme_color)
         self.color_box.config(background=self.theme_color)
 

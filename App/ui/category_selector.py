@@ -33,7 +33,7 @@ import os
 from tkinter import messagebox
 
 class CategorySelector(ttk.LabelFrame):
-    def __init__(self, parent, x, y, width, height, BASE_DIR, main_window):
+    def __init__(self, parent, BASE_DIR, main_window):
         """
         Inisialisasi CategorySelector.
         """
@@ -49,10 +49,10 @@ class CategorySelector(ttk.LabelFrame):
 
         # Buat LabelFrames untuk kategori dan subkategori
         self.category_label_frame = ttk.LabelFrame(self, text="Kategori :", padding="10")
-        self.category_label_frame.grid(row=0, column=0, padx=10, pady=5, sticky="ew")
+        self.category_label_frame.grid(row=0, column=0, padx=10, pady=5, sticky="new")
 
         self.subcategory_label_frame = ttk.LabelFrame(self, text="Sub Kategori :", padding="10")
-        self.subcategory_label_frame.grid(row=1, column=0, padx=10, pady=5, sticky="ew")
+        self.subcategory_label_frame.grid(row=1, column=0, padx=10, pady=5, sticky="new")
 
         # Tambahkan dropdown kategori dan input field
         self._add_category_dropdown(self.category_label_frame)
@@ -63,12 +63,13 @@ class CategorySelector(ttk.LabelFrame):
         self._add_subcategory_input(self.subcategory_label_frame)
 
         # Tombol reset ditempatkan di bawah frame subkategori
-        self.reset_button = ttk.Button(self, text="Reset Kategori", command=self._reset, state=tk.DISABLED)
+        self.reset_button = ttk.Button(self, text="Reset", command=self._reset, state=tk.DISABLED, padding=5)
         self.reset_button.grid(row=2, column=0, padx=10, pady=5, sticky="ew")
 
         # Configure grid to be resizable
         self.columnconfigure(0, weight=1)
-        self.rowconfigure(0, weight=1)
+        self.rowconfigure(0, weight=0)
+        self.rowconfigure(1, weight=0)
 
         # Inisialisasi waktu terakhir modifikasi untuk Category.txt
         self.category_file_path = os.path.join(self.BASE_DIR, "Database", "Category.txt")
@@ -118,6 +119,9 @@ class CategorySelector(ttk.LabelFrame):
         self.category_dropdown.bind("<<ComboboxSelected>>", self._on_category_selected)
         self.category_value.trace("w", self._update_subcategory_state)
 
+        # Configure grid to be resizable
+        parent_frame.columnconfigure(0, weight=1)
+
     def _add_category_input(self, parent_frame):
         """
         Tambahkan input field dan tombol untuk menambah kategori baru.
@@ -126,7 +130,7 @@ class CategorySelector(ttk.LabelFrame):
         self.new_category_value = tk.StringVar()
 
         # Entry untuk kategori baru dengan validasi input
-        self.new_category_entry = ttk.Entry(parent_frame, textvariable=self.new_category_value, font=("Arial", 10))
+        self.new_category_entry = ttk.Entry(parent_frame, textvariable=self.new_category_value, font=("Arial", 12))
         self.new_category_entry.grid(row=1, column=0, pady=(10, 0), sticky="ew")
         self.new_category_entry.bind("<Return>", lambda event: self._add_new_category())
 
@@ -146,8 +150,11 @@ class CategorySelector(ttk.LabelFrame):
         self.new_category_entry.bind("<KeyRelease>", on_key_release)
 
         # Tombol untuk menambah kategori baru
-        add_button = ttk.Button(parent_frame, text="Tambah", command=self._add_new_category)
+        add_button = ttk.Button(parent_frame, text="+", command=self._add_new_category, padding=5)
         add_button.grid(row=2, column=0, pady=(10, 0), sticky="ew")
+
+        # Configure grid to be resizable
+        parent_frame.columnconfigure(0, weight=1)
 
     def _add_new_category(self):
         """
@@ -277,6 +284,9 @@ class CategorySelector(ttk.LabelFrame):
         self.subcategory_dropdown.bind("<<ComboboxSelected>>", self._on_subcategory_selected)
         self.subcategory_dropdown.config(state="disabled")
 
+        # Configure grid to be resizable
+        parent_frame.columnconfigure(0, weight=1)
+
     def _add_subcategory_input(self, parent_frame):
         """
         Tambahkan input field dan tombol untuk menambah subkategori baru.
@@ -285,7 +295,7 @@ class CategorySelector(ttk.LabelFrame):
         self.new_subcategory_value = tk.StringVar()
 
         # Entry untuk subkategori baru dengan validasi input
-        self.new_subcategory_entry = ttk.Entry(parent_frame, textvariable=self.new_subcategory_value, font=("Arial", 10))
+        self.new_subcategory_entry = ttk.Entry(parent_frame, textvariable=self.new_subcategory_value, font=("Arial", 12))
         self.new_subcategory_entry.grid(row=1, column=0, pady=(10, 0), sticky="ew")
         self.new_subcategory_entry.bind("<Return>", lambda event: self._add_subcategory())
 
@@ -305,10 +315,13 @@ class CategorySelector(ttk.LabelFrame):
         self.new_subcategory_entry.bind("<KeyRelease>", on_key_release)  # Bind event key release
 
         # Tombol untuk menambah subkategori baru
-        self.add_subcategory_button = ttk.Button(parent_frame, text="Tambah", command=self._add_subcategory)
+        self.add_subcategory_button = ttk.Button(parent_frame, text="+", command=self._add_subcategory, padding=5)
         self.add_subcategory_button.grid(row=2, column=0, pady=(10, 0), sticky="ew")
         self.add_subcategory_button.config(state="disabled")
         self.new_subcategory_entry.config(state="disabled")
+
+        # Configure grid to be resizable
+        parent_frame.columnconfigure(0, weight=1)
 
     def _on_subcategory_selected(self, event):
         """
@@ -339,7 +352,7 @@ class CategorySelector(ttk.LabelFrame):
         self.category_dropdown["values"] = self.categories
 
         # Reset dropdown subkategori jika diperlukan (pertimbangkan logika berdasarkan implementasi)
-        self.subcategory_dropdown["values"] = ["Pilih kategori dulu"]
+        self.subcategory_dropdown["values"] = [""]
 
         # Cetak pesan untuk konfirmasi (opsional)
         print("Semua nilai kategori telah direset.")
@@ -355,7 +368,7 @@ class CategorySelector(ttk.LabelFrame):
                 self._load_categories()
                 self.category_dropdown["values"] = self.categories
                 self.category_value.set("")  # Reset kategori yang dipilih
-                self.subcategory_dropdown["values"] = ["Pilih kategori dulu"]  # Reset dropdown subkategori
+                self.subcategory_dropdown["values"] = [""]  # Reset dropdown subkategori
                 self.subcategory_value.set("")  # Reset subkategori yang dipilih
         except FileNotFoundError:
             messagebox.showwarning("Gawat...!", "Waduh databasenya belum ada! (o_O)")
@@ -374,7 +387,7 @@ class CategorySelector(ttk.LabelFrame):
                     self._on_category_selected(None)  # Muat ulang subkategori
             except FileNotFoundError:
                 # Jika file dihapus, reset dropdown subkategori
-                self.subcategory_dropdown["values"] = ["Pilih kategori dulu"]
+                self.subcategory_dropdown["values"] = [""]
                 self.subcategory_value.set("")
             except Exception as e:
                 messagebox.showerror("Error", f"Terjadi kesalahan: {e}")

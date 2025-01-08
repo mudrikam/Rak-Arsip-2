@@ -35,12 +35,12 @@ from tkinter import messagebox
 from App.ui.core_scan import forbidden_words
 
 class ProjectNameInput(ttk.LabelFrame):
-    def __init__(self, parent, x, y, width, height, BASE_DIR, main_window):
+    def __init__(self, parent, BASE_DIR, main_window):
         """
         Inisialisasi kelas ProjectNameInput.
         """
         super().__init__(parent, text="Masukkan Nama Arsip :")  # LabelFrame sebagai induk komponen
-        self.place(x=x, y=y, width=width, height=height)  # Set posisi dan ukuran
+        self.grid(row=0, column=0, padx=10, pady=10, sticky="nsew")
         self.BASE_DIR = BASE_DIR
         
         self.main_window = main_window  # Simpan referensi ke MainWindow
@@ -59,19 +59,17 @@ class ProjectNameInput(ttk.LabelFrame):
             justify="left", 
             textvariable=self.project_name_value
         )
-        self.project_name_entry.place(x=10, y=0, width=445, height=50)
+        self.project_name_entry.place(x=10, y=10, width=self.winfo_width()-20, height=40)  # set width to 100%
+        self.bind("<Configure>", self._resize_entry)  # bind resize event
 
         # Label untuk menampilkan nama Arsip yang telah diformat
         self.formatted_project_name_label = ttk.Label(
             self, 
-            text=" ", 
+            text="-", 
             font=("Helvetica", 10), 
             foreground="green"
         )
-        self.formatted_project_name_label.place(x=10, y=75)  # Posisi di bawah entry
-
-        # Bind event <KeyRelease> untuk memperbarui nama yang diformat
-        self.project_name_entry.bind("<KeyRelease>", lambda e: (self._update_formatted_name(e), self.check_forbidden_words(e)))
+        self.formatted_project_name_label.place(x=10, y=55)  # Posisi di bawah entry
 
         # Checkbox untuk sanitasi karakter spesial
         self.skip_sanitization_var = tk.BooleanVar(value=True)
@@ -81,7 +79,10 @@ class ProjectNameInput(ttk.LabelFrame):
             text="Sanitasi nama Arsip", 
             variable=self.skip_sanitization_var
         )
-        self.skip_sanitization_checkbox.place(x=10, y=55)  # Posisi di bawah label
+        self.skip_sanitization_checkbox.place(x=10, y=75)  # Posisi di bawah label
+
+        # Bind event <KeyRelease> untuk memperbarui nama yang diformat
+        self.project_name_entry.bind("<KeyRelease>", lambda e: (self._update_formatted_name(e), self.check_forbidden_words(e)))
 
         self.invalid_char_count = 0  # Inisialisasi counter karakter invalid
         self.hahaha_count = 0  # Inisialisasi counter untuk "hahaha"
@@ -127,7 +128,7 @@ class ProjectNameInput(ttk.LabelFrame):
         return result
     def _update_formatted_name(self, event=None):
         project_name = self.project_name_value.get()
-        project_name = project_name[:50]
+        project_name = project_name[:40]
 
         formatted_name = ""
         invalid_char_detected = False
@@ -240,3 +241,7 @@ class ProjectNameInput(ttk.LabelFrame):
             self.main_window.update_status("Lewati sanitasi, selanjutnya filter nama Arsip aku serahkan padamu!")
         else:
             self.main_window.update_status("Serahkan padaku! nama Arsip akan disanitasi supaya aman. (^_-)")
+
+    def _resize_entry(self, event):
+        """Resize the entry dynamically."""
+        self.project_name_entry.place_configure(width=event.width-20)

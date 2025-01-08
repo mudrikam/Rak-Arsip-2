@@ -39,9 +39,9 @@ from datetime import datetime
 
 
 class BatchGenerator(ttk.LabelFrame): 
-    def __init__(self, parent, x, y, width, height, BASE_DIR, main_window):
+    def __init__(self, parent, BASE_DIR, main_window):
         super().__init__(parent, text="Buat folder secara massal, praktis!", padding=10)
-        self.place(x=x, y=y, width=width, height=height)  # Atur posisi dan ukuran
+        self.grid(row=0, column=0, padx=10, pady=10, sticky="nsew")
         self.current_file_path = None
         self.root_path = None
         self.BASE_DIR = BASE_DIR

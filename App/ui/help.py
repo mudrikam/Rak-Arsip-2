@@ -35,12 +35,12 @@ import markdown
 from tkhtmlview import HTMLLabel
 
 class LoadHelpFile(ttk.LabelFrame):
-    def __init__(self, parent, x, y, width, height, BASE_DIR, main_window):
+    def __init__(self, parent, BASE_DIR, main_window):
         """
         Inisialisasi kelas LoadHelpFile untuk menampilkan konten file bantuan.
         """
         super().__init__(parent, text="Bantuan :")  # LabelFrame sebagai widget induk
-        self.place(x=x, y=y, width=width, height=height)  # Atur posisi dan ukuran
+        self.grid(row=0, column=0, padx=10, pady=10, sticky="nsew")
         self.BASE_DIR = BASE_DIR
         
         self.main_window = main_window  # Simpan referensi ke MainWindow

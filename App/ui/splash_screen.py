@@ -27,28 +27,30 @@
 # |                        |                                    |
 # ---------------------------------------------------------------
 
-import os
 import tkinter as tk
+import os
 
-class HeaderImage:
-    def __init__(self, root, BASE_DIR):
-        self.root = root
-        self.BASE_DIR = BASE_DIR
+class SplashScreen:
+    def __init__(self, parent, BASE_DIR):
+        """
+        Inisialisasi splash screen dengan gambar.
+        :param parent: Widget induk tempat splash screen akan ditempatkan.
+        :param BASE_DIR: Direktori dasar tempat gambar berada.
+        """
+        self.parent = parent
+        self.BASE_DIR = BASE_DIR  # Simpan BASE_DIR
 
-    def add_header_image(self):
-        """Metode untuk memuat dan menampilkan gambar header."""
-        header_path = os.path.join(self.BASE_DIR, "Img", "header.ppm")  # Path ke gambar
+        # Set path gambar splash screen berdasarkan BASE_DIR
+        self.image_path = os.path.join(self.BASE_DIR, "img", "splash_screen.png")
+        
+        # Buat label untuk menampilkan gambar (jika image_path disediakan)
+        self.splash_image = tk.PhotoImage(file=self.image_path)
+        self.image_label = tk.Label(self.parent, image=self.splash_image)
 
-        try:
-            if os.path.isfile(header_path):
-                img = tk.PhotoImage(file=header_path)  # Muat gambar menggunakan PhotoImage
+    def show(self):
+        """Tampilkan gambar splash screen pada widget induk."""
+        self.image_label.pack(fill="both", expand=True)
 
-                # Simpan referensi gambar untuk menghindari garbage collection
-                self.img = img  # Cegah garbage collection dengan menyimpannya sebagai atribut kelas
-                label = tk.Label(self.root, image=img, anchor="w")  # Buat label dengan anchor ke kiri
-                label.pack(fill=tk.X, anchor="w")  # Tambahkan label ke window dengan anchor ke kiri
-            else:
-                print("Error: File gambar tidak ditemukan!")
-                print(f"Path yang diperiksa: {header_path}")
-        except Exception as e:
-            print(f"Error memuat gambar: {e}")
+    def hide(self):
+        """Sembunyikan gambar splash screen."""
+        self.image_label.pack_forget()
