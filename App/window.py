@@ -20,7 +20,7 @@
 # Mohon untuk tidak menghapus header ini.
 # Jika ingin berkontribusi, tuliskan namamu di sini.
 # ---------------------------------------------------------------
-# | Nama Kontributor       | Fitur yang Ditambahkan atau Ubah   |
+# | Nama Kontributor       | Kontribusi                         |
 # |------------------------|------------------------------------|
 # |                        |                                    |
 # |                        |                                    |
@@ -196,6 +196,50 @@ class MainWindow(tk.Tk):
         self.library_tab = ttk.Frame(self.notebook)
         self.notebook.add(self.library_tab, text="Pustaka")
         
+        # Tab AI
+        self.ai_tab = ttk.Frame(self.notebook)
+        self.notebook.add(self.ai_tab, text="Ai")
+
+        # Notebook bersarang untuk AI
+        self.ai_nested_notebook = ttk.Notebook(self.ai_tab)
+        self.ai_nested_notebook.pack(fill='both', expand=True, pady=(5,5))
+
+        # Tab AI Sub Tab 1
+        self.ai_sub_tab1 = ttk.Frame(self.ai_nested_notebook)
+        self.ai_nested_notebook.add(self.ai_sub_tab1, text="Segera ditambahkan...!")
+
+        # Add description and list of AI features to AI Sub Tab 1
+        ai_features_label = ttk.Label(
+            self.ai_sub_tab1,
+            text=(
+            "Fitur AI yang ingin ditambahkan:\n\n"
+            "- ChatGPT\n"
+            "- Deteksi Gambar\n"
+            "- Nama Otomatis\n"
+            "- Tag Gambar Otomatis\n"
+            "- Generate Template\n"
+            "- Tanya\n"
+            "- Sub Kategori Otomatis\n"
+            "- Moderasi Teks\n"
+            "- Pengenalan Teks (OCR)\n"
+            "- Analisis Sentimen\n"
+            "- Pencarian Cerdas\n"
+            "- Rekomendasi Arsip\n"
+            "- Klasifikasi Dokumen\n"
+            "- Ekstraksi Metadata Otomatis\n"
+            "- Deteksi Duplikasi\n"
+            "- Ringkasan Dokumen Otomatis\n"
+            "- Fitur AI Berguna untuk Arsip Lainnya"
+            ),
+            justify="left",
+            padding=10
+        )
+        ai_features_label.pack(anchor="n", fill="both", expand=True, padx=10, pady=10)
+
+        # Tab AI Sub Tab 2
+        self.ai_sub_tab2 = ttk.Frame(self.ai_nested_notebook)
+        self.ai_nested_notebook.add(self.ai_sub_tab2, text="Tunggu updatenya...!")
+
         # Tab Bantuan
         self.help_tab = ttk.Frame(self.notebook)
         self.notebook.add(self.help_tab, text="?")

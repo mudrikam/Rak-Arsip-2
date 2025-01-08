@@ -20,7 +20,7 @@
 # Mohon untuk tidak menghapus header ini.
 # Jika ingin berkontribusi, tuliskan namamu di sini.
 # ---------------------------------------------------------------
-# | Nama Kontributor       | Fitur yang Ditambahkan atau Ubah   |
+# | Nama Kontributor       | Kontribusi                         |
 # |------------------------|------------------------------------|
 # |                        |                                    |
 # |                        |                                    |
@@ -137,7 +137,6 @@ class BatchGenerator(ttk.LabelFrame):
     def check_invalid_characters(self, folder_name):
         """Memeriksa nama folder untuk karakter tidak valid."""
         invalid_chars = r'[<>:"/\\|?*]'
-        self.main_window.update_status(f"Karakter {invalid_chars} tidak diperbolehkan di nama folder.")
         return re.search(invalid_chars, folder_name) is not None
 
     def validate_text_area(self, event=None):
@@ -163,7 +162,9 @@ class BatchGenerator(ttk.LabelFrame):
 
         if invalid_detected and not ignore_special_characters:
             self.generate_button.config(state=tk.DISABLED)
-            messagebox.showwarning("Peringatan", "CSV mengandung karakter tidak valid di nama folder.")
+            invalid_chars = r'[<>:"/\\|?*]'
+            messagebox.showwarning("Peringatan", "CSV mengandung karakter tidak valid di nama folder.\n\nTekan Tab untuk membuat folder bersarang.")
+            self.main_window.update_status(f"Karakter {invalid_chars} tidak diperbolehkan di nama folder.")
         else:
             self.generate_button.config(state=tk.NORMAL)
 

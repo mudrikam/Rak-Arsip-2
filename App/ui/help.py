@@ -20,7 +20,7 @@
 # Mohon untuk tidak menghapus header ini.
 # Jika ingin berkontribusi, tuliskan namamu di sini.
 # ---------------------------------------------------------------
-# | Nama Kontributor       | Fitur yang Ditambahkan atau Ubah   |
+# | Nama Kontributor       | Kontribusi                         |
 # |------------------------|------------------------------------|
 # |                        |                                    |
 # |                        |                                    |
