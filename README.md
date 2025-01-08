@@ -160,7 +160,7 @@ Fitur baru: pembuatan folder otomatis dengan template, pencarian dokumen cepat, 
 
 **Dalam konteks Rak Arsip**
 
-- **Folder untuk data penting:** Tempat menyimpan dokumen-dokumen yang memiliki nilai penting dan harus diorganisir dengan baik.
+- **Arsip = Folder untuk data penting:** Tempat menyimpan dokumen-dokumen yang memiliki nilai penting dan harus diorganisir dengan baik.
 - **Markdown:** Format file teks yang digunakan untuk menulis dokumentasi dengan sintaks yang mudah dibaca. Memiliki ekstensi .MD
 - **Python:** Bahasa pemrograman yang sering digunakan untuk pengembangan aplikasi dan skrip otomatisasi.
 - **BAT:** File batch yang berisi serangkaian perintah untuk dieksekusi oleh Command Prompt di Windows.
