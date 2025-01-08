@@ -34,7 +34,7 @@ import subprocess
 class DiskSelector(ttk.LabelFrame):
     def __init__(self, parent, x, y, width, height, BASE_DIR, main_window):
         super().__init__(parent, text="Pilih Disk :")
-        self.place(x=x, y=y, width=width, height=height)  # Set position and size
+        self.grid(row=0, column=0, padx=10, pady=10, sticky="nsew")  # Use grid for dynamic resizing
         self.parent = parent
         self.BASE_DIR = BASE_DIR
         self.main_window = main_window
@@ -48,6 +48,10 @@ class DiskSelector(ttk.LabelFrame):
         # Tambahkan kontrol untuk memilih disk
         self.add_disk_selector_controls()
 
+        # Configure grid to be resizable
+        self.columnconfigure(0, weight=1)
+        self.rowconfigure(0, weight=1)
+
     def add_disk_selector_controls(self):
         """Menambahkan combobox dan label untuk memilih disk."""
         # Format untuk menampilkan drives di combobox
@@ -55,17 +59,17 @@ class DiskSelector(ttk.LabelFrame):
 
         # Combobox untuk memilih drive
         self.disk_selector = ttk.Combobox(self, values=display_drives, state="readonly", font=("Arial", 10))
-        self.disk_selector.pack(pady=10, padx=10, fill='x')  # Padding di dalam frame
+        self.disk_selector.grid(row=0, column=0, padx=10, pady=10, sticky="ew")  # Use grid for dynamic resizing
 
         # Set awal combobox kosong
         self.disk_selector.set("")  
 
         # Label untuk menampilkan drive letter dan volume name
         self.selected_drive_letter_label = ttk.Label(self, text="-", font=("Arial", 9), foreground="#999")
-        self.selected_drive_letter_label.pack(padx=2)
+        self.selected_drive_letter_label.grid(row=1, column=0, padx=2, sticky="w")
 
         self.selected_drive_name_label = ttk.Label(self, text="-", font=("Arial", 12), foreground="#666")
-        self.selected_drive_name_label.pack(padx=2)
+        self.selected_drive_name_label.grid(row=2, column=0, padx=2, sticky="w")
 
         # Fungsi callback untuk memperbarui label ketika memilih drive
         def on_select(event):

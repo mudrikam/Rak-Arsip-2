@@ -48,7 +48,7 @@ class MainWindow(tk.Tk):
         super().__init__()
         self.title("Rak Arsip 2.0")
         self.geometry("700x630")
-        self.resizable(False, False)  # Nonaktifkan pengubahan ukuran (lebar, tinggi)
+        self.resizable(True, True)  # Allow resizing
 
         # Pengaturan direktori dasar
         BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -245,30 +245,64 @@ class MainWindow(tk.Tk):
         self.notebook.add(self.help_tab, text="?")
 
         # Pemilih disk
-        self.disk_selector = DiskSelector(self.project_tab, x=10, y=10, width=200, height=120, BASE_DIR=self.BASE_DIR, main_window=self,)
+        self.disk_selector = DiskSelector(self.project_tab, x=10, y=10, width=200, height=120, BASE_DIR=self.BASE_DIR, main_window=self)
+        self.disk_selector.grid(row=0, column=0, padx=10, pady=10, sticky="nsew")
         
         # Input nama proyek
         self.project_name_input = ProjectNameInput(self.project_tab, x=220, y=10, width=470, height=120, BASE_DIR=self.BASE_DIR, main_window=self)
+        self.project_name_input.grid(row=0, column=1, padx=10, pady=10, sticky="nsew")
         
         # Pemilih kategori
         self.category_selector = CategorySelector(self.project_tab, x=10, y=135, width=200, height=365, BASE_DIR=self.BASE_DIR, main_window=self)
+        self.category_selector.grid(row=1, column=0, padx=10, pady=10, sticky="nsew")
 
         
         # Generator Proyek
         self.project_generator = ProjectGenerator(self.project_tab, x=220, y=135, width=470, height=365, BASE_DIR=self.BASE_DIR, main_window=self, selected_disk=self.selected_disk, root_folder=self.root_folder, category=self.category, sub_category=self.sub_category, date_var=self.date_var, project_name=self.project_name)
+        self.project_generator.grid(row=1, column=1, padx=10, pady=10, sticky="nsew")
 
         # File Bantuan
         self.load_help_file = LoadHelpFile(self.help_tab, x=10, y=10, width=675, height=490, BASE_DIR=self.BASE_DIR, main_window=self)
+        self.load_help_file.pack(fill="both", expand=True, padx=10, pady=10)
         
         # Pembuat Template Sub Folder
         self.template_creator = TemplateCreator(self.template_tab, x=10, y=10, width=675, height=450, BASE_DIR=self.BASE_DIR, main_window=self)
+        self.template_creator.pack(fill="both", expand=True, padx=10, pady=10)
         
         # Pembuat Batch Sub
         self.batch_generator = BatchGenerator(self.batch_generator_tab, x=10, y=10, width=675, height=490, BASE_DIR=self.BASE_DIR, main_window=self)
+        self.batch_generator.pack(fill="both", expand=True, padx=10, pady=10)
         
         # Pustaka Proyek
         self.project_library = ProjectLibrary(self.library_tab, x=10, y=10, width=675, height=490, BASE_DIR=self.BASE_DIR, main_window=self)
+        self.project_library.pack(fill="both", expand=True, padx=10, pady=10)
         
         # Editor Kategori
         self.category_editor = CategoryEditor(self.category_editor_tab, x=10, y=10, width=675, height=450, BASE_DIR=self.BASE_DIR, main_window=self)
+        self.category_editor.pack(fill="both", expand=True, padx=10, pady=10)
+
+        # Configure grid to be resizable
+        self.project_tab.columnconfigure(0, weight=1)
+        self.project_tab.columnconfigure(1, weight=1)
+        self.project_tab.rowconfigure(0, weight=1)
+        self.project_tab.rowconfigure(1, weight=1)
+
+        # Bind the configure event to adjust widget sizes dynamically
+        self.bind("<Configure>", self.on_resize)
+
+    def on_resize(self, event):
+        """Adjust widget sizes dynamically based on window size."""
+        width = self.winfo_width()
+        height = self.winfo_height()
+
+        # Adjust the sizes of widgets based on the new window size
+        self.disk_selector.grid_configure(sticky="nsew")
+        self.project_name_input.grid_configure(sticky="nsew")
+        self.category_selector.grid_configure(sticky="nsew")
+        self.project_generator.grid_configure(sticky="nsew")
+        self.load_help_file.pack_configure(fill="both", expand=True)
+        self.template_creator.pack_configure(fill="both", expand=True)
+        self.batch_generator.pack_configure(fill="both", expand=True)
+        self.project_library.pack_configure(fill="both", expand=True)
+        self.category_editor.pack_configure(fill="both", expand=True)
 

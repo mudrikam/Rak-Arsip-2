@@ -38,11 +38,10 @@ class CategorySelector(ttk.LabelFrame):
         Inisialisasi CategorySelector.
         """
         super().__init__(parent, text="Pilih Kategori :")  # LabelFrame sebagai widget induk
-        self.place(x=x, y=y, width=width, height=height)  # Atur posisi dan ukuran
+        self.grid(row=0, column=0, padx=10, pady=10, sticky="nsew")  # Use grid for dynamic resizing
         self.BASE_DIR = BASE_DIR
-                
         self.main_window = main_window
-                
+
         self.category_value = tk.StringVar()
         self.new_category_value = tk.StringVar()
         self.categories = []
@@ -50,10 +49,10 @@ class CategorySelector(ttk.LabelFrame):
 
         # Buat LabelFrames untuk kategori dan subkategori
         self.category_label_frame = ttk.LabelFrame(self, text="Kategori :", padding="10")
-        self.category_label_frame.pack(fill="x", padx=10, pady=5)
+        self.category_label_frame.grid(row=0, column=0, padx=10, pady=5, sticky="ew")
 
         self.subcategory_label_frame = ttk.LabelFrame(self, text="Sub Kategori :", padding="10")
-        self.subcategory_label_frame.pack(fill="x", padx=10, pady=5)
+        self.subcategory_label_frame.grid(row=1, column=0, padx=10, pady=5, sticky="ew")
 
         # Tambahkan dropdown kategori dan input field
         self._add_category_dropdown(self.category_label_frame)
@@ -65,7 +64,11 @@ class CategorySelector(ttk.LabelFrame):
 
         # Tombol reset ditempatkan di bawah frame subkategori
         self.reset_button = ttk.Button(self, text="Reset Kategori", command=self._reset, state=tk.DISABLED)
-        self.reset_button.pack(fill=tk.X, padx=10, pady=5)  # Pack setelah frame subkategori
+        self.reset_button.grid(row=2, column=0, padx=10, pady=5, sticky="ew")
+
+        # Configure grid to be resizable
+        self.columnconfigure(0, weight=1)
+        self.rowconfigure(0, weight=1)
 
         # Inisialisasi waktu terakhir modifikasi untuk Category.txt
         self.category_file_path = os.path.join(self.BASE_DIR, "Database", "Category.txt")
@@ -106,7 +109,7 @@ class CategorySelector(ttk.LabelFrame):
             state="readonly",  # Buat dropdown hanya-baca
         )
         self.category_dropdown["values"] = self.categories
-        self.category_dropdown.pack(fill=tk.X, pady=(10, 0))  # Tempatkan dropdown dengan padding
+        self.category_dropdown.grid(row=0, column=0, pady=(10, 0), sticky="ew")
 
         # Set kategori default ke None (kosong) awalnya
         self.category_value.set("")  # Pastikan tidak ada pilihan default
@@ -124,7 +127,7 @@ class CategorySelector(ttk.LabelFrame):
 
         # Entry untuk kategori baru dengan validasi input
         self.new_category_entry = ttk.Entry(parent_frame, textvariable=self.new_category_value, font=("Arial", 10))
-        self.new_category_entry.pack(fill=tk.X, pady=(10, 0))
+        self.new_category_entry.grid(row=1, column=0, pady=(10, 0), sticky="ew")
         self.new_category_entry.bind("<Return>", lambda event: self._add_new_category())
 
         # Bind event untuk mengganti spasi dengan underscore secara otomatis
@@ -144,7 +147,7 @@ class CategorySelector(ttk.LabelFrame):
 
         # Tombol untuk menambah kategori baru
         add_button = ttk.Button(parent_frame, text="Tambah", command=self._add_new_category)
-        add_button.pack(fill=tk.X, pady=(10, 0))
+        add_button.grid(row=2, column=0, pady=(10, 0), sticky="ew")
 
     def _add_new_category(self):
         """
@@ -265,7 +268,7 @@ class CategorySelector(ttk.LabelFrame):
             font=("Arial", 10),
             state="readonly",  # Buat dropdown hanya-baca
         )
-        self.subcategory_dropdown.pack(fill=tk.X, pady=(10, 0))  # Tempatkan dropdown dengan padding
+        self.subcategory_dropdown.grid(row=0, column=0, pady=(10, 0), sticky="ew")
 
         # Set subkategori default (atau nilai default lainnya)
         self.subcategory_value.set("Pilih kategori dulu")
@@ -283,7 +286,7 @@ class CategorySelector(ttk.LabelFrame):
 
         # Entry untuk subkategori baru dengan validasi input
         self.new_subcategory_entry = ttk.Entry(parent_frame, textvariable=self.new_subcategory_value, font=("Arial", 10))
-        self.new_subcategory_entry.pack(fill=tk.X, pady=(10, 0))
+        self.new_subcategory_entry.grid(row=1, column=0, pady=(10, 0), sticky="ew")
         self.new_subcategory_entry.bind("<Return>", lambda event: self._add_subcategory())
 
         # Bind event untuk mengganti spasi dengan underscore secara otomatis
@@ -303,7 +306,7 @@ class CategorySelector(ttk.LabelFrame):
 
         # Tombol untuk menambah subkategori baru
         self.add_subcategory_button = ttk.Button(parent_frame, text="Tambah", command=self._add_subcategory)
-        self.add_subcategory_button.pack(fill=tk.X, pady=(10, 0))
+        self.add_subcategory_button.grid(row=2, column=0, pady=(10, 0), sticky="ew")
         self.add_subcategory_button.config(state="disabled")
         self.new_subcategory_entry.config(state="disabled")
 
