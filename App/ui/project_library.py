@@ -36,9 +36,9 @@ from tkinter import filedialog
 import webbrowser
 
 class ProjectLibrary(ttk.LabelFrame):
-    def __init__(self, parent, x, y, width, height, BASE_DIR, main_window):
+    def __init__(self, parent, BASE_DIR, main_window):
         super().__init__(parent, text="Daftar Arsip yang telah dibuat :", padding=10)
-        self.place(x=x, y=y, width=width, height=height)  # Atur posisi dan ukuran
+        self.grid(row=0, column=0, padx=10, pady=10, sticky="nsew")
         self.main_window = main_window
 
         self.BASE_DIR = os.path.join(BASE_DIR, "Database", "Library")
@@ -55,19 +55,21 @@ class ProjectLibrary(ttk.LabelFrame):
 
         # Label "Cari :"
         self.search_label = ttk.Label(self.search_frame, text="Cari :")
-        self.search_label.grid(row=0, column=0, padx=(0,5))
+        self.search_label.grid(row=0, column=0, padx=(0,5), sticky="w")  # sticky left
 
         # Entry untuk pencarian
         self.search_var = tk.StringVar()
-        self.search_entry = ttk.Entry(self.search_frame, textvariable=self.search_var, width=45, font=("Lato Medium", 14))
-        self.search_entry.grid(row=0, column=1, padx=(0,5), sticky="ew")
+        self.search_entry = ttk.Entry(self.search_frame, textvariable=self.search_var, font=("Lato Medium", 14))
+        self.search_entry.grid(row=0, column=1, padx=(0,5), sticky="w")  # sticky left
+        self.search_entry.config(width=20)  # set fixed width
         self.search_entry.bind("<KeyRelease>", self.search_library)
         self.search_entry.bind("<Double-Button-1>", self.clear_search)
 
         self.open_button = ttk.Button(self.search_frame, text="Buka di Explorer", command=self.open_file, state=tk.DISABLED, padding=5)
-        self.open_button.grid(row=0, column=2, sticky="ew", padx=(0,0))  # sticky ew dan padx 0
+        self.open_button.grid(row=0, column=2, padx=(5,0), sticky="e")  # sticky right
 
-        self.search_frame.columnconfigure(2, weight=1)  # memberikan weight pada kolom 2
+        self.search_frame.columnconfigure(1, weight=0)  # remove weight from column 1
+        self.search_frame.columnconfigure(2, weight=1)  # set weight to 1 for column 2
         
 
         self.tree = ttk.Treeview(self, columns=("No", "Tanggal", "Nama", "Lokasi"), show="headings", height=6)
@@ -76,8 +78,8 @@ class ProjectLibrary(ttk.LabelFrame):
         self.tree.heading("Nama", text="Nama")
         self.tree.heading("Lokasi", text="Lokasi")
         self.tree.column("No", width=50, anchor="center")
-        self.tree.column("Tanggal", width=120, anchor="center")
-        self.tree.column("Nama", width=200, anchor="w")
+        self.tree.column("Tanggal", width=80, anchor="center")
+        self.tree.column("Nama", width=150, anchor="w")
         self.tree.column("Lokasi", width=300, anchor="w")
         self.tree.pack(fill=tk.BOTH, expand=True)
         self.tree.bind("<<TreeviewSelect>>", self.on_row_select)
@@ -95,6 +97,12 @@ class ProjectLibrary(ttk.LabelFrame):
         self.reminder_label = ttk.Label(self, text="Buatlah cadangan berkala untuk menghindari kehilangan akses daftar pustaka.", foreground="#999999")
         self.reminder_label.pack(side=tk.LEFT, pady=10, padx=10)
 
+        # Configure grid to be resizable with weight constraints
+        self.columnconfigure(0, weight=1)
+        self.rowconfigure(1, weight=1)
+
+        # Bind the configure event to adjust widget sizes dynamically
+        self.bind("<Configure>", self.on_resize)
 
     def create_csv_if_not_exists(self):
         if not os.path.exists(self.csv_file_path):
@@ -245,4 +253,12 @@ class ProjectLibrary(ttk.LabelFrame):
             self.load_library()  # Muat ulang data di Treeview
         except Exception as e:
             messagebox.showerror("Error", f"Gagal mengimpor Daftar Pustaka:\n{e}")
+
+    def on_resize(self, event):
+        """Adjust column widths dynamically based on window size."""
+        width = self.winfo_width()
+        self.tree.column("No", width=int(width * 0.05))
+        self.tree.column("Tanggal", width=int(width * 0.15))
+        self.tree.column("Nama", width=int(width * 0.25))
+        self.tree.column("Lokasi", width=int(width * 0.55))
 

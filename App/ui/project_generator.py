@@ -32,16 +32,17 @@ import tkinter as tk
 from tkinter import ttk
 from datetime import date
 from tkinter import messagebox
-import random
 import csv
+from colorsys import hsv_to_rgb
+from tkinter import colorchooser
 
 class ProjectGenerator(ttk.LabelFrame):
-    def __init__(self, parent, x, y, width, height, BASE_DIR, main_window, selected_disk, root_folder, category, sub_category, date_var, project_name):
+    def __init__(self, parent, BASE_DIR, main_window, selected_disk, root_folder, category, sub_category, date_var, project_name):
         """
         Inisialisasi ProjectGenerator.
         """
         super().__init__(parent, text="Ringkasan :")
-        self.place(x=x, y=y, width=width, height=height)
+        self.grid(row=0, column=0, padx=10, pady=10, sticky="nsew")
 
         self.BASE_DIR = BASE_DIR
         self.main_window = main_window
@@ -76,7 +77,7 @@ class ProjectGenerator(ttk.LabelFrame):
 
         # Frame untuk input dan dropdown (kanan)
         self.input_dropdown_frame = ttk.Frame(self.adjust_frame)
-        self.input_dropdown_frame.pack(side=tk.RIGHT, fill=tk.Y, padx=5, pady=5)
+        self.input_dropdown_frame.pack(side=tk.LEFT, fill=tk.Y, padx=5, pady=5)
 
         # Tambahkan checkbox untuk menyertakan tanggal
         self.include_date = tk.BooleanVar(value=True)  # Variabel untuk checkbox
@@ -86,7 +87,7 @@ class ProjectGenerator(ttk.LabelFrame):
         self.checkbox.pack(side=tk.TOP, anchor="w", padx=10, pady=5)
 
         # Tambahkan dropdown combobox untuk folder
-        self.folder_label = ttk.Label(self.input_dropdown_frame, text="Pilih lokasi Arsip :")
+        self.folder_label = ttk.Label(self.input_dropdown_frame, text="Lokasi Arsip :")
         self.folder_label.pack(side=tk.TOP, anchor="w", padx=10, pady=5)
         
         self.folder_combobox = ttk.Combobox(self.input_dropdown_frame, textvariable=self.root_folder)
@@ -108,7 +109,7 @@ class ProjectGenerator(ttk.LabelFrame):
         self.explorer_checkbox.pack(side=tk.TOP, anchor="w", padx=10, pady=5)
 
         # Tambahkan dropdown untuk template
-        self.template_label = ttk.Label(self.input_dropdown_frame, text="Pilih Template :")
+        self.template_label = ttk.Label(self.input_dropdown_frame, text="Template :")
         self.template_label.pack(side=tk.TOP, anchor="w", padx=10, pady=5)
         
         self.template_var = tk.StringVar()
@@ -117,11 +118,15 @@ class ProjectGenerator(ttk.LabelFrame):
         self.template_combobox.bind("<<ComboboxSelected>>", self._update_template_var)
 
         # Tambahkan Entry untuk jumlah pengulangan
-        self.repeat_label = ttk.Label(self.input_dropdown_frame, text="Ulangi sebanyak :")
-        self.repeat_label.pack(side=tk.TOP, anchor="w", padx=10, pady=5)
-        self.repeat_entry = ttk.Entry(self.input_dropdown_frame)
-        self.repeat_entry.pack(side=tk.TOP, fill=tk.X, padx=10, pady=5)
+        self.repeat_frame = ttk.Frame(self.input_dropdown_frame)
+        self.repeat_frame.pack(side=tk.TOP, fill=tk.X, padx=10, pady=5)
         
+        self.repeat_label = ttk.Label(self.repeat_frame, text="Ulang :")
+        self.repeat_label.pack(side=tk.LEFT, anchor="w")
+        
+        self.repeat_entry = ttk.Entry(self.repeat_frame, font=("Arial", 12))
+        self.repeat_entry.pack(side=tk.LEFT, fill=tk.X, expand=True)
+
         # Tambahkan tombol "Buat Arsip"
         self.create_project_button = ttk.Button(self, text="Buat Arsip", command=self.create_project)
         self.create_project_button.pack(side=tk.BOTTOM, fill=tk.X, padx=10, pady=10)
@@ -129,7 +134,7 @@ class ProjectGenerator(ttk.LabelFrame):
 
         # Tambahkan style untuk tombol dengan ukuran font 12
         style = ttk.Style()
-        style.configure("Custom.TButton", font=("TkDefaultFont", 12), padding=15)
+        style.configure("Custom.TButton", font=("Arial", 12), padding=10)
 
         # Tampilkan path awal
         self._create_project_path()
@@ -145,20 +150,29 @@ class ProjectGenerator(ttk.LabelFrame):
         self.theme_label = ttk.Label(self.checkbox_frame, text="Tema markdown", foreground=self.theme_color)
         self.theme_label.pack(side=tk.TOP, anchor="w", padx=10, pady=5)
 
-        # Tambahkan kotak warna untuk tema markdown
-        self.color_box = tk.Label(self.checkbox_frame, background=self.theme_color, width=20, height=1)
-        self.color_box.pack(side=tk.TOP, anchor="w", padx=10, pady=5)
+        # Tambahkan frame untuk color picker dan tombol acak
+        self.picker_frame = ttk.Frame(self.checkbox_frame)
+        self.picker_frame.pack(side=tk.TOP, anchor="w", padx=10, pady=5)
+
+        # Tambahkan tombol untuk membuka color picker (kotak kecil berwarna)
+        self.color_picker_button = tk.Label(self.picker_frame, background=self.theme_color, width=2, height=1, relief="groove")
+        self.color_picker_button.pack(side=tk.LEFT, padx=5)
+        self.color_picker_button.bind("<Button-1>", self.open_color_picker)
+
+        # Tambahkan tombol untuk mengacak warna
+        self.randomize_button = ttk.Button(self.picker_frame, text="Acak", command=self.enable_random_color)
+        self.randomize_button.pack(side=tk.LEFT, padx=5)
 
         # Bind events untuk mengubah warna label tema dan kotak warna
-        self.theme_label.bind("<Enter>", self._change_theme_color)
-        self.theme_label.bind("<Leave>", self._change_theme_color)
-        self.theme_label.bind("<ButtonRelease>", self._change_theme_color)
-        self.bind("<Motion>", self._change_theme_color)  # Ubah warna saat mouse bergerak di atas frame
+        self.bind("<Motion>", self._change_theme_color, add="+")  # Ubah warna saat mouse bergerak di atas frame
+        self.adjust_frame.bind("<Motion>", self._change_theme_color, add="+")  # Ubah warna saat mouse bergerak di atas frame
 
         self.folders_to_make = tk.StringVar()  # Variabel untuk menyimpan subfolder dari template
 
         # Panggil metode untuk melacak perubahan pada combobox template
         self.track_template_changes()
+
+        self.hue = 0  # Initialize hue
 
     def _create_project_path(self, *args):
         """
@@ -359,11 +373,40 @@ class ProjectGenerator(ttk.LabelFrame):
                 except Exception as e:
                     print(f"Error loading template {selected_template}: {e}")
 
+    def open_color_picker(self, event):
+        """Buka color picker dan ambil warna yang dipilih."""
+        color_code = colorchooser.askcolor(title="Pilih Warna")[1]
+        if color_code:
+            self.theme_color = color_code
+            self.theme_label.config(foreground=self.theme_color)
+            self.color_picker_button.config(background=self.theme_color)
+            # Disable motion tracking
+            self.unbind("<Motion>")
+            self.adjust_frame.unbind("<Motion>")
+
+    def enable_random_color(self):
+        """Enable random color changes again."""
+        self.bind("<Motion>", self._change_theme_color, add="+")
+        self.adjust_frame.bind("<Motion>", self._change_theme_color, add="+")
+        print("Random color changes enabled.")
+
     def _change_theme_color(self, event):
-        """Ubah warna tema ke warna acak."""
-        self.theme_color = "#{:06x}".format(random.randint(0, 0xFFFFFF))
+        """Ubah warna tema ke warna dengan hue incremental, tetapi saturasi dan value tetap."""
+        # Tetapkan saturasi dan value tetap
+        saturation = 0.97
+        value = 0.70
+
+        # Increment hue
+        self.hue += 0.01
+        if self.hue > 1:
+            self.hue = 0
+
+        # Konversi dari HSV ke RGB
+        r, g, b = hsv_to_rgb(self.hue, saturation, value)
+        self.theme_color = "#{:02x}{:02x}{:02x}".format(int(r * 255), int(g * 255), int(b * 255))
+
         self.theme_label.config(foreground=self.theme_color)
-        self.color_box.config(background=self.theme_color)
+        self.color_picker_button.config(background=self.theme_color)
 
     def track_template_changes(self):
         """

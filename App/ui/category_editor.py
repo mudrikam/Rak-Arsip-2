@@ -36,9 +36,9 @@ from tkinter import scrolledtext
 from tkinter import messagebox
 
 class CategoryEditor(ttk.LabelFrame): 
-    def __init__(self, parent, x, y, width, height, BASE_DIR, main_window):
+    def __init__(self, parent, BASE_DIR, main_window):
         super().__init__(parent, text="Kelola Kategori dan Sub Kategori :", padding=10)
-        self.place(x=x, y=y, width=width, height=height)  # Setel posisi dan ukuran
+        self.grid(row=0, column=0, padx=10, pady=10, sticky="nsew")
         
         # Pastikan folder 'Database' ada di dalam BASE_DIR
         self.BASE_DIR = os.path.join(BASE_DIR, "Database")
@@ -63,7 +63,7 @@ class CategoryEditor(ttk.LabelFrame):
         self.left_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, pady=(10, 0), padx=(0, 5))
 
         # Tambahkan Entry untuk kategori baru
-        self.category_entry = ttk.Entry(self.left_frame, width=30)
+        self.category_entry = ttk.Entry(self.left_frame, font=("Arial", 12))
         self.category_entry.pack(fill=tk.X, pady=(10, 0))
         self.category_entry.bind("<KeyRelease>", self.sanitize_category_entry)
         self.category_entry.bind("<FocusIn>", self.disable_delete_button)
@@ -71,7 +71,7 @@ class CategoryEditor(ttk.LabelFrame):
         self.category_entry.bind("<Return>", lambda event: self.add_category())
 
         # Tambahkan Tombol untuk menambah kategori baru
-        self.add_category_button = ttk.Button(self.left_frame, text="Tambah Kategori", command=self.add_category)
+        self.add_category_button = ttk.Button(self.left_frame, text="+", command=self.add_category, padding=5)
         self.add_category_button.pack(fill=tk.X, pady=(10, 10))
 
         # Buat Treeview untuk kategori tanpa heading
@@ -80,7 +80,7 @@ class CategoryEditor(ttk.LabelFrame):
         self.category_tree.bind("<<TreeviewSelect>>", self.on_category_select)
 
         # Tambahkan Tombol Hapus
-        self.delete_category_button = ttk.Button(self.left_frame, text="Hapus Kategori", command=self.delete_category, state=tk.DISABLED)
+        self.delete_category_button = ttk.Button(self.left_frame, text="Hapus", command=self.delete_category, state=tk.DISABLED, padding=5)
         self.delete_category_button.pack(fill=tk.X, pady=(10, 0))
 
         # Muat kategori dari Category.txt

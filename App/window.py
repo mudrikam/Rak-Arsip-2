@@ -40,15 +40,15 @@ from App.ui.help import LoadHelpFile
 from App.ui.project_generator import ProjectGenerator
 from App.ui.project_library import ProjectLibrary
 from App.ui.project_name_input import ProjectNameInput
-from App.ui.loader_bar import LoaderBar
 from App.ui.template_creator import TemplateCreator
+from App.ui.splash_screen import SplashScreen
 
 class MainWindow(tk.Tk):
     def __init__(self):
         super().__init__()
         self.title("Rak Arsip 2.0")
-        self.geometry("700x630")
-        self.resizable(False, False)  # Nonaktifkan pengubahan ukuran (lebar, tinggi)
+        self.geometry("700x600")
+        self.resizable(True, True)  # Allow resizing
 
         # Pengaturan direktori dasar
         BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -69,15 +69,18 @@ class MainWindow(tk.Tk):
 
         # Tambahkan gambar header ke jendela
         self.header = HeaderImage(self, BASE_DIR)  # Buat instance HeaderImage
-        self.header.add_header_image()  # Panggil metode untuk menampilkan gambar header
+        self.header.add_header_image()  # Panggil metode untuk menampilkan gambar header tanpa padding dan border
 
-        # Inisialisasi loader bar untuk proses pemuatan
-        self.loader_bar = LoaderBar(self, BASE_DIR)  # Buat instance LoaderBar
-        self.loader_bar.start_loading(self.initialize_ui)  # Mulai pemuatan dan inisialisasi UI setelah selesai
-        
+        # Inisialisasi splash screen untuk proses pemuatan
+        self.splash_screen = SplashScreen(self, BASE_DIR)  # Buat instance SplashScreen
+        self.splash_screen.show()  # Tampilkan splash screen
+
         # Tambahkan status bar
         self.create_status_bar()
-        
+
+        # Mulai pemuatan dan inisialisasi UI setelah selesai
+        self.after(100, self.start_loading)
+
         # Variabel StringVar untuk sinkronisasi
         self.selected_disk = tk.StringVar()
         self.root_folder = tk.StringVar()
@@ -111,7 +114,7 @@ class MainWindow(tk.Tk):
         """
         self.status_bar = tk.Label(
             self,
-            text="Meluncuuur...!",
+            text="",
             anchor="w",
             background="#f6f8f9",
             foreground="#666",
@@ -128,11 +131,29 @@ class MainWindow(tk.Tk):
         print(f"Memperbarui status bar dengan pesan: {message}")  # Pernyataan debugging
         self.status_bar.config(text=message)
 
+    def start_loading(self):
+        """Mulai proses pemuatan dan inisialisasi UI."""
+        self.status_message = "Meluncuuur"
+        self.update_status(self.status_message)
+        self.animate_ellipsis()
+        self.after(5000, self.initialize_ui)
+
+    def animate_ellipsis(self):
+        """Animasi titik-titik pada pesan status."""
+        current_text = self.status_message
+        if current_text.endswith("..."):
+            self.status_message = "Meluncuuur"
+        else:
+            self.status_message += "."
+        self.update_status(self.status_message)
+        self.ellipsis_animation = self.after(100, self.animate_ellipsis)  # Ubah titik-titik setiap 500 ms
 
     def initialize_ui(self):
-        """
-        Inisialisasi semua elemen UI setelah pemuatan selesai.
-        """
+        """Inisialisasi semua elemen UI setelah pemuatan selesai."""
+        # Hentikan animasi titik-titik
+        if hasattr(self, 'ellipsis_animation'):
+            self.after_cancel(self.ellipsis_animation)
+        
         self.BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
         # Cek apakah direktori "Database" ada, jika tidak buatkan
@@ -222,7 +243,6 @@ class MainWindow(tk.Tk):
             "- Sub Kategori Otomatis\n"
             "- Moderasi Teks\n"
             "- Pengenalan Teks (OCR)\n"
-            "- Analisis Sentimen\n"
             "- Pencarian Cerdas\n"
             "- Rekomendasi Arsip\n"
             "- Klasifikasi Dokumen\n"
@@ -245,30 +265,67 @@ class MainWindow(tk.Tk):
         self.notebook.add(self.help_tab, text="?")
 
         # Pemilih disk
-        self.disk_selector = DiskSelector(self.project_tab, x=10, y=10, width=200, height=120, BASE_DIR=self.BASE_DIR, main_window=self,)
+        self.disk_selector = DiskSelector(self.project_tab, BASE_DIR=self.BASE_DIR, main_window=self)
+        self.disk_selector.grid(row=0, column=0, padx=10, pady=(10,0), sticky="nsew")
         
         # Input nama proyek
-        self.project_name_input = ProjectNameInput(self.project_tab, x=220, y=10, width=470, height=120, BASE_DIR=self.BASE_DIR, main_window=self)
+        self.project_name_input = ProjectNameInput(self.project_tab, BASE_DIR=self.BASE_DIR, main_window=self)
+        self.project_name_input.grid(row=0, column=1, padx=10, pady=(10,0), sticky="nsew")
         
         # Pemilih kategori
-        self.category_selector = CategorySelector(self.project_tab, x=10, y=135, width=200, height=365, BASE_DIR=self.BASE_DIR, main_window=self)
+        self.category_selector = CategorySelector(self.project_tab, BASE_DIR=self.BASE_DIR, main_window=self)
+        self.category_selector.grid(row=1, column=0, padx=10, pady=5, sticky="nsew")
 
         
         # Generator Proyek
-        self.project_generator = ProjectGenerator(self.project_tab, x=220, y=135, width=470, height=365, BASE_DIR=self.BASE_DIR, main_window=self, selected_disk=self.selected_disk, root_folder=self.root_folder, category=self.category, sub_category=self.sub_category, date_var=self.date_var, project_name=self.project_name)
+        self.project_generator = ProjectGenerator(self.project_tab, BASE_DIR=self.BASE_DIR, main_window=self, selected_disk=self.selected_disk, root_folder=self.root_folder, category=self.category, sub_category=self.sub_category, date_var=self.date_var, project_name=self.project_name)
+        self.project_generator.grid(row=1, column=1, padx=10, pady=5, sticky="nsew")
 
         # File Bantuan
-        self.load_help_file = LoadHelpFile(self.help_tab, x=10, y=10, width=675, height=490, BASE_DIR=self.BASE_DIR, main_window=self)
+        self.load_help_file = LoadHelpFile(self.help_tab, BASE_DIR=self.BASE_DIR, main_window=self)
+        self.load_help_file.pack(fill="both", expand=True, padx=10, pady=10)
         
         # Pembuat Template Sub Folder
-        self.template_creator = TemplateCreator(self.template_tab, x=10, y=10, width=675, height=450, BASE_DIR=self.BASE_DIR, main_window=self)
+        self.template_creator = TemplateCreator(self.template_tab, BASE_DIR=self.BASE_DIR, main_window=self)
+        self.template_creator.pack(fill="both", expand=True, padx=10, pady=10)
         
         # Pembuat Batch Sub
-        self.batch_generator = BatchGenerator(self.batch_generator_tab, x=10, y=10, width=675, height=490, BASE_DIR=self.BASE_DIR, main_window=self)
+        self.batch_generator = BatchGenerator(self.batch_generator_tab, BASE_DIR=self.BASE_DIR, main_window=self)
+        self.batch_generator.pack(fill="both", expand=True, padx=10, pady=10)
         
         # Pustaka Proyek
-        self.project_library = ProjectLibrary(self.library_tab, x=10, y=10, width=675, height=490, BASE_DIR=self.BASE_DIR, main_window=self)
+        self.project_library = ProjectLibrary(self.library_tab, BASE_DIR=self.BASE_DIR, main_window=self)
+        self.project_library.pack(fill="both", expand=True, padx=10, pady=10)
         
         # Editor Kategori
-        self.category_editor = CategoryEditor(self.category_editor_tab, x=10, y=10, width=675, height=450, BASE_DIR=self.BASE_DIR, main_window=self)
+        self.category_editor = CategoryEditor(self.category_editor_tab, BASE_DIR=self.BASE_DIR, main_window=self)
+        self.category_editor.pack(fill="both", expand=True, padx=10, pady=10)
+
+        # Sembunyikan splash screen setelah pemuatan selesai
+        self.splash_screen.hide()
+
+        # Configure grid to be resizable with weight constraints
+        self.project_tab.columnconfigure(0, weight=0, minsize=200)  # Minimum width for "Pilih Disk"
+        self.project_tab.columnconfigure(1, weight=3)  # More weight for the second column
+        self.project_tab.rowconfigure(0, weight=0) # Resizable row for other widgets
+        self.project_tab.rowconfigure(1, weight=1) # Resizable row for other widgets
+
+        # Bind the configure event to adjust widget sizes dynamically
+        self.bind("<Configure>", self.on_resize)
+
+    def on_resize(self, event):
+        """Adjust widget sizes dynamically based on window size."""
+        width = self.winfo_width()
+        height = self.winfo_height()
+
+        # Adjust the sizes of widgets based on the new window size
+        self.disk_selector.grid_configure(sticky="nsew")
+        self.project_name_input.grid_configure(sticky="nsew")
+        self.category_selector.grid_configure(sticky="nsew")
+        self.project_generator.grid_configure(sticky="nsew")
+        self.load_help_file.pack_configure(fill="both", expand=True)
+        self.template_creator.pack_configure(fill="both", expand=True)
+        self.batch_generator.pack_configure(fill="both", expand=True)
+        self.project_library.pack_configure(fill="both", expand=True)
+        self.category_editor.pack_configure(fill="both", expand=True)
 

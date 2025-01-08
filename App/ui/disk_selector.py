@@ -32,9 +32,9 @@ from tkinter import ttk
 import subprocess
 
 class DiskSelector(ttk.LabelFrame):
-    def __init__(self, parent, x, y, width, height, BASE_DIR, main_window):
+    def __init__(self, parent, BASE_DIR, main_window):
         super().__init__(parent, text="Pilih Disk :")
-        self.place(x=x, y=y, width=width, height=height)  # Set position and size
+        self.grid(row=0, column=0, padx=10, pady=10, sticky="nsew")  # Use grid for dynamic resizing
         self.parent = parent
         self.BASE_DIR = BASE_DIR
         self.main_window = main_window
@@ -48,29 +48,40 @@ class DiskSelector(ttk.LabelFrame):
         # Tambahkan kontrol untuk memilih disk
         self.add_disk_selector_controls()
 
+        # Configure grid to be resizable
+        self.columnconfigure(0, weight=1)
+        self.rowconfigure(0, weight=1)
+
     def add_disk_selector_controls(self):
         """Menambahkan combobox dan label untuk memilih disk."""
         # Format untuk menampilkan drives di combobox
         display_drives = [drive.replace("|", " ") for drive in self.drives]
 
         # Combobox untuk memilih drive
-        self.disk_selector = ttk.Combobox(self, values=display_drives, state="readonly", font=("Arial", 10))
-        self.disk_selector.pack(pady=10, padx=10, fill='x')  # Padding di dalam frame
+        self.disk_selector = ttk.Combobox(self, values=display_drives, state="readonly", font=("Arial", 12), height=10, width=0)  # increase height to show more items
+        self.disk_selector.grid(row=0, column=0, padx=20, pady=10, sticky="new")  # sticky top
 
         # Set awal combobox kosong
         self.disk_selector.set("")  
 
-        # Label untuk menampilkan drive letter dan volume name
-        self.selected_drive_letter_label = ttk.Label(self, text="-", font=("Arial", 9), foreground="#999")
-        self.selected_drive_letter_label.pack(padx=2)
+        # Frame untuk label drive letter dan drive name
+        self.label_frame = ttk.Frame(self)
+        self.label_frame.grid(row=1, column=0, padx=10, pady=5, sticky="new")  # sticky below disk selector
 
-        self.selected_drive_name_label = ttk.Label(self, text="-", font=("Arial", 12), foreground="#666")
-        self.selected_drive_name_label.pack(padx=2)
+        # Label untuk menampilkan drive letter dan volume name
+        self.selected_drive_letter_label = ttk.Label(self.label_frame, text="-", font=("Arial", 9), foreground="#999", anchor="center")
+        self.selected_drive_letter_label.grid(row=0, column=0, sticky="ew")  # sticky expand horizontally
+
+        self.selected_drive_name_label = ttk.Label(self.label_frame, text="-", font=("Arial", 12), foreground="#666", anchor="center")
+        self.selected_drive_name_label.grid(row=1, column=0, pady=5, sticky="ew")  # sticky expand horizontally
+
+        # Configure column to center align the labels
+        self.label_frame.columnconfigure(0, weight=1)
 
         # Fungsi callback untuk memperbarui label ketika memilih drive
         def on_select(event):
             selected_index = self.disk_selector.current()
-            if selected_index >= 0:
+            if (selected_index >= 0):
                 selected_drive_info = self.drives[selected_index].split("|")  # Pisahkan menggunakan delimiter "|"
                 selected_letter = selected_drive_info[0]
                 selected_name = selected_drive_info[1]
