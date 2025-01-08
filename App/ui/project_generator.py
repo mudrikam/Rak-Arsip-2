@@ -185,7 +185,15 @@ class ProjectGenerator(ttk.LabelFrame):
         project_name_value = self.project_name.get()
 
         if self.include_date.get():  # Jika checkbox diaktifkan (sertakan tanggal)
-            today_date = date.today().strftime("%Y_%B_%d")
+            # Format tanggal dengan bulan dalam bahasa Indonesia
+            bulan_indonesia = {
+                "January": "Januari", "February": "Februari", "March": "Maret", "April": "April",
+                "May": "Mei", "June": "Juni", "July": "Juli", "August": "Agustus",
+                "September": "September", "October": "Oktober", "November": "November", "December": "Desember"
+            }
+            today_date = date.today().strftime("%Y\\%B\\%d")
+            for eng, ind in bulan_indonesia.items():
+                today_date = today_date.replace(eng, ind)
             project_path = f"{selected_disk_value}\\{root_folder_value}\\{category_value}\\{sub_category_value}\\{today_date}\\{project_name_value}"
         else:  # Jika checkbox tidak diaktifkan (jangan sertakan tanggal)
             project_path = f"{selected_disk_value}\\{root_folder_value}\\{category_value}\\{sub_category_value}\\{project_name_value}"
@@ -300,7 +308,16 @@ class ProjectGenerator(ttk.LabelFrame):
         with open(csv_file_path, mode="a", newline="", encoding="utf-8") as file:
             writer = csv.writer(file)
             new_no = last_no + 1
-            new_row = [new_no, date.today().strftime("%Y_%B_%d"), self.project_name.get(), project_folder]
+            # Format tanggal dengan bulan dalam bahasa Indonesia
+            bulan_indonesia = {
+            "January": "Januari", "February": "Februari", "March": "Maret", "April": "April",
+            "May": "Mei", "June": "Juni", "July": "Juli", "August": "Agustus",
+            "September": "September", "October": "Oktober", "November": "November", "December": "Desember"
+            }
+            tanggal = date.today().strftime("%d_%B_%Y")
+            for eng, ind in bulan_indonesia.items():
+                tanggal = tanggal.replace(eng, ind)
+            new_row = [new_no, tanggal, self.project_name.get(), project_folder]
             writer.writerow(new_row)
 
     def load_templates(self):

@@ -333,8 +333,13 @@ class BatchGenerator(ttk.LabelFrame):
         # Ambil nama file CSV yang dimuat
         csv_file_name = os.path.basename(self.current_file_path)
 
-        # Ambil tanggal saat ini
-        current_date = datetime.now().strftime("%Y_%B_%d")
+        # Ambil tanggal saat ini dengan format bulan dalam bahasa Indonesia
+        bulan_indonesia = {
+            1: "Januari", 2: "Februari", 3: "Maret", 4: "April", 5: "Mei", 6: "Juni",
+            7: "Juli", 8: "Agustus", 9: "September", 10: "Oktober", 11: "November", 12: "Desember"
+        }
+        now = datetime.now()
+        current_date = f"{now.day}_{bulan_indonesia[now.month]}_{now.year}"
 
         # Baca file CSV yang ada untuk menentukan nomor terakhir
         try:

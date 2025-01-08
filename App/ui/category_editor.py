@@ -62,17 +62,21 @@ class CategoryEditor(ttk.LabelFrame):
         self.left_frame = ttk.LabelFrame(self, text="Kategori :", padding=10)
         self.left_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, pady=(10, 0), padx=(0, 5))
 
+        # Tambahkan Frame untuk Entry dan Tombol tambah kategori
+        self.entry_button_frame = ttk.Frame(self.left_frame)
+        self.entry_button_frame.pack(fill=tk.X, pady=(0, 10))
+
         # Tambahkan Entry untuk kategori baru
-        self.category_entry = ttk.Entry(self.left_frame, font=("Arial", 12))
-        self.category_entry.pack(fill=tk.X, pady=(10, 0))
+        self.category_entry = ttk.Entry(self.entry_button_frame, font=("Arial", 12))
+        self.category_entry.pack(side=tk.LEFT, fill=tk.X, expand=True)
         self.category_entry.bind("<KeyRelease>", self.sanitize_category_entry)
         self.category_entry.bind("<FocusIn>", self.disable_delete_button)
         self.category_entry.bind("<FocusOut>", self.enable_delete_button)
         self.category_entry.bind("<Return>", lambda event: self.add_category())
 
         # Tambahkan Tombol untuk menambah kategori baru
-        self.add_category_button = ttk.Button(self.left_frame, text="+", command=self.add_category, padding=5)
-        self.add_category_button.pack(fill=tk.X, pady=(10, 10))
+        self.add_category_button = ttk.Button(self.entry_button_frame, text="+", command=self.add_category)
+        self.add_category_button.pack(side=tk.LEFT, padx=(5, 0))
 
         # Buat Treeview untuk kategori tanpa heading
         self.category_tree = ttk.Treeview(self.left_frame, columns=("Category"), show="")
