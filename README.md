@@ -111,7 +111,11 @@ A: Iya, **Rak Arsip** gratis dan _open source_ di bawah lisensi GNU GPL v3. Kamu
 
 **Q: Boleh pakai logo dan maskot Rak Arsip?**
 
-A: Sayangnya, nggak bisa. Logo dan maskot milik Desainia dan nggak termasuk lisensi GPL. Butuh izin tertulis dari pemiliknya buat pakai.
+A: Sayangnya, **nggak bisa**. Logo dan maskot milik Desainia nggak termasuk lisensi GPL. Butuh izin tertulis dari pemiliknya buat pakai.
+
+**Q: Bolehkah aplikasinya saya jual/beli?**
+
+A: **Boleh**, karena **Rak Arsip** gratis dan open source di bawah lisensi GNU GPL v3. Kamu boleh pakai, modifikasi, dan bahkan jual. Tapi, pastikan tetap mematuhi syarat-syarat lisensi GNU GPL v3. Tetap semangat berbagi!
 
 **Q: Bagaimana cara membuat arsip baru di Rak Arsip?**
 
@@ -130,9 +134,6 @@ A: Gampang banget! Ikuti langkah-langkah ini di tab **Buat Arsip**:
 
 _Tips : akses cepat arsip yang telah kamu buat sebelumnya dari daftar Pustaka._
 
-**Q: Bolehkah aplikasinya saya jual/beli?**
-
-A: **Boleh**, karena **Rak Arsip** gratis dan open source di bawah lisensi GNU GPL v3. Kamu boleh pakai, modifikasi, dan bahkan jual. Tapi, pastikan tetap mematuhi syarat-syarat lisensi GNU GPL v3. Tetap semangat berbagi!
 
 ## Penutup
 
@@ -157,10 +158,10 @@ Fitur baru: pembuatan folder otomatis dengan template, pencarian dokumen cepat, 
 
 ## Pengertian
 
-**Arsip dalam konteks Rak Arsip adalah:**
+**Dalam konteks Rak Arsip**
 
 - **Folder untuk data penting:** Tempat menyimpan dokumen-dokumen yang memiliki nilai penting dan harus diorganisir dengan baik.
-- **Markdown:** Format file teks yang digunakan untuk menulis dokumentasi dengan sintaks yang mudah dibaca.
+- **Markdown:** Format file teks yang digunakan untuk menulis dokumentasi dengan sintaks yang mudah dibaca. Memiliki ekstensi .MD
 - **Python:** Bahasa pemrograman yang sering digunakan untuk pengembangan aplikasi dan skrip otomatisasi.
 - **BAT:** File batch yang berisi serangkaian perintah untuk dieksekusi oleh Command Prompt di Windows.
 - **EXE:** File eksekusi yang dapat dijalankan di sistem operasi Windows untuk menjalankan aplikasi.
