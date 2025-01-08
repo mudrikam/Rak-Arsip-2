@@ -165,8 +165,8 @@ class ProjectNameInput(ttk.LabelFrame):
             else:
                 self._show_warning("Sana Lanjut...!", "Gak usah ketawa terus, sana kerja yang bener! (>_<)")
                 self.hahaha_count += 1
-
             return
+        
         
         for char in project_name:
             if self.skip_sanitization_var.get():
