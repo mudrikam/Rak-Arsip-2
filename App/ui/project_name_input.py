@@ -39,7 +39,7 @@ class ProjectNameInput(ttk.LabelFrame):
         """
         Inisialisasi kelas ProjectNameInput.
         """
-        super().__init__(parent, text="Masukkan Nama Arsip :")  # LabelFrame sebagai induk komponen
+        super().__init__(parent, text="Nama Arsip :")  # LabelFrame sebagai induk komponen
         self.grid(row=0, column=0, padx=10, pady=10, sticky="nsew")
         self.BASE_DIR = BASE_DIR
         
