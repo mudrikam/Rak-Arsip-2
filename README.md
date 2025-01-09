@@ -169,14 +169,6 @@ _Made with love and care to help you._
 
 ---
 
-## Catatan Perubahan
-
-### Versi 2.0.0-beta (1-1-2025)
-
-Fitur baru: pembuatan folder otomatis dengan template, pencarian dokumen cepat, dan antarmuka lebih ramah. Perbaikan: optimalisasi kinerja dan bug pada pembuatan subfolder otomatis. Opsi penambahan tanggal pada nama folder.
-
----
-
 ## Pengertian
 
 **Dalam konteks Rak Arsip**
@@ -191,6 +183,14 @@ Fitur baru: pembuatan folder otomatis dengan template, pencarian dokumen cepat, 
 - [M. Mudrikul Hikam](https://www.facebook.com/M.Mudrikul.hikam)
 - [Muhammad Syahril](https://www.linkedin.com/in/muhammad-syahril-148228248/)
 - **Krea:** Karakter unik maskot Desainia.
+
+---
+
+## Catatan Perubahan
+
+### Versi 2.0.0-beta (1-1-2025)
+
+Fitur baru: pembuatan folder otomatis dengan template, pencarian dokumen cepat, dan antarmuka lebih ramah. Perbaikan: optimalisasi kinerja dan bug pada pembuatan subfolder otomatis. Opsi penambahan tanggal pada nama folder.
 
 ---
 
