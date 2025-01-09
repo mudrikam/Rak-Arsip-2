@@ -46,10 +46,10 @@ Logo dan maskot **Rak Arsip** adalah milik eksklusif **Desainia** dan tidak dili
 
 - [Desainia](https://www.behance.net/desainia)
 
-**Krea**
+**Maskot: Krea**
 
 - Konsep oleh: [Hikam](https://www.facebook.com/M.Mudrikul.hikam)
-- Digambar oleh: [Cowt Zzy](https://www.facebook.com/cowtzzy)
+- Digambar oleh: [Cowt Zzy](https://cowtzzy.carrd.co)
 
 ---
 
@@ -139,9 +139,11 @@ _Tips : akses cepat arsip yang telah kamu buat sebelumnya dari daftar Pustaka._
 
 A: Sayangnya, **nggak bisa**. Logo dan maskot milik Desainia nggak termasuk lisensi GPL. Butuh izin tertulis dari pemiliknya buat pakai.
 
+_Logo dan maskot boleh digunakan selama tidak diubah atau dipisahkan dari aplikasi **Rak Arsip**. Untuk keperluan lain, harus ada izin._
+
 **Q: Bolehkah aplikasinya saya jual/beli?**
 
-A: **Boleh**, karena **Rak Arsip** gratis dan open source di bawah lisensi GNU GPL v3. Kamu boleh pakai, modifikasi, dan bahkan jual. Tapi, pastikan tetap mematuhi syarat-syarat lisensi GNU GPL v3 yaitu:
+A: **Boleh**, karena **Rak Arsip** gratis dan *open source* di bawah lisensi GNU GPL v3. Kamu boleh pakai, modifikasi, dan bahkan jual. Tapi, pastikan tetap mematuhi syarat-syarat lisensi GNU GPL v3 yaitu:
 
 - Sertakan kode sumber saat distribusi.
 - Cantumkan lisensi GNU GPL v3.
@@ -154,11 +156,11 @@ Jadi, bebas deh asal patuhi aturan ini!
 
 ## Penutup
 
-Semoga aplikasi ini bermanfaat. Awalnya, **Rak Arsip** dibuat untuk tim Desainia, tapi melihat potensinya, saya putuskan untuk membagikannya. Harapannya, aplikasi ini bisa membantu kamu mengatur dokumen dengan lebih rapi dan efisien.
+Semoga aplikasi ini bermanfaat. Awalnya, **Rak Arsip** dibuat untuk tim Desainia, tapi melihat potensinya, kami putuskan untuk membagikannya. Harapannya, aplikasi ini bisa membantu kamu mengatur dokumen dengan lebih rapi dan efisien.
 
 Aplikasi ini dirancang dengan suasana yang ringan dan menyenangkan, agar tidak terasa membosankan. Semoga kesan ini juga bisa kamu rasakan.
 
-Saya berharap, dengan izin Allah, kebaikan dari aplikasi ini menjadi amal jariyah. Jika ada kekurangan, saya mohon maaf. Terima kasih atas dukungan dan kontribusimu!
+Kami berharap, dengan izin Allah, kebaikan dari aplikasi ini menjadi amal jariyah. Jika ada kekurangan, kami mohon maaf. Terima kasih atas dukungan dan kontribusimu!
 
 
 **_Wassalamualaikum Warahmatullahi Wabarakatuh_**
@@ -194,3 +196,4 @@ Fitur baru: pembuatan folder otomatis dengan template, pencarian dokumen cepat, 
 - [Muhammad Syahril](https://www.linkedin.com/in/muhammad-syahril-148228248/) (Tim Desainia)
 - [M Huda](https://www.instagram.com/miftakh_hd/) (Tim Desainia)
 - [Riska Twins](https://www.instagram.com/riskarisky_11/) (Tim Desainia)
+- [Cowt Zzy](https://cowtzzy.carrd.co) (Artwork)

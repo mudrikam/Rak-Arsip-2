@@ -234,21 +234,19 @@ class MainWindow(tk.Tk):
             self.ai_sub_tab1,
             text=(
             "Fitur AI yang ingin ditambahkan:\n\n"
-            "- Deteksi Gambar\n"
+            "- Deteksi Gambar dan Video\n"
+            "- Generate Metadata Otomatis\n"
             "- Nama Otomatis\n"
-            "- Tag Gambar Otomatis\n"
             "- Generate Template\n"
-            "- Tanya\n"
             "- Sub Kategori Otomatis\n"
             "- Moderasi Teks\n"
             "- Pengenalan Teks (OCR)\n"
-            "- Pencarian Cerdas\n"
-            "- Rekomendasi Arsip\n"
             "- Klasifikasi Dokumen\n"
             "- Ekstraksi Metadata Otomatis\n"
             "- Deteksi Duplikasi\n"
             "- Ringkasan Dokumen Otomatis\n"
-            "- Fitur AI Berguna untuk Arsip Lainnya"
+            "- Fitur AI Berguna untuk Arsip Lainnya\n\n"
+            "Jika kamu punya ide atau saran, \nsilakan beri tahu kami dengan membuat issue di GitHub."
             ),
             justify="left",
             padding=10
