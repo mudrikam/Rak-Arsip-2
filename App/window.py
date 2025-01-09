@@ -234,7 +234,6 @@ class MainWindow(tk.Tk):
             self.ai_sub_tab1,
             text=(
             "Fitur AI yang ingin ditambahkan:\n\n"
-            "- ChatGPT\n"
             "- Deteksi Gambar\n"
             "- Nama Otomatis\n"
             "- Tag Gambar Otomatis\n"

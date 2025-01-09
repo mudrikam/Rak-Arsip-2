@@ -26,7 +26,7 @@ Yups! Simpel aja, semoga aplikasi ini bisa jadi ladang amal jariyah buat kita se
 
 **Download aplikasinya di mana?**
 
-Kamu bisa download aplikasinya di [sini](https://github.com/mudrikam/Rak-Arsip-2).
+Kamu bisa download aplikasinya di [sini](https://github.com/mudrikam/Rak-Arsip-2/releases).
 
 ---
 
@@ -40,7 +40,16 @@ Kamu bisa download aplikasinya di [sini](https://github.com/mudrikam/Rak-Arsip-2
 
 ## Logo dan Maskot
 
-Logo dan maskot **Rak Arsip** adalah milik eksklusif **Desainia** dan tidak dilisensikan di bawah GPL. Maskot kami, **Krea**, adalah karakter unik yang tidak boleh digunakan tanpa izin tertulis dari pemiliknya, **Muhamad Mudrikul Hikam**. Untuk izin penggunaan, hubungi pemilik langsung.
+Logo dan maskot **Rak Arsip** adalah milik eksklusif **Desainia** dan tidak dilisensikan di bawah GPL. Maskot kami, **Krea**, adalah karakter unik yang tidak boleh digunakan tanpa izin tertulis dari pemiliknya, **M. Mudrikul Hikam**. Untuk izin penggunaan, hubungi pemilik langsung.
+
+**Logo**
+
+- [Desainia](https://www.behance.net/desainia)
+
+**Krea**
+
+- Konsep oleh: [Hikam](https://www.facebook.com/M.Mudrikul.hikam)
+- Digambar oleh: [Cowt Zzy](https://www.facebook.com/cowtzzy)
 
 ---
 
@@ -109,14 +118,6 @@ Jangan ragu, saya siap membantu!
 
 A: Iya, **Rak Arsip** gratis dan _open source_ di bawah lisensi GNU GPL v3. Kamu bisa pakai dan modifikasi sesuka hati!
 
-**Q: Boleh pakai logo dan maskot Rak Arsip?**
-
-A: Sayangnya, **nggak bisa**. Logo dan maskot milik Desainia nggak termasuk lisensi GPL. Butuh izin tertulis dari pemiliknya buat pakai.
-
-**Q: Bolehkah aplikasinya saya jual/beli?**
-
-A: **Boleh**, karena **Rak Arsip** gratis dan open source di bawah lisensi GNU GPL v3. Kamu boleh pakai, modifikasi, dan bahkan jual. Tapi, pastikan tetap mematuhi syarat-syarat lisensi GNU GPL v3. Tetap semangat berbagi!
-
 **Q: Bagaimana cara membuat arsip baru di Rak Arsip?**
 
 A: Gampang banget! Ikuti langkah-langkah ini di tab **Buat Arsip**:
@@ -133,6 +134,22 @@ A: Gampang banget! Ikuti langkah-langkah ini di tab **Buat Arsip**:
 5. Klik **Buat Arsip** dan selesai!
 
 _Tips : akses cepat arsip yang telah kamu buat sebelumnya dari daftar Pustaka._
+
+**Q: Boleh pakai logo dan maskot Rak Arsip?**
+
+A: Sayangnya, **nggak bisa**. Logo dan maskot milik Desainia nggak termasuk lisensi GPL. Butuh izin tertulis dari pemiliknya buat pakai.
+
+**Q: Bolehkah aplikasinya saya jual/beli?**
+
+A: **Boleh**, karena **Rak Arsip** gratis dan open source di bawah lisensi GNU GPL v3. Kamu boleh pakai, modifikasi, dan bahkan jual. Tapi, pastikan tetap mematuhi syarat-syarat lisensi GNU GPL v3 yaitu:
+
+- Sertakan kode sumber saat distribusi.
+- Cantumkan lisensi GNU GPL v3.
+- Berikan kredit kepada pengembang asli.
+- Jangan membatasi hak pengguna lain.
+
+Jadi, bebas deh asal patuhi aturan ini!
+
 
 
 ## Penutup
@@ -152,7 +169,7 @@ _Made with love and care to help you._
 
 ## Catatan Perubahan
 
-### Versi 2.0.0-beta (1-8-2025)
+### Versi 2.0.0-beta (1-1-2025)
 
 Fitur baru: pembuatan folder otomatis dengan template, pencarian dokumen cepat, dan antarmuka lebih ramah. Perbaikan: optimalisasi kinerja dan bug pada pembuatan subfolder otomatis. Opsi penambahan tanggal pada nama folder.
 
@@ -166,4 +183,6 @@ Fitur baru: pembuatan folder otomatis dengan template, pencarian dokumen cepat, 
 - **BAT:** File batch yang berisi serangkaian perintah untuk dieksekusi oleh Command Prompt di Windows.
 - **EXE:** File eksekusi yang dapat dijalankan di sistem operasi Windows untuk menjalankan aplikasi.
 - **Setup:** File instalasi yang digunakan untuk menginstal perangkat lunak di komputer.
-
+- **Desainia:** Brand desainer grafis dengan owner:
+- [M. Mudrikul Hikam](https://www.facebook.com/M.Mudrikul.hikam)
+- [Muhammad Syahril](https://www.linkedin.com/in/muhammad-syahril-148228248/)
