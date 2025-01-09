@@ -186,3 +186,11 @@ Fitur baru: pembuatan folder otomatis dengan template, pencarian dokumen cepat, 
 - **Desainia:** Brand desainer grafis dengan owner:
 - [M. Mudrikul Hikam](https://www.facebook.com/M.Mudrikul.hikam)
 - [Muhammad Syahril](https://www.linkedin.com/in/muhammad-syahril-148228248/)
+- **Krea:** Karakter unik maskot Desainia.
+
+## Kontributor
+
+- [M. Mudrikul Hikam](https://www.facebook.com/M.Mudrikul.hikam) (Tim Desainia)
+- [Muhammad Syahril](https://www.linkedin.com/in/muhammad-syahril-148228248/) (Tim Desainia)
+- [M Huda](https://www.instagram.com/miftakh_hd/) (Tim Desainia)
+- [Riska Twins](https://www.instagram.com/riskarisky_11/) (Tim Desainia)
