@@ -152,7 +152,7 @@ A: **Boleh**, karena **Rak Arsip** gratis dan *open source* di bawah lisensi GNU
 
 Jadi, bebas deh asal patuhi aturan ini!
 
-
+---
 
 ## Penutup
 
@@ -175,6 +175,8 @@ _Made with love and care to help you._
 
 Fitur baru: pembuatan folder otomatis dengan template, pencarian dokumen cepat, dan antarmuka lebih ramah. Perbaikan: optimalisasi kinerja dan bug pada pembuatan subfolder otomatis. Opsi penambahan tanggal pada nama folder.
 
+---
+
 ## Pengertian
 
 **Dalam konteks Rak Arsip**
@@ -189,6 +191,8 @@ Fitur baru: pembuatan folder otomatis dengan template, pencarian dokumen cepat, 
 - [M. Mudrikul Hikam](https://www.facebook.com/M.Mudrikul.hikam)
 - [Muhammad Syahril](https://www.linkedin.com/in/muhammad-syahril-148228248/)
 - **Krea:** Karakter unik maskot Desainia.
+
+---
 
 ## Kontributor
 
