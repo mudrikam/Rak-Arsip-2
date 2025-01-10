@@ -197,6 +197,10 @@ Fitur baru: pembuatan folder otomatis dengan template, pencarian dokumen cepat, 
 Fitur baru: membuat pencadangan database. Sekarang kamu bisa mencadangkan database dengan mudah untuk memastikan data pada Rak Arsip aman. Cukup pilih opsi Cadangkan di menu Atur, dan aplikasi akan membuat salinan database. Fitur ini sangat berguna untuk menghindari kehilangan data yang tidak diinginkan.
 Perbaikan: perubahan beberapa logika dan penambahan fitur ganti nama template.
 
+### Versi 2.0.2-beta (11-1-2025)
+
+Fitur baru: Relokasi file untuk mempermudah pemindahan file dari satu folder ke folder lain secara terstruktur. Terimakasih kepada [Lu'Lu' Maknun](https://www.instagram.com/lulumaknun___/) untuk ide fiturnya.
+
 ---
 
 ## Kontributor
