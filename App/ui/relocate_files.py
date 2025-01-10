@@ -271,7 +271,7 @@ class RelocateFiles(ttk.LabelFrame):
             self.progress_bar["value"] = 0
         else:
             style = ttk.Style()
-            style.configure('Location.Horizontal.TProgressbar', text="Belum ada lokasi yang dipilih")
+            style.configure('Location.Horizontal.TProgressbar', text="Belum ada lokasi tujuan yang dipilih")
             self.progress_bar["value"] = 0
 
     def select_files(self):
