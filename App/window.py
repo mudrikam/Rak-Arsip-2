@@ -42,6 +42,8 @@ from App.ui.project_library import ProjectLibrary
 from App.ui.project_name_input import ProjectNameInput
 from App.ui.template_creator import TemplateCreator
 from App.ui.splash_screen import SplashScreen
+from App.ui.database_backup import DatabaseBackup
+from App.ui.relocate_files import RelocateFiles  # Import RelocateFiles
 
 class MainWindow(tk.Tk):
     def __init__(self):
@@ -88,6 +90,7 @@ class MainWindow(tk.Tk):
         self.sub_category = tk.StringVar()
         self.date_var = tk.StringVar(value=date.today().strftime("%Y_%B_%d"))
         self.project_name = tk.StringVar()
+        self.project_name.trace_add("write", self.update_project_path)
         
     def update_date(self):
         """Perbarui tanggal setiap hari."""
@@ -141,7 +144,7 @@ class MainWindow(tk.Tk):
     def animate_ellipsis(self):
         """Animasi titik-titik pada pesan status."""
         current_text = self.status_message
-        if current_text.endswith("..."):
+        if (current_text.endswith("...")):
             self.status_message = "Meluncuuur"
         else:
             self.status_message += "."
@@ -193,30 +196,18 @@ class MainWindow(tk.Tk):
         self.project_tab = ttk.Frame(self.notebook)
         self.notebook.add(self.project_tab, text="Buat Arsip")
 
-        # Tab Atur dengan Notebook bersarang
-        self.atur_tab = ttk.Frame(self.notebook)
-        self.notebook.add(self.atur_tab, text="Atur")
-
-        # Notebook bersarang untuk Template dan Kategori
-        self.nested_notebook = ttk.Notebook(self.atur_tab)
-        self.nested_notebook.pack(fill='both', expand=True, pady=(5,5))
-
-        # Tab Template
-        self.template_tab = ttk.Frame(self.nested_notebook)
-        self.nested_notebook.add(self.template_tab, text="Template")
-
-        # Tab Kategori
-        self.category_editor_tab = ttk.Frame(self.nested_notebook)
-        self.nested_notebook.add(self.category_editor_tab, text="Kategori")
-
         # Tab Masal
         self.batch_generator_tab = ttk.Frame(self.notebook)
         self.notebook.add(self.batch_generator_tab, text="Massal")
-        
+
+        # Tab Relokasi
+        self.relocation_tab = ttk.Frame(self.notebook)
+        self.notebook.add(self.relocation_tab, text="Relokasi")
+
         # Tab Pustaka
         self.library_tab = ttk.Frame(self.notebook)
         self.notebook.add(self.library_tab, text="Pustaka")
-        
+
         # Tab AI
         self.ai_tab = ttk.Frame(self.notebook)
         self.notebook.add(self.ai_tab, text="Ai")
@@ -261,6 +252,26 @@ class MainWindow(tk.Tk):
         self.help_tab = ttk.Frame(self.notebook)
         self.notebook.add(self.help_tab, text="?")
 
+        # Tab Atur dengan Notebook bersarang
+        self.atur_tab = ttk.Frame(self.notebook)
+        self.notebook.insert(self.notebook.index(self.help_tab), self.atur_tab, text="Atur")
+
+        # Notebook bersarang untuk Template dan Kategori
+        self.nested_notebook = ttk.Notebook(self.atur_tab)
+        self.nested_notebook.pack(fill='both', expand=True, pady=(5,0))
+
+        # Tab Template
+        self.template_tab = ttk.Frame(self.nested_notebook)
+        self.nested_notebook.add(self.template_tab, text="Template")
+
+        # Tab Kategori
+        self.category_editor_tab = ttk.Frame(self.nested_notebook)
+        self.nested_notebook.add(self.category_editor_tab, text="Kategori")
+
+        # Tab Cadangkan
+        self.backup_tab = ttk.Frame(self.nested_notebook)
+        self.nested_notebook.add(self.backup_tab, text="Cadangkan")
+
         # Pemilih disk
         self.disk_selector = DiskSelector(self.project_tab, BASE_DIR=self.BASE_DIR, main_window=self)
         self.disk_selector.grid(row=0, column=0, padx=10, pady=(10,0), sticky="nsew")
@@ -273,6 +284,9 @@ class MainWindow(tk.Tk):
         self.category_selector = CategorySelector(self.project_tab, BASE_DIR=self.BASE_DIR, main_window=self)
         self.category_selector.grid(row=1, column=0, padx=10, pady=5, sticky="nsew")
 
+        #Relokasi File
+        self.relocate_files = RelocateFiles(self.relocation_tab, BASE_DIR=self.BASE_DIR, main_window=self)
+        self.relocate_files.pack(fill="both", expand=True, padx=10, pady=10)
         
         # Generator Proyek
         self.project_generator = ProjectGenerator(self.project_tab, BASE_DIR=self.BASE_DIR, main_window=self, selected_disk=self.selected_disk, root_folder=self.root_folder, category=self.category, sub_category=self.sub_category, date_var=self.date_var, project_name=self.project_name)
@@ -298,6 +312,10 @@ class MainWindow(tk.Tk):
         self.category_editor = CategoryEditor(self.category_editor_tab, BASE_DIR=self.BASE_DIR, main_window=self)
         self.category_editor.pack(fill="both", expand=True, padx=10, pady=10)
 
+        # Add DatabaseBackup to the Cadangkan tab
+        self.database_backup = DatabaseBackup(self.backup_tab, BASE_DIR=self.BASE_DIR, main_window=self)
+        self.database_backup.pack(fill="both", expand=True, padx=10, pady=10)
+        
         # Sembunyikan splash screen setelah pemuatan selesai
         self.splash_screen.hide()
 
@@ -325,4 +343,11 @@ class MainWindow(tk.Tk):
         self.batch_generator.pack_configure(fill="both", expand=True)
         self.project_library.pack_configure(fill="both", expand=True)
         self.category_editor.pack_configure(fill="both", expand=True)
+
+    def update_project_path(self, *args):
+        """Update project path in real-time."""
+        if hasattr(self, 'project_generator'):
+            self.project_generator._create_project_path()
+        else:
+            print("ProjectGenerator instance not found.")
 

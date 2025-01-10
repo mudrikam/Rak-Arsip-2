@@ -42,6 +42,8 @@ class CategoryEditor(ttk.LabelFrame):
         
         # Pastikan folder 'Database' ada di dalam BASE_DIR
         self.BASE_DIR = os.path.join(BASE_DIR, "Database")
+        self.SUB_CATEGORY_DIR = os.path.join(self.BASE_DIR, "Sub_Category")
+        os.makedirs(self.SUB_CATEGORY_DIR, exist_ok=True)
         self.main_window = main_window  # Simpan referensi ke MainWindow
 
         os.makedirs(self.BASE_DIR, exist_ok=True)
@@ -78,14 +80,28 @@ class CategoryEditor(ttk.LabelFrame):
         self.add_category_button = ttk.Button(self.entry_button_frame, text="+", command=self.add_category)
         self.add_category_button.pack(side=tk.LEFT, padx=(5, 0))
 
+        # Buat Frame untuk Treeview dan scrollbar
+        self.treeview_frame = ttk.Frame(self.left_frame)
+        self.treeview_frame.pack(side=tk.TOP, fill=tk.BOTH, expand=True)
+
         # Buat Treeview untuk kategori tanpa heading
-        self.category_tree = ttk.Treeview(self.left_frame, columns=("Category"), show="")
-        self.category_tree.pack(side=tk.TOP, fill=tk.BOTH, expand=True)
+        self.category_tree = ttk.Treeview(self.treeview_frame, columns=("Category"), show="")
+        self.category_tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        
+        # Add a scrollbar to the category Treeview
+        self.category_scrollbar = ttk.Scrollbar(self.treeview_frame, orient="vertical", command=self.category_tree.yview)
+        self.category_tree.configure(yscroll=self.category_scrollbar.set)
+        self.category_scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+        
         self.category_tree.bind("<<TreeviewSelect>>", self.on_category_select)
 
-        # Tambahkan Tombol Hapus
-        self.delete_category_button = ttk.Button(self.left_frame, text="Hapus", command=self.delete_category, state=tk.DISABLED, padding=5)
-        self.delete_category_button.pack(fill=tk.X, pady=(10, 0))
+        # Buat Frame untuk Tombol Hapus
+        self.delete_button_frame = ttk.Frame(self.left_frame)
+        self.delete_button_frame.pack(side=tk.BOTTOM, fill=tk.X, pady=(10, 0))
+
+        # Tambahkan Tombol Hapus di bawah Treeview
+        self.delete_category_button = ttk.Button(self.delete_button_frame, text="Hapus", command=self.delete_category, state=tk.DISABLED, padding=5)
+        self.delete_category_button.pack(fill=tk.X)
 
         # Muat kategori dari Category.txt
         self.load_categories()
@@ -111,8 +127,9 @@ class CategoryEditor(ttk.LabelFrame):
         if os.path.exists(self.category_file):
             with open(self.category_file, "r") as file:
                 categories = file.readlines()
+            categories = sorted([category.strip() for category in categories])  # Sort categories alphabetically
             for category in categories:
-                self.category_tree.insert("", tk.END, values=(category.strip(),))
+                self.category_tree.insert("", tk.END, values=(category,))
 
     def on_category_select(self, event):
         selected_item = self.category_tree.selection()
@@ -125,7 +142,7 @@ class CategoryEditor(ttk.LabelFrame):
             self.delete_category_button.config(state=tk.DISABLED)
 
     def load_subcategories(self, category):
-        subcategory_file = os.path.join(self.BASE_DIR, f"{category}.txt")
+        subcategory_file = os.path.join(self.SUB_CATEGORY_DIR, f"{category}.txt")
         self.subcategory_text.delete(1.0, tk.END)
         if os.path.exists(subcategory_file):
             with open(subcategory_file, "r") as file:
@@ -159,7 +176,7 @@ class CategoryEditor(ttk.LabelFrame):
 
     def save_subcategory_text(self, event):
         if self.selected_category:
-            subcategory_file = os.path.join(self.BASE_DIR, f"{self.selected_category}.txt")
+            subcategory_file = os.path.join(self.SUB_CATEGORY_DIR, f"{self.selected_category}.txt")
             with open(subcategory_file, "w") as file:
                 file.write(self.subcategory_text.get(1.0, tk.END))
 
@@ -183,7 +200,7 @@ class CategoryEditor(ttk.LabelFrame):
                 self.main_window.update_status(f"Kategori '{new_category}' telah ditambahkan!")
             
             # Buat file subkategori baru jika belum ada
-            subcategory_file = os.path.join(self.BASE_DIR, f"{new_category}.txt")
+            subcategory_file = os.path.join(self.SUB_CATEGORY_DIR, f"{new_category}.txt")
             if not os.path.exists(subcategory_file):
                 with open(subcategory_file, "w") as file:
                     pass
@@ -197,8 +214,13 @@ class CategoryEditor(ttk.LabelFrame):
 
     def delete_category(self):
         if self.selected_category:
+            # Tampilkan dialog konfirmasi
+            confirm = messagebox.askyesno("Konfirmasi Hapus", f"Apakah yakin ingin menghapus kategori '{self.selected_category}'?")
+            if not confirm:
+                return
+
             category_file = os.path.join(self.BASE_DIR, "Category.txt")
-            subcategory_file = os.path.join(self.BASE_DIR, f"{self.selected_category}.txt")
+            subcategory_file = os.path.join(self.SUB_CATEGORY_DIR, f"{self.selected_category}.txt")
             
             # Hapus kategori dari Category.txt
             with open(category_file, "r") as file:
@@ -236,10 +258,10 @@ class CategoryEditor(ttk.LabelFrame):
                 self.last_modified_time = current_modified_time
                 self.load_categories()
         except FileNotFoundError:
-            messagebox.showwarning("Gawat...!", "Waduh databasenya hilang! (o_O)")
-            messagebox.showinfo("Hehehe...", "Tenang jangan panik, aku buatin dulu nih")
-            self.create_csv_if_not_exists()
-            messagebox.showinfo("Tolong diingat...!", "Database mungkin berisi file penting seperti daftar kategori, sub kategori, daftar pustaka dan template. \nBackup Database secara berkala demi keamanan!")
+            # Create the Category.txt file if not found
+            with open(self.category_file, "w") as file:
+                pass
+            self.main_window.update_status("File Category.txt tidak ditemukan, membuat file baru!")
         except Exception as e:
             messagebox.showerror("Error", f"Terjadi kesalahan: {e}")
 

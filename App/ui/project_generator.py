@@ -63,6 +63,9 @@ class ProjectGenerator(ttk.LabelFrame):
         for var in self.variables:
             var.trace_add("write", self._create_project_path)
 
+        # Add trace to project_name to update project path in real-time
+        self.project_name.trace_add("write", self._create_project_path)
+
         # Label untuk menampilkan project path
         self.project_label = ttk.Label(self, text="", anchor="w", foreground="blue")
         self.project_label.pack(side=tk.TOP, fill=tk.X, padx=10, pady=10)
@@ -93,6 +96,8 @@ class ProjectGenerator(ttk.LabelFrame):
         self.folder_combobox = ttk.Combobox(self.input_dropdown_frame, textvariable=self.root_folder)
         self.folder_combobox.pack(side=tk.TOP, fill=tk.X, padx=10, pady=5)
         self.folder_combobox.bind("<<ComboboxSelected>>", self._create_project_path)
+        self.folder_combobox.bind("<Button-1>", self.start_scanning)
+        self.folder_combobox.bind("<FocusOut>", self.stop_scanning)
 
         # Tambahkan checkbox untuk Markdown
         self.include_markdown = tk.BooleanVar(value=True)  # Default is checked
@@ -174,6 +179,12 @@ class ProjectGenerator(ttk.LabelFrame):
 
         self.hue = 0  # Initialize hue
 
+        self.initial_root_folder = root_folder.get()  # Save initial root folder value
+
+        # Schedule the check for project_name every 1000ms
+        self.check_project_name()
+        self.check_sync_project_name()
+
     def _create_project_path(self, *args):
         """
         Perbarui teks project path berdasarkan kategori dan status checkbox.
@@ -209,18 +220,62 @@ class ProjectGenerator(ttk.LabelFrame):
         if selected_disk_value:
             try:
                 # Ambil daftar folder dari disk yang dipilih dan filter out $RECYCLE.BIN, '.' dan '_'
-                folders = [
+                folders = sorted([
                     f for f in os.listdir(selected_disk_value)
                     if os.path.isdir(os.path.join(selected_disk_value, f)) and 
                     f != "$RECYCLE.BIN" and not f.startswith(('.', '_'))
-                ]
+                ])
+                current_selection = self.root_folder.get()  # Save current selection
                 self.folder_combobox['values'] = folders
-                # Jangan set nilai default ke folder pertama, biarkan kosong
-                self.folder_combobox.set("")  
+                if current_selection in folders:
+                    self.folder_combobox.set(current_selection)  # Restore previous selection if it still exists
+                else:
+                    self.folder_combobox.set("")  # Reset selection if previous selection no longer exists
             except Exception as e:
                 print(f"Error updating folder combobox: {e}")
                 self.folder_combobox['values'] = []
                 self.folder_combobox.set("")  # Tetap kosong jika ada error
+
+    def start_scanning(self, event):
+        """
+        Start scanning for external changes when the combobox is clicked.
+        """
+        self._scan_external_changes()
+
+    def stop_scanning(self, event):
+        """
+        Stop scanning for external changes when the combobox loses focus.
+        """
+        if hasattr(self, '_scan_job'):
+            self.after_cancel(self._scan_job)
+
+    def _scan_external_changes(self):
+        """
+        Scan for external changes in the selected disk and refresh the folder combobox if new folders are detected.
+        """
+        selected_disk_value = self.selected_disk.get()
+        if selected_disk_value:
+            try:
+                # Ambil daftar folder dari disk yang dipilih dan filter out $RECYCLE.BIN, '.' dan '_'
+                current_folders = set(
+                    f for f in os.listdir(selected_disk_value)
+                    if os.path.isdir(os.path.join(selected_disk_value, f)) and 
+                    f != "$RECYCLE.BIN" and not f.startswith(('.', '_'))
+                )
+                previous_folders = set(self.folder_combobox['values'])
+                if current_folders != previous_folders:
+                    sorted_folders = sorted(current_folders)
+                    current_selection = self.root_folder.get()  # Save current selection
+                    self.folder_combobox['values'] = sorted_folders
+                    if current_selection in sorted_folders:
+                        self.folder_combobox.set(current_selection)  # Restore previous selection if it still exists
+                    else:
+                        self.folder_combobox.set(self.initial_root_folder)  # Restore initial root folder if previous selection no longer exists
+            except Exception as e:
+                print(f"Error scanning external changes: {e}")
+
+        # Jadwalkan pemeriksaan berikutnya setelah 1000 ms
+        self._scan_job = self.after(1000, self._scan_external_changes)
 
     def create_project(self):
         """
@@ -257,6 +312,9 @@ class ProjectGenerator(ttk.LabelFrame):
             os.makedirs(project_folder)
             last_created_folder = project_folder
             print(f"Direktori {project_folder} telah dibuat.")
+            
+            # Refresh folder_combobox after creating a new folder
+            self._update_folder_combobox()
 
             # Membuat file Markdown jika diperlukan
             if self.include_markdown.get():
@@ -320,12 +378,26 @@ class ProjectGenerator(ttk.LabelFrame):
             new_row = [new_no, tanggal, self.project_name.get(), project_folder]
             writer.writerow(new_row)
 
+    def rename_template(self, old_name, new_name):
+        """
+        Rename a template file.
+        """
+        old_path = os.path.join(self.BASE_DIR, "Database", "Template", old_name + ".txt")
+        new_path = os.path.join(self.BASE_DIR, "Database", "Template", new_name + ".txt")
+        if os.path.exists(old_path):
+            os.rename(old_path, new_path)
+            self.load_templates()
+            messagebox.showinfo("Success", f"Template renamed from {old_name} to {new_name}")
+        else:
+            messagebox.showerror("Error", f"Template {old_name} does not exist")
+
     def load_templates(self):
         """Muat file template ke dalam combobox dan set pilihan default."""
         self.check_and_load_templates()  # Panggil metode untuk memeriksa dan memuat template
+        self.main_window.update_status("Memastikan template default ada di database.")  # Update status bar
 
     def check_and_load_templates(self):
-        """Periksa file template, pastikan template_0 ada, dan refresh combobox jika template_0 hilang."""
+        """Periksa file template, pastikan default_template ada, dan refresh combobox jika default_template hilang."""
         try:
             # Path ke folder Template
             template_folder = os.path.join(self.BASE_DIR, "Database", "Template")
@@ -339,17 +411,18 @@ class ProjectGenerator(ttk.LabelFrame):
                 if os.path.isfile(os.path.join(template_folder, f)) and f.endswith(".txt")
             ]
 
-            # Cek apakah template_0.txt ada
-            if "template_0.txt" not in files:
-                # Jika template_0.txt hilang, buat kembali file default dan refresh combobox
-                default_template_path = os.path.join(template_folder, "template_0.txt")
+            # Cek apakah default_template.txt ada
+            if "default_template.txt" not in files:
+                # Jika default_template.txt hilang, buat kembali file default dan refresh combobox
+                default_template_path = os.path.join(template_folder, "default_template.txt")
                 with open(default_template_path, "w") as default_file:
                     default_file.write("")  # Isi default template
-                files.append("template_0.txt")  # Tambahkan template_0 ke daftar file
+                files.append("default_template.txt")  # Tambahkan default_template ke daftar file
+                self.main_window.update_status("Memastikan template default ada di database.") # Update status bar
 
             # Sembunyikan ekstensi .txt dan buat mapping nama file
             self.file_mapping = {os.path.splitext(f)[0]: f for f in files}  # {display_name: full_name}
-            display_names = list(self.file_mapping.keys())
+            display_names = sorted(list(self.file_mapping.keys()))  # Sort display names alphabetically
 
             # Simpan pilihan pengguna saat ini
             current_selection = self.template_combobox.get()
@@ -359,7 +432,7 @@ class ProjectGenerator(ttk.LabelFrame):
 
             # Logika untuk refresh combobox
             if current_selection not in display_names:
-                # Jika pilihan saat ini tidak ada di daftar (misalnya template_0 baru dibuat), pilih default
+                # Jika pilihan saat ini tidak ada di daftar (misalnya default_template baru dibuat), pilih default
                 default_selection = ""  # Set default selection to empty
                 self.template_combobox.set(default_selection)
             else:
@@ -492,5 +565,51 @@ Selesai: false
 ![[{self.project_name.get()}.png]]
 """)
         print(f"File Markdown telah dibuat di {markdown_file_path}.")
+
+    def check_project_name(self):
+        """
+        Check if project_name is empty or only 1 character and update the UI accordingly.
+        """
+        if len(self.project_name.get()) == 1:
+            # Check if project_name in ProjectNameInput is empty
+            if not self.main_window.project_name_input.get_project_name():
+                self.project_name.set("")  # Clear project_name in ProjectGenerator
+
+        if not self.project_name.get():
+            self.create_project_button.config(state=tk.DISABLED)
+        else:
+            self.create_project_button.config(state=tk.NORMAL)
+        
+        # Schedule the next check after 1000ms
+        self.after(1000, self.check_project_name)
+
+    def update_project_name(self, new_name):
+        """
+        Update the project_name with the new value.
+        """
+        self.project_name.set(new_name)
+        self._create_project_path()
+
+    def check_sync_project_name(self):
+        """
+        Ensure project_name in ProjectGenerator and ProjectNameInput are synchronized.
+        """
+        project_name_input = self.main_window.project_name_input.get_project_name()
+        if self.project_name.get() != project_name_input:
+            self.project_name.set(project_name_input)
+            self._create_project_path()
+
+        # Schedule the next check after 1000ms
+        self.after(1000, self.check_sync_project_name)
+
+    def check_update_project_name(self):
+        """
+        Check if update_project_name needs to be called every 1000ms.
+        """
+        if not self.project_name.get():
+            self.update_project_name("")
+
+        # Schedule the next check after 1000ms
+        self.after(1000, self.check_update_project_name)
 
 

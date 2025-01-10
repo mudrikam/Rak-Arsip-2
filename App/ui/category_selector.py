@@ -61,6 +61,8 @@ class CategorySelector(ttk.LabelFrame):
         # Tambahkan dropdown subkategori dan input field
         self._add_subcategory_dropdown(self.subcategory_label_frame)
         self._add_subcategory_input(self.subcategory_label_frame)
+        self.SUB_CATEGORY_DIR = os.path.join(self.BASE_DIR, "Database", "Sub_Category")
+        os.makedirs(self.SUB_CATEGORY_DIR, exist_ok=True)
 
         # Tombol reset ditempatkan di bawah frame subkategori
         self.reset_button = ttk.Button(self, text="Reset", command=self._reset, state=tk.DISABLED, padding=5)
@@ -93,7 +95,7 @@ class CategorySelector(ttk.LabelFrame):
         category_file_path = os.path.join(self.BASE_DIR, "Database", "Category.txt")
         try:
             with open(category_file_path, "r") as file:
-                self.categories = [line.strip() for line in file if line.strip()]
+                self.categories = sorted([line.strip() for line in file if line.strip()])
         except FileNotFoundError:
             print("Category.txt tidak ditemukan. Memulai dengan daftar kategori kosong.")
             self.categories = ["Tambahkan Kategori Baru"]  # Default jika file tidak ditemukan
@@ -190,8 +192,11 @@ class CategorySelector(ttk.LabelFrame):
 
             # Perbarui dropdown kategori
             self.categories.append(new_category)
+            self.categories = sorted(self.categories)  # Sort categories alphabetically
             self.category_dropdown["values"] = self.categories
             self.category_value.set(new_category)  # Set kategori baru sebagai default
+            self.main_window.update_value("category", new_category)  # Update main window category value
+            self.main_window.update_status(f"Kategori utama: {new_category}")  # Update status bar
             print(f"New category added: {new_category}")
 
             # Bersihkan field entry
@@ -199,6 +204,15 @@ class CategorySelector(ttk.LabelFrame):
         else:
             print("Invalid input. Category name cannot be empty.")
             messagebox.showwarning("Peringatan", "Kategori tidak boleh kosong!")
+
+        # Refresh the dropdown with the new category
+        self.category_dropdown["values"] = self.categories
+
+        # Ensure the selected category remains the same
+        self.category_value.set(new_category)
+
+        # Set focus to the subcategory entry
+        self.new_subcategory_entry.focus_set()
 
     def _add_subcategory(self):
         """
@@ -208,12 +222,32 @@ class CategorySelector(ttk.LabelFrame):
         new_subcategory = self.new_subcategory_value.get().strip()  # Gunakan StringVar baru untuk input
 
         if new_subcategory:
-            subcategory_file_path = os.path.join(self.BASE_DIR, "Database", f"{selected_category}.txt")
+            subcategory_file_path = os.path.join(self.SUB_CATEGORY_DIR, f"{selected_category}.txt")
+            
+            # Periksa apakah subkategori sudah ada di file
+            if os.path.exists(subcategory_file_path):
+                with open(subcategory_file_path, "r") as file:
+                    existing_subcategories = [line.strip() for line in file if line.strip()]
+                    if new_subcategory in existing_subcategories:
+                        messagebox.showwarning("Peringatan", "Subkategori sudah ada!")
+                        self.new_subcategory_entry.delete(0, tk.END)  # Reset input field
+                        return
+
+            # Tambahkan subkategori baru ke file
             with open(subcategory_file_path, "a") as file:
                 file.write(f"{new_subcategory}\n")
             print(f"Added new subcategory: {new_subcategory}")
+
             # Muat ulang subkategori
             self._on_category_selected(None)  # Trigger pemuatan ulang daftar
+
+            # Perbarui dropdown subkategori
+            with open(subcategory_file_path, "r") as file:
+                subcategories = sorted([line.strip() for line in file if line.strip()])
+                self.subcategory_dropdown["values"] = subcategories
+                self.subcategory_value.set(new_subcategory)  # Set subkategori baru sebagai default
+                self.main_window.update_value("sub_category", new_subcategory)  # Update main window subcategory value
+                self.main_window.update_status(f"Kategori dipilih: {self.category_value.get()}\\{new_subcategory}")  # Update status bar
 
             # Bersihkan field entry
             self.new_subcategory_entry.delete(0, tk.END)
@@ -236,13 +270,13 @@ class CategorySelector(ttk.LabelFrame):
         self.reset_button.config(state=tk.NORMAL)
 
         # Buat path ke file subkategori yang sesuai
-        subcategory_file_path = os.path.join(self.BASE_DIR, "Database", f"{selected_category}.txt")
+        subcategory_file_path = os.path.join(self.SUB_CATEGORY_DIR, f"{selected_category}.txt")
 
         # Periksa apakah file ada
         if os.path.exists(subcategory_file_path):
             try:
                 with open(subcategory_file_path, "r") as file:
-                    subcategories = [line.strip() for line in file if line.strip()]
+                    subcategories = sorted([line.strip() for line in file if line.strip()])
                     if subcategories:
                         self.subcategory_dropdown["values"] = subcategories
                         self.subcategory_value.set(subcategories[0])  # Set subkategori default dari daftar
@@ -372,9 +406,13 @@ class CategorySelector(ttk.LabelFrame):
             current_modified_time = os.path.getmtime(self.category_file_path)
             if current_modified_time != self.last_modified_time:
                 self.last_modified_time = current_modified_time
+                current_category = self.category_value.get()  # Save the current selected category
                 self._load_categories()
                 self.category_dropdown["values"] = self.categories
-                self.category_value.set("")  # Reset kategori yang dipilih
+                if current_category in self.categories:
+                    self.category_value.set(current_category)  # Restore the selected category if it exists
+                else:
+                    self.category_value.set("")  # Reset kategori yang dipilih jika tidak ada
                 self.subcategory_dropdown["values"] = [""]  # Reset dropdown subkategori
                 self.subcategory_value.set("")  # Reset subkategori yang dipilih
         except FileNotFoundError:

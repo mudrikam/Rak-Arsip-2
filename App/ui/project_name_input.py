@@ -46,6 +46,7 @@ class ProjectNameInput(ttk.LabelFrame):
         self.main_window = main_window  # Simpan referensi ke MainWindow
         self.forbidden_words = forbidden_words
         self.project_name_value = tk.StringVar()  # Gunakan StringVar untuk nilai dinamis
+        self.project_name_value.trace_add("write", self._update_formatted_name)
         self._add_project_name_input()
 
     def _add_project_name_input(self):
@@ -82,7 +83,7 @@ class ProjectNameInput(ttk.LabelFrame):
         self.skip_sanitization_checkbox.place(x=10, y=75)  # Posisi di bawah label
 
         # Bind event <KeyRelease> untuk memperbarui nama yang diformat
-        self.project_name_entry.bind("<KeyRelease>", lambda e: (self._update_formatted_name(e), self.check_forbidden_words(e)))
+        self.project_name_entry.bind("<KeyRelease>", self.check_forbidden_words)
 
         self.invalid_char_count = 0  # Inisialisasi counter karakter invalid
         self.hahaha_count = 0  # Inisialisasi counter untuk "hahaha"
@@ -126,7 +127,7 @@ class ProjectNameInput(ttk.LabelFrame):
         """Menampilkan messagebox."""
         result = messagebox.showwarning(title, message)
         return result
-    def _update_formatted_name(self, event=None):
+    def _update_formatted_name(self, *args):
         project_name = self.project_name_value.get()
         project_name = project_name[:40]
 
@@ -230,7 +231,6 @@ class ProjectNameInput(ttk.LabelFrame):
         """
         Ambil nama Arsip yang telah diformat.
         """
-        # Format nama Arsip sebelum mengembalikannya
         return self.project_name_value.get()
     
     def _on_sanitization_change(self, *args):

@@ -71,8 +71,11 @@ class ProjectLibrary(ttk.LabelFrame):
         self.search_frame.columnconfigure(1, weight=0)  # remove weight from column 1
         self.search_frame.columnconfigure(2, weight=1)  # set weight to 1 for column 2
         
+        # Frame untuk Treeview dan scrollbar
+        self.tree_frame = ttk.Frame(self)
+        self.tree_frame.pack(fill=tk.BOTH, expand=True)
 
-        self.tree = ttk.Treeview(self, columns=("No", "Tanggal", "Nama", "Lokasi"), show="headings", height=6)
+        self.tree = ttk.Treeview(self.tree_frame, columns=("No", "Tanggal", "Nama", "Lokasi"), show="headings", height=6)
         self.tree.heading("No", text="No")
         self.tree.heading("Tanggal", text="Tanggal")
         self.tree.heading("Nama", text="Nama")
@@ -81,6 +84,12 @@ class ProjectLibrary(ttk.LabelFrame):
         self.tree.column("Tanggal", width=80, anchor="center")
         self.tree.column("Nama", width=150, anchor="w")
         self.tree.column("Lokasi", width=300, anchor="w")
+        
+        # Add a scrollbar to the Treeview
+        self.tree_scrollbar = ttk.Scrollbar(self.tree_frame, orient="vertical", command=self.tree.yview)
+        self.tree.configure(yscroll=self.tree_scrollbar.set)
+        self.tree_scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+        
         self.tree.pack(fill=tk.BOTH, expand=True)
         self.tree.bind("<<TreeviewSelect>>", self.on_row_select)
         self.tree.bind("<Double-Button-1>", self.on_double_click)
@@ -88,14 +97,18 @@ class ProjectLibrary(ttk.LabelFrame):
         self.selected_file = None
         self.check_for_upDates()
 
-        self.backup_button = ttk.Button(self, text="Cadangkan", command=self.backup_library, padding=5)
-        self.backup_button.pack(side=tk.LEFT, pady=10)
-        
-        self.import_button = ttk.Button(self, text="Impor", command=self.import_existing_library, padding=5)
-        self.import_button.pack(side=tk.LEFT, pady=10, padx=(10,0))
+        # Frame untuk tombol cadangkan dan impor
+        self.button_frame = ttk.Frame(self)
+        self.button_frame.pack(side=tk.BOTTOM, fill=tk.X, pady=(10, 0))
 
-        self.reminder_label = ttk.Label(self, text="Buatlah cadangan berkala untuk menghindari kehilangan akses daftar pustaka.", foreground="#999999")
-        self.reminder_label.pack(side=tk.LEFT, pady=10, padx=10)
+        self.backup_button = ttk.Button(self.button_frame, text="Cadangkan", command=self.backup_library, padding=5)
+        self.backup_button.pack(side=tk.LEFT, padx=(0, 10))
+
+        self.import_button = ttk.Button(self.button_frame, text="Impor", command=self.import_existing_library, padding=5)
+        self.import_button.pack(side=tk.LEFT)
+
+        self.reminder_label = ttk.Label(self.button_frame, text="Buatlah cadangan berkala untuk menghindari kehilangan akses daftar pustaka.", foreground="#999999")
+        self.reminder_label.pack(side=tk.LEFT, padx=10)
 
         # Configure grid to be resizable with weight constraints
         self.columnconfigure(0, weight=1)

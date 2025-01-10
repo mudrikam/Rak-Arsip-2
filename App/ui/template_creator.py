@@ -65,6 +65,7 @@ class TemplateCreator(ttk.LabelFrame):
         os.makedirs(self.BASE_DIR, exist_ok=True)  # Buat 'Database' jika belum ada
 
         self.current_file = None
+        self.rename_entry = None  # Entry field for renaming
 
         self._create_widgets()
 
@@ -81,6 +82,26 @@ class TemplateCreator(ttk.LabelFrame):
         self.combobox.pack(side=tk.LEFT, padx=5, pady=10)
         self.combobox.bind("<<ComboboxSelected>>", self.display_file_content)
 
+        # Entry field for renaming file
+        self.rename_entry = ttk.Entry(self.file_frame, font=14)
+
+        # Insert label "Ganti nama ke :" between dropdown and entry field
+        rename_label = ttk.Label(self.file_frame, text="Ubah nama ke :")
+        rename_label.pack(side=tk.LEFT, padx=5, pady=10)
+
+        self.rename_entry.pack(side=tk.LEFT, padx=5, pady=10)
+
+        # Add "Hapus" button next to the entry field
+        delete_button = ttk.Button(self.file_frame, text="Hapus", command=self.delete_current_file)
+        delete_button.pack(side=tk.LEFT, padx=5, pady=10)
+
+        # Bind combobox selection to update rename entry
+        self.combobox.bind("<<ComboboxSelected>>", self.on_template_selected)
+        # Bind Enter key to rename entry
+        self.rename_entry.bind("<Return>", lambda event: self.rename_current_file())
+        # Bind focus-in event to select all text in the entry field
+        self.rename_entry.bind("<FocusIn>", self.select_all_text)
+
         # Bagian Konten File (Daftar sub folder)
         self.text_frame = ttk.LabelFrame(self, text="Daftar sub folder :", padding=10)
         self.text_frame.pack(fill=tk.BOTH, expand=True)
@@ -90,7 +111,7 @@ class TemplateCreator(ttk.LabelFrame):
         frame.pack(fill=tk.BOTH, expand=True)
 
         # Tambahkan tombol di dalam frame yang sama dengan area teks
-        save_button = ttk.Button(frame, text="Tambah Template", command=self.save_as_template, padding=10)
+        save_button = ttk.Button(frame, text="Tambah Template", command=self.save_as_template_and_focus, padding=10)
         save_button.pack(side=tk.BOTTOM, anchor='w', pady=10)  # Tempatkan di bawah dalam frame
 
         # Tampilan nomor baris
@@ -116,22 +137,17 @@ class TemplateCreator(ttk.LabelFrame):
         self.load_files()
         
     def load_files(self):
-        """Muat nama file ke dalam combobox dan pilih template_0 secara default."""
+        """Muat nama file ke dalam combobox dan pilih default_template secara default."""
         self.check_and_load_files()  # Panggil metode untuk memeriksa dan memuat file
 
     def check_and_load_files(self):
-        """Periksa file .txt dan pastikan template_0 ada, muat ulang hanya jika file diperbarui."""
+        """Periksa file .txt dan pastikan default_template ada, muat ulang hanya jika file diperbarui."""
         try:
             # Ambil daftar file .txt di direktori
             current_files = [
                 f for f in os.listdir(self.BASE_DIR)
                 if os.path.isfile(os.path.join(self.BASE_DIR, f)) and f.endswith(".txt")
             ]
-
-            # Pastikan template_0.txt ada; jika tidak, buat file tersebut
-            if "template_0.txt" not in current_files:
-                self.create_template_file("template_0.txt")  # Buat file template_0.txt
-                current_files.append("template_0.txt")  # Tambahkan ke daftar file
 
             # Bandingkan daftar file baru dengan daftar file sebelumnya
             if hasattr(self, 'previous_files') and set(current_files) == set(self.previous_files):
@@ -144,7 +160,7 @@ class TemplateCreator(ttk.LabelFrame):
 
             # Buat mapping file untuk menghilangkan ekstensi .txt
             self.file_mapping = {os.path.splitext(f)[0]: f for f in current_files}  # {display_name: full_name}
-            display_names = list(self.file_mapping.keys())
+            display_names = sorted(list(self.file_mapping.keys()))  # Sort display names alphabetically
 
             # Simpan pilihan saat ini di combobox
             current_selection = self.combobox.get()
@@ -152,9 +168,9 @@ class TemplateCreator(ttk.LabelFrame):
 
             # Tetapkan default jika tidak ada pilihan atau pilihan tidak valid
             if not current_selection or current_selection not in display_names:
-                if "template_0" in display_names:
-                    self.combobox.set("template_0")
-                    self.display_file_content("template_0")  # Tampilkan konten template_0
+                if "default_template" in display_names:
+                    self.combobox.set("default_template")
+                    self.display_file_content("default_template")  # Tampilkan konten default_template
                 else:
                     self.combobox.current(0)  # Pilih item pertama
                     self.display_file_content(display_names[0])
@@ -164,9 +180,8 @@ class TemplateCreator(ttk.LabelFrame):
                 self.display_file_content(current_selection)
 
         except FileNotFoundError:
-            # Jika folder tidak ditemukan, buat folder dan file template_0.txt
+            # Jika folder tidak ditemukan, buat folder
             os.makedirs(self.BASE_DIR, exist_ok=True)
-            self.create_template_file("template_0.txt")
             self.previous_files = []  # Kosongkan daftar file sebelumnya
             self.check_and_load_files()  # Muat ulang setelah membuat file
 
@@ -176,11 +191,14 @@ class TemplateCreator(ttk.LabelFrame):
     def on_template_selected(self, event):
         """Callback untuk menangani pemilihan template."""
         self.selected_template = self.combobox.get()  # Simpan template yang dipilih
+        self.rename_entry.delete(0, tk.END)  # Clear the entry field
+        self.rename_entry.insert(0, self.selected_template)  # Fill entry with selected template name
         self.display_file_content(self.selected_template)  # Tampilkan isi template yang dipilih
+        self.text_area.focus_set()  # Set focus to the text area
 
-    def create_template_file(self):
-        """Buat file template_0.txt kosong di BASE_DIR."""
-        template_path = os.path.join(self.BASE_DIR, "template_0.txt")
+    def create_template_file(self, file_name):
+        """Buat file template kosong di BASE_DIR."""
+        template_path = os.path.join(self.BASE_DIR, file_name)
         if not os.path.exists(template_path):
             with open(template_path, "w") as file:
                 file.write("")  # Buat file kosong
@@ -255,11 +273,19 @@ class TemplateCreator(ttk.LabelFrame):
                 with open(file_path, "w") as file:
                     file.write(self.text_area.get("1.0", tk.END).strip())
                 self.load_files()  # Perbarui file_mapping dan combobox
-                self.combobox.set(os.path.splitext(file_name)[0])  # Pilih file baru
-                self.display_file_content(display_nama=os.path.splitext(file_name)[0])
+                new_template_name = os.path.splitext(file_name)[0]
+                self.combobox.set(new_template_name)  # Pilih file baru
+                self.rename_entry.delete(0, tk.END)  # Clear the entry field
+                self.rename_entry.insert(0, new_template_name)  # Fill entry with new template name
+                self.display_file_content(display_nama=new_template_name)
                 return
 
             index += 1
+
+    def save_as_template_and_focus(self):
+        """Simpan konten area teks sebagai file template baru dan fokus ke entry field."""
+        self.save_as_template()
+        self.rename_entry.focus_set()
 
     def update_line_numbers(self):
         """Perbarui nomor baris di panel kiri."""
@@ -343,3 +369,53 @@ class TemplateCreator(ttk.LabelFrame):
         if not found_forbidden:
             self.current_warning_level = 0
             self.last_bad_word = None
+
+    def rename_current_file(self):
+        """Rename the currently selected file using the name from the entry field."""
+        new_name = self.rename_entry.get().strip()
+        if new_name:
+            old_name = self.combobox.get()
+            if old_name:
+                self.rename_template(old_name, new_name)
+                self.rename_entry.delete(0, tk.END)  # Clear the entry field
+                self.text_area.focus_set()  # Move focus to the text area
+
+    def rename_template(self, old_name, new_name):
+        """
+        Rename a template file.
+        """
+        old_path = os.path.join(self.BASE_DIR, old_name + ".txt")
+        new_path = os.path.join(self.BASE_DIR, new_name + ".txt")
+        if os.path.exists(old_path):
+            os.rename(old_path, new_path)
+            self.load_files()
+            self.combobox.set(new_name)  # Update combobox with new name
+            self.display_file_content(new_name)  # Display content of the renamed file
+        else:
+            messagebox.showerror("Error", f"Template {old_name} does not exist")
+
+    def select_all_text(self, event):
+        """Select all text in the entry field when it gains focus."""
+        event.widget.select_range(0, tk.END)
+        return "break"
+
+    def delete_current_file(self):
+        """Delete the currently selected file."""
+        selected_file = self.combobox.get()
+        if selected_file:
+            full_name = self.file_mapping.get(selected_file)
+            if full_name:
+                file_path = os.path.join(self.BASE_DIR, full_name)
+                if os.path.exists(file_path):
+                    confirm = messagebox.askyesno("Konfirmasi Hapus", f"Apakah yakin ingin menghapus {selected_file}?")
+                    if confirm:
+                        os.remove(file_path)
+                        self.load_files()
+                        self.text_area.delete("1.0", tk.END)
+                        self.rename_entry.delete(0, tk.END)
+                        self.main_window.update_status(f"Template {selected_file} berhasil dihapus.")
+                    else:
+                        self.main_window.update_status(f"Penghapusan {selected_file} dibatalkan.")
+                else:
+                    messagebox.showerror("Error", f"Template {selected_file} tidak ditemukan.")
+                    self.main_window.update_status(f"Template {selected_file} tidak ditemukan.")

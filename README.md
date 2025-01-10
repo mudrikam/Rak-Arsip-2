@@ -192,6 +192,11 @@ _Made with love and care to help you._
 
 Fitur baru: pembuatan folder otomatis dengan template, pencarian dokumen cepat, dan antarmuka lebih ramah. Perbaikan: optimalisasi kinerja dan bug pada pembuatan subfolder otomatis. Opsi penambahan tanggal pada nama folder.
 
+### Versi 2.0.1-beta (10-1-2025)
+
+Fitur baru: membuat pencadangan database. Sekarang kamu bisa mencadangkan database dengan mudah untuk memastikan data pada Rak Arsip aman. Cukup pilih opsi Cadangkan di menu Atur, dan aplikasi akan membuat salinan database. Fitur ini sangat berguna untuk menghindari kehilangan data yang tidak diinginkan.
+Perbaikan: perubahan beberapa logika dan penambahan fitur ganti nama template.
+
 ---
 
 ## Kontributor
@@ -201,3 +206,5 @@ Fitur baru: pembuatan folder otomatis dengan template, pencarian dokumen cepat, 
 - [M Huda](https://www.instagram.com/miftakh_hd/) (Tim Desainia)
 - [Riska Twins](https://www.instagram.com/riskarisky_11/) (Tim Desainia)
 - [Cowt Zzy](https://cowtzzy.carrd.co) (Artwork)
+- [Lu'Lu' Maknun](https://www.instagram.com/lulumaknun___/) (Ide fitur Relokasi File)
+- [Pangesti San](https://www.instagram.com/pangestisan/) (Ide fitur ubah nama Template)
