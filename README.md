@@ -173,7 +173,7 @@ _Made with love and care to help you._
 
 **Dalam konteks Rak Arsip**
 
-- **Arsip = Folder untuk data penting:** Tempat menyimpan dokumen-dokumen yang memiliki nilai penting dan harus diorganisir dengan baik.
+- **Arsip = Folder atau data penting:** Tempat menyimpan dokumen-dokumen yang memiliki nilai penting dan harus diorganisir dengan baik.
 - **Markdown:** Format file teks yang digunakan untuk menulis dokumentasi dengan sintaks yang mudah dibaca. Memiliki ekstensi .MD
 - **Python:** Bahasa pemrograman yang sering digunakan untuk pengembangan aplikasi dan skrip otomatisasi.
 - **BAT:** File batch yang berisi serangkaian perintah untuk dieksekusi oleh Command Prompt di Windows.
