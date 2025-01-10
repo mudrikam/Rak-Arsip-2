@@ -138,7 +138,7 @@ class MainWindow(tk.Tk):
         # Label tutorial di kanan
         tutorial_label = tk.Label(
             status_frame,
-            text="Tutorial",
+            text="Tutorial v2.0.2",
             anchor="e",
             background="#f6f8f9",
             foreground="#0066cc",
