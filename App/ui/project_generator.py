@@ -309,9 +309,14 @@ class ProjectGenerator(ttk.LabelFrame):
                 project_folder = f"{base_project_path}_{i+1}_{counter}"
                 counter += 1
 
-            os.makedirs(project_folder)
-            last_created_folder = project_folder
-            print(f"Direktori {project_folder} telah dibuat.")
+            try:
+                os.makedirs(project_folder)
+                last_created_folder = project_folder
+                print(f"Direktori {project_folder} telah dibuat.")
+            except Exception as e:
+                messagebox.showerror("Error", f"Gagal membuat direktori:\n\nError:\n\n {project_folder}\n\n {e}\n\nPeriksa kembali nama Arsip.")
+                self.main_window.update_status("Karakter seperti [<>:\"/\\|?*] tidak didukung saat membuat nama folder")
+                return
             
             # Refresh folder_combobox after creating a new folder
             self._update_folder_combobox()

@@ -127,6 +127,7 @@ class ProjectNameInput(ttk.LabelFrame):
         """Menampilkan messagebox."""
         result = messagebox.showwarning(title, message)
         return result
+
     def _update_formatted_name(self, *args):
         project_name = self.project_name_value.get()
         project_name = project_name[:40]
@@ -134,7 +135,7 @@ class ProjectNameInput(ttk.LabelFrame):
         formatted_name = ""
         invalid_char_detected = False
 
-        if "maaf" in project_name.lower():
+        if "maaf" in project_name.lower() and self.skip_sanitization_var.get():
             if self.invalid_char_count == 0:
                 self._show_warning("Eh...", "Buat apa minta maaf? udahlah gak usah aneh-aneh pakai karakter segala macam (-_-)")
                 self.project_name_value.set("")
@@ -148,7 +149,7 @@ class ProjectNameInput(ttk.LabelFrame):
                 self.invalid_char_count = 0
                 return
 
-        elif "hahaha" in project_name.lower():
+        elif "hahaha" in project_name.lower() and self.skip_sanitization_var.get():
             self.project_name_value.set("")
             self.formatted_project_name_label.config(text="", foreground="black")
             print(f"Haha Counter: {self.hahaha_count}")
@@ -180,13 +181,9 @@ class ProjectNameInput(ttk.LabelFrame):
                     invalid_char_detected = True
             else:
                 # Jika tidak dicentang, semua karakter valid langsung ditambahkan
-                if char.isalnum() or char == "_" or char == " ":
-                    formatted_name += char
-                else:
-                    invalid_char_detected = True
+                formatted_name += char
 
-
-        if invalid_char_detected:
+        if invalid_char_detected and self.skip_sanitization_var.get():
             self.invalid_char_count += 1
 
             if self.invalid_char_count == 3:
@@ -213,6 +210,9 @@ class ProjectNameInput(ttk.LabelFrame):
                 else:
                     self.invalid_char_count = 0
 
+        if not self.skip_sanitization_var.get() and invalid_char_detected:
+            self._show_warning("Error", "Nama Arsip mengandung karakter yang tidak didukung oleh Windows. Silakan periksa kembali.")
+
         self.project_name_value.set(formatted_name)
 
         if formatted_name:
@@ -238,9 +238,9 @@ class ProjectNameInput(ttk.LabelFrame):
         Tangani perubahan pada checkbox sanitasi.
         """
         if self.skip_sanitization_var.get():
-            self.main_window.update_status("Lewati sanitasi, selanjutnya filter nama Arsip aku serahkan padamu!")
-        else:
             self.main_window.update_status("Serahkan padaku! nama Arsip akan disanitasi supaya aman. (^_-)")
+        else:
+            self.main_window.update_status("Lewati sanitasi, selanjutnya filter nama Arsip aku serahkan padamu!")
 
     def _resize_entry(self, event):
         """Resize the entry dynamically."""
