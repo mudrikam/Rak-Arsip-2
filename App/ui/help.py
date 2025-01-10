@@ -92,7 +92,7 @@ class LoadHelpFile(ttk.LabelFrame):
                     html_label.config(cursor="hand2")
                     
                     # Perbarui status bar
-                    self.main_window.update_status("Kalau bingung cara pakainya bisa cek di tab tanda tanya [?] ya (^_-)")
+                    self.main_window.update_status("Kalau bingung cara pakainya bisa cek di tab tanda tanya [?] atau klik link Tutorial di sebelah ini. (^_-)")
             else:
                 error_message = f"File tidak ditemukan: {help_file_path}"
                 self.show_error(error_message)

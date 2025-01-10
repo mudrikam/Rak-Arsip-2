@@ -31,6 +31,9 @@ from datetime import date
 import os
 import tkinter as tk
 from tkinter import ttk
+import markdown
+import re
+from tkhtmlview import HTMLLabel
 from App.ui.category_editor import CategoryEditor
 from App.ui.header import HeaderImage
 from App.ui.disk_selector import DiskSelector
@@ -43,7 +46,7 @@ from App.ui.project_name_input import ProjectNameInput
 from App.ui.template_creator import TemplateCreator
 from App.ui.splash_screen import SplashScreen
 from App.ui.database_backup import DatabaseBackup
-from App.ui.relocate_files import RelocateFiles  # Import RelocateFiles
+from App.ui.relocate_files import RelocateFiles
 
 class MainWindow(tk.Tk):
     def __init__(self):
@@ -113,19 +116,117 @@ class MainWindow(tk.Tk):
         
     def create_status_bar(self):
         """
-        Buat status bar penuh di bagian bawah jendela dengan latar belakang abu-abu, tanpa border, dan padding.
+        Buat status bar dengan dua bagian: status di kiri dan tutorial di kanan
         """
+        # Buat frame untuk status bar
+        status_frame = tk.Frame(self, background="#f6f8f9")
+        status_frame.pack(side="bottom", fill="x")
+
+        # Label status di kiri
         self.status_bar = tk.Label(
-            self,
+            status_frame,
             text="",
             anchor="w",
             background="#f6f8f9",
             foreground="#666",
             borderwidth=0,
-            padx=10,  # Padding horizontal
-            pady=5    # Padding vertikal
+            padx=10,
+            pady=5
         )
-        self.status_bar.pack(side="bottom", fill="x")
+        self.status_bar.pack(side="left", fill="x", expand=True)
+
+        # Label tutorial di kanan
+        tutorial_label = tk.Label(
+            status_frame,
+            text="Tutorial",
+            anchor="e",
+            background="#f6f8f9",
+            foreground="#0066cc",
+            font=("Arial", 8, "underline"),
+            cursor="hand2",
+            borderwidth=0,
+            padx=10,
+            pady=5
+        )
+        tutorial_label.pack(side="right")
+        tutorial_label.bind("<Button-1>", self.show_tutorial)
+
+    def show_tutorial(self, event=None):
+        """
+        Tampilkan tutorial dalam window baru dengan format HTML
+        """
+        tutorial_window = tk.Toplevel(self)
+        tutorial_window.title("Tutorial Rak Arsip 2.0")
+        tutorial_window.geometry("800x600")
+
+        # Set ikon window
+        icon_path = os.path.join(self.BASE_DIR, "Img", "icon", "rakikon.ico")
+        if os.path.exists(icon_path):
+            tutorial_window.iconbitmap(icon_path)
+        
+        # Buat frame untuk konten
+        html_frame = tk.Frame(tutorial_window, bg="white")
+        html_frame.pack(fill='both', expand=True)
+        
+        try:
+            # Baca file User_Guide.md
+            with open("User_Guide.md", "r", encoding="utf-8") as file:
+                content = file.read()
+                
+            # Konversi konten Markdown ke HTML
+            html_content = markdown.markdown(content)
+            
+            # Terapkan gaya ke tag HTML tertentu
+            tag_styles = {
+                "p": "font-size: 12px; line-height: 1.5; font-weight: normal;",
+                "h1": "font-size: 18px; color: #ff7d19; font-weight: normal;",
+                "h2": "font-size: 16px; font-weight: normal;",
+                "h3": "font-size: 14px; font-weight: normal;",
+                "li": "font-size: 12px; list-style-type: disc; font-weight: normal;",
+            }
+            
+            new_html_content = self.replace_tags(html_content, tag_styles)
+            
+            # Buat HTMLLabel dengan konten yang telah di-style
+            html_label = HTMLLabel(
+                html_frame,
+                html=new_html_content,
+                background="white",
+                padx=100,
+                pady=100
+            )
+            html_label.pack(fill="both", expand=True)
+            html_label.config(cursor="hand2")
+                
+        except FileNotFoundError:
+            error_label = tk.Label(
+                html_frame,
+                text="Tutorial file (User_Guide.md) tidak ditemukan.",
+                padx=20,
+                pady=20
+            )
+            error_label.pack()
+        except Exception as e:
+            error_label = tk.Label(
+                html_frame,
+                text=f"Error membaca file tutorial: {str(e)}",
+                padx=20,
+                pady=20
+            )
+            error_label.pack()
+
+    def replace_tags(self, html_content, tag_styles):
+        """Mengganti beberapa tag dengan style sekaligus."""
+        def replace_match(match):
+            tag = match.group(1)
+            if tag in tag_styles:
+                style = tag_styles[tag]
+                return f'<{tag} style="{style}">'
+            return match.group(0)
+
+        tag_regex = "|".join(tag_styles.keys())
+        pattern = rf"<({tag_regex})>"
+        return re.sub(pattern, replace_match, html_content)
 
     def update_status(self, message):
         """
@@ -196,10 +297,6 @@ class MainWindow(tk.Tk):
         self.project_tab = ttk.Frame(self.notebook)
         self.notebook.add(self.project_tab, text="Buat Arsip")
 
-        # Tab Masal
-        self.batch_generator_tab = ttk.Frame(self.notebook)
-        self.notebook.add(self.batch_generator_tab, text="Massal")
-
         # Tab Relokasi
         self.relocation_tab = ttk.Frame(self.notebook)
         self.notebook.add(self.relocation_tab, text="Relokasi")
@@ -208,6 +305,10 @@ class MainWindow(tk.Tk):
         self.library_tab = ttk.Frame(self.notebook)
         self.notebook.add(self.library_tab, text="Pustaka")
 
+        # Tab Masal
+        self.batch_generator_tab = ttk.Frame(self.notebook)
+        self.notebook.add(self.batch_generator_tab, text="Massal")
+        
         # Tab AI
         self.ai_tab = ttk.Frame(self.notebook)
         self.notebook.add(self.ai_tab, text="Ai")
@@ -253,11 +354,11 @@ class MainWindow(tk.Tk):
         self.notebook.add(self.help_tab, text="?")
 
         # Tab Atur dengan Notebook bersarang
-        self.atur_tab = ttk.Frame(self.notebook)
-        self.notebook.insert(self.notebook.index(self.help_tab), self.atur_tab, text="Atur")
+        self.setting_tab = ttk.Frame(self.notebook)
+        self.notebook.insert(self.notebook.index(self.help_tab), self.setting_tab, text="Setting")
 
         # Notebook bersarang untuk Template dan Kategori
-        self.nested_notebook = ttk.Notebook(self.atur_tab)
+        self.nested_notebook = ttk.Notebook(self.setting_tab)
         self.nested_notebook.pack(fill='both', expand=True, pady=(5,0))
 
         # Tab Template

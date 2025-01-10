@@ -74,8 +74,8 @@ class TemplateCreator(ttk.LabelFrame):
         Buat dan atur semua widget yang digunakan dalam template creator.
         """
         # Bagian Manajemen File
-        self.file_frame = ttk.LabelFrame(self, text="Pilih Template")
-        self.file_frame.pack(pady=10, fill=tk.X)
+        self.file_frame = ttk.LabelFrame(self, text="Sesuaikan :", padding=5)
+        self.file_frame.pack(pady=(0,10), fill=tk.X)
 
         # Dropdown combobox untuk pemilihan file
         self.combobox = ttk.Combobox(self.file_frame, font= 14)
@@ -112,7 +112,7 @@ class TemplateCreator(ttk.LabelFrame):
 
         # Tambahkan tombol di dalam frame yang sama dengan area teks
         save_button = ttk.Button(frame, text="Tambah Template", command=self.save_as_template_and_focus, padding=10)
-        save_button.pack(side=tk.BOTTOM, anchor='w', pady=10)  # Tempatkan di bawah dalam frame
+        save_button.pack(side=tk.BOTTOM, anchor='w', pady=(10,0))  # Tempatkan di bawah dalam frame
 
         # Tampilan nomor baris
         self.line_numbers = tk.Text(frame, width=4, padx=5, state="disabled", wrap="none", bg="#f0f0f0")
@@ -407,15 +407,15 @@ class TemplateCreator(ttk.LabelFrame):
             if full_name:
                 file_path = os.path.join(self.BASE_DIR, full_name)
                 if os.path.exists(file_path):
-                    confirm = messagebox.askyesno("Konfirmasi Hapus", f"Apakah yakin ingin menghapus {selected_file}?")
+                    confirm = messagebox.askyesno("Konfirmasi Hapus", f"Apakah yakin ingin menghapus '{selected_file}'?")
                     if confirm:
                         os.remove(file_path)
                         self.load_files()
                         self.text_area.delete("1.0", tk.END)
                         self.rename_entry.delete(0, tk.END)
-                        self.main_window.update_status(f"Template {selected_file} berhasil dihapus.")
+                        self.main_window.update_status(f"Template '{selected_file}' berhasil dihapus.")
                     else:
-                        self.main_window.update_status(f"Penghapusan {selected_file} dibatalkan.")
+                        self.main_window.update_status(f"Penghapusan '{selected_file}' dibatalkan.")
                 else:
                     messagebox.showerror("Error", f"Template {selected_file} tidak ditemukan.")
                     self.main_window.update_status(f"Template {selected_file} tidak ditemukan.")

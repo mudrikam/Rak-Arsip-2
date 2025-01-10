@@ -62,7 +62,7 @@ class CategoryEditor(ttk.LabelFrame):
 
         # Buat LabelFrame kiri untuk "Kategori :"
         self.left_frame = ttk.LabelFrame(self, text="Kategori :", padding=10)
-        self.left_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, pady=(10, 0), padx=(0, 5))
+        self.left_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, pady=0, padx=(0, 5))
 
         # Tambahkan Frame untuk Entry dan Tombol tambah kategori
         self.entry_button_frame = ttk.Frame(self.left_frame)
@@ -108,7 +108,7 @@ class CategoryEditor(ttk.LabelFrame):
 
         # Buat LabelFrame kanan untuk "Sub Kategori :"
         self.right_frame = ttk.LabelFrame(self, text="Sub Kategori :", padding=10)
-        self.right_frame.pack(side=tk.RIGHT, fill=tk.BOTH, expand=True, pady=(10, 0),padx=(5, 0))
+        self.right_frame.pack(side=tk.RIGHT, fill=tk.BOTH, expand=True, pady=0, padx=(5, 0))
 
         # Buat widget Text untuk sub-kategori
         self.subcategory_text = scrolledtext.ScrolledText(self.right_frame, wrap=tk.WORD)

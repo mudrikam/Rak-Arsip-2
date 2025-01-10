@@ -80,8 +80,10 @@ class ProjectLibrary(ttk.LabelFrame):
         self.tree.heading("Tanggal", text="Tanggal")
         self.tree.heading("Nama", text="Nama")
         self.tree.heading("Lokasi", text="Lokasi")
-        self.tree.column("No", width=50, anchor="center")
-        self.tree.column("Tanggal", width=80, anchor="center")
+        
+        # Set fixed width for No and Tanggal columns
+        self.tree.column("No", width=40, minwidth=40, stretch=False, anchor="center")
+        self.tree.column("Tanggal", width=150, minwidth=150, stretch=False, anchor="center")
         self.tree.column("Nama", width=150, anchor="w")
         self.tree.column("Lokasi", width=300, anchor="w")
         
@@ -270,8 +272,9 @@ class ProjectLibrary(ttk.LabelFrame):
     def on_resize(self, event):
         """Adjust column widths dynamically based on window size."""
         width = self.winfo_width()
-        self.tree.column("No", width=int(width * 0.05))
-        self.tree.column("Tanggal", width=int(width * 0.15))
-        self.tree.column("Nama", width=int(width * 0.25))
-        self.tree.column("Lokasi", width=int(width * 0.55))
+        # Skip No and Tanggal columns as they have fixed width
+        fixed_width = 40 + 150  # No (40) + Tanggal (150)
+        remaining_width = width - fixed_width
+        self.tree.column("Nama", width=int(remaining_width * 0.35))
+        self.tree.column("Lokasi", width=int(remaining_width * 0.65))
 
