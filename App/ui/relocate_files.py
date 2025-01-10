@@ -165,7 +165,7 @@ class RelocateFiles(ttk.LabelFrame):
                                    {'side': 'left', 'sticky': 'ns'})],
                        'sticky': 'nswe'}),
                      ('Horizontal.Progressbar.label', {'sticky': ''})])
-        style.configure('Location.Horizontal.TProgressbar', text='Belum ada lokasi yang dipilih')
+        style.configure('Location.Horizontal.TProgressbar', text='Belum ada lokasi tujuan yang dipilih')
 
         # Configure grid weights
         self.columnconfigure(0, weight=1)
