@@ -265,9 +265,9 @@ class RelocateFiles(ttk.LabelFrame):
 
     def update_location_label(self, path):
         if path:
-            # Update progress bar text instead of separate label
+            # Update progress bar text.
             style = ttk.Style()
-            style.configure('Location.Horizontal.TProgressbar', text=f"Lokasi: {path}")
+            style.configure('Location.Horizontal.TProgressbar', text=f"Tujuan: {path}")
             self.progress_bar["value"] = 0
         else:
             style = ttk.Style()
