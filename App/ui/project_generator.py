@@ -36,6 +36,8 @@ import csv
 from colorsys import hsv_to_rgb
 from tkinter import colorchooser
 
+from App.ui.personalize_settings import PersonalizeSettings
+
 class ProjectGenerator(ttk.LabelFrame):
     def __init__(self, parent, BASE_DIR, main_window, selected_disk, root_folder, category, sub_category, date_var, project_name):
         """
@@ -82,8 +84,20 @@ class ProjectGenerator(ttk.LabelFrame):
         self.input_dropdown_frame = ttk.Frame(self.adjust_frame)
         self.input_dropdown_frame.pack(side=tk.LEFT, fill=tk.Y, padx=5, pady=5)
 
+        # Get saved checkbox states
+        checkbox_states = PersonalizeSettings.get_checkbox_states(BASE_DIR)
+        
+        # Initialize checkboxes with saved states
+        self.include_date = tk.BooleanVar(value=checkbox_states.get('include_date', True))
+        self.include_markdown = tk.BooleanVar(value=checkbox_states.get('include_markdown', True))
+        self.open_explorer = tk.BooleanVar(value=checkbox_states.get('open_explorer', True))
+
+        # Add trace to save checkbox states when changed
+        self.include_date.trace_add("write", self._save_checkbox_states)
+        self.include_markdown.trace_add("write", self._save_checkbox_states)
+        self.open_explorer.trace_add("write", self._save_checkbox_states)
+
         # Tambahkan checkbox untuk menyertakan tanggal
-        self.include_date = tk.BooleanVar(value=True)  # Variabel untuk checkbox
         self.checkbox = ttk.Checkbutton(
             self.checkbox_frame, text="Sertakan tanggal", variable=self.include_date, command=self._create_project_path
         )
@@ -100,14 +114,12 @@ class ProjectGenerator(ttk.LabelFrame):
         self.folder_combobox.bind("<FocusOut>", self.stop_scanning)
 
         # Tambahkan checkbox untuk Markdown
-        self.include_markdown = tk.BooleanVar(value=True)  # Default is checked
         self.markdown_checkbox = ttk.Checkbutton(
             self.checkbox_frame, text="Sertakan file Markdown", variable=self.include_markdown
         )
         self.markdown_checkbox.pack(side=tk.TOP, anchor="w", padx=10, pady=5)
 
         # Tambahkan checkbox untuk membuka explorer
-        self.open_explorer = tk.BooleanVar(value=True)
         self.explorer_checkbox = ttk.Checkbutton(
             self.checkbox_frame, text="Buka explorer setelah Arsip dibuat", variable=self.open_explorer
         )
@@ -611,5 +623,13 @@ Selesai: false
 
         # Schedule the next check after 1000ms
         self.after(1000, self.check_update_project_name)
+
+    def _save_checkbox_states(self, *args):
+        """Save checkbox states to config"""
+        PersonalizeSettings.save_checkbox_states(self.BASE_DIR, {
+            'include_date': self.include_date.get(),
+            'include_markdown': self.include_markdown.get(),
+            'open_explorer': self.open_explorer.get()
+        })
 
 

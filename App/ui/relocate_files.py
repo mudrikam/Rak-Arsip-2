@@ -103,7 +103,8 @@ class RelocateFiles(ttk.LabelFrame):
             background='#FFFFFF',
             foreground='#999999',
             font=('Segoe UI', 12),
-            anchor='center'
+            anchor='center',
+            padding=10
         )
         
         # Enable drag and drop for both the listbox and the frame
