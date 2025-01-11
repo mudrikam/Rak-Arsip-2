@@ -65,7 +65,7 @@ class ProjectLibrary(ttk.LabelFrame):
         self.search_entry.bind("<KeyRelease>", self.search_library)
         self.search_entry.bind("<Double-Button-1>", self.clear_search)
 
-        self.open_button = ttk.Button(self.search_frame, text="Buka di Explorer", command=self.open_file, state=tk.DISABLED, padding=5)
+        self.open_button = ttk.Button(self.search_frame, text="Buka Folder", command=self.open_file, state=tk.DISABLED, padding=5)
         self.open_button.grid(row=0, column=2, padx=(5,0), sticky="e")  # sticky right
 
         self.search_frame.columnconfigure(1, weight=0)  # remove weight from column 1
