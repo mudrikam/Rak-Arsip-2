@@ -792,8 +792,15 @@ class RelocateFiles(ttk.LabelFrame):
 
     def open_selected_folder(self):
         folder_path = self.selected_destination.get()
-        if (folder_path and os.path.exists(folder_path)):
-            os.startfile(folder_path)
+        if not folder_path:
+            tk.messagebox.showwarning("Peringatan", "Tidak ada folder yang dipilih!")
+            return
+        
+        if not os.path.exists(folder_path):
+            tk.messagebox.showerror("Error", f"Folder tidak ditemukan:\n{folder_path}")
+            return
+        
+        os.startfile(folder_path)
 
     def _enable_buttons(self):
         """Re-enable buttons after operation completes"""
