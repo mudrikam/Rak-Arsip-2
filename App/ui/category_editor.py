@@ -28,8 +28,6 @@
 # ---------------------------------------------------------------
 
 import os
-import threading
-import time
 import tkinter as tk
 from tkinter import ttk
 from tkinter import scrolledtext
@@ -267,8 +265,3 @@ class CategoryEditor(ttk.LabelFrame):
 
         # Jadwalkan pemeriksaan berikutnya
         self.after(1000, self.check_for_updates)
-
-    def create_csv_if_not_exists(self):
-        if not os.path.exists(self.category_file):
-            with open(self.category_file, "w") as file:
-                pass

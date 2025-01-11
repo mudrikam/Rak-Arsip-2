@@ -240,7 +240,7 @@ class MainWindow(tk.Tk):
         self.status_message = "Meluncuuur"
         self.update_status(self.status_message)
         self.animate_ellipsis()
-        self.after(5000, self.initialize_ui)
+        self.after(100, self.initialize_ui)
 
     def animate_ellipsis(self):
         """Animasi titik-titik pada pesan status."""

@@ -37,7 +37,7 @@ import threading  # Add this import
 
 class RelocateFiles(ttk.LabelFrame):
     def __init__(self, parent, BASE_DIR, main_window):
-        super().__init__(parent, text="Relokasi File", padding=10)
+        super().__init__(parent, text="Relokasi File ke Rak Arsip agar mudah di akses.", padding=10)
         self.grid(row=0, column=0, padx=10, pady=10, sticky="nsew")
         self.parent = parent
         self.BASE_DIR = BASE_DIR
@@ -70,7 +70,7 @@ class RelocateFiles(ttk.LabelFrame):
         self.columnconfigure(1, weight=1, uniform="group1")
 
         # Create left panel (Source)
-        self.left_panel = ttk.LabelFrame(self, text="Sumber", padding=10)
+        self.left_panel = ttk.LabelFrame(self, text="Sumber :", padding=10)
         self.left_panel.grid(row=1, column=0, padx=(0, 10), sticky="nsew")
 
         # Create top panel with buttons
@@ -95,7 +95,7 @@ class RelocateFiles(ttk.LabelFrame):
         self.file_listbox.pack(fill="both", expand=True)
 
         # Create right panel (Destination)
-        self.right_panel = ttk.LabelFrame(self, text="Tujuan", padding=10)
+        self.right_panel = ttk.LabelFrame(self, text="Tujuan :", padding=10)
         self.right_panel.grid(row=1, column=1, sticky="nsew")
         
         # Configure right panel to fill space
@@ -301,116 +301,6 @@ class RelocateFiles(ttk.LabelFrame):
             for file_path in folder_files:
                 self.file_listbox.insert(tk.END, file_path)
             self.update_button_states()
-
-    def handle_file_conflict(self, dst_path):
-        """Handle file conflict with options for handling all similar cases."""
-        if not os.path.exists(dst_path):
-            return dst_path
-
-        # Create a Future object to handle async result
-        future = threading.Event()
-        result = {"path": None}
-
-        # Check existing "all" decisions
-        if self.replace_all:
-            return dst_path
-        elif self.rename_all:
-            base, ext = os.path.splitext(dst_path)
-            counter = 1
-            while os.path.exists(dst_path):
-                dst_path = f"{base} ({counter}){ext}"
-                counter += 1
-            return dst_path
-        elif self.skip_all:
-            return None
-
-        def show_dialog():
-            # Create and configure dialog
-            dialog = tk.Toplevel()
-            dialog.title("File sudah ada")
-            dialog.transient(self)
-            dialog.grab_set()
-            
-            # Set icon
-            icon_path = os.path.join(self.BASE_DIR, "Img", "Icon", "rakikon.ico")
-            if os.path.exists(icon_path):
-                dialog.iconbitmap(icon_path)
-
-            dialog.grid_columnconfigure(0, weight=1)
-            
-            message = f"'{os.path.basename(dst_path)}' sudah ada di folder tujuan.\nApa yang ingin dilakukan?"
-            ttk.Label(dialog, text=message, padding=10).grid(row=0, column=0, sticky="ew")
-
-            def set_action(action):
-                if action == "replace_all":
-                    self.replace_all = True
-                    result["path"] = dst_path
-                elif action == "replace":
-                    result["path"] = dst_path
-                elif action == "rename_all":
-                    self.rename_all = True
-                    base, ext = os.path.splitext(dst_path)
-                    counter = 1
-                    new_path = dst_path
-                    while os.path.exists(new_path):
-                        new_path = f"{base} ({counter}){ext}"
-                        counter += 1
-                    result["path"] = new_path
-                elif action == "rename":
-                    base, ext = os.path.splitext(dst_path)
-                    counter = 1
-                    new_path = dst_path
-                    while os.path.exists(new_path):
-                        new_path = f"{base} ({counter}){ext}"
-                        counter += 1
-                    result["path"] = new_path
-                elif action == "skip_all":
-                    self.skip_all = True
-                    result["path"] = None
-                elif action == "skip":
-                    result["path"] = None
-                
-                dialog.destroy()
-                future.set()  # Signal that we have a result
-
-            # Button frame
-            button_frame = ttk.Frame(dialog, padding=10)
-            button_frame.grid(row=1, column=0, sticky="ew")
-            button_frame.grid_columnconfigure(0, weight=1)
-            button_frame.grid_columnconfigure(1, weight=1)
-            button_frame.grid_columnconfigure(2, weight=1)
-
-            # First row buttons
-            ttk.Button(button_frame, text="Ganti", width=15,
-                      command=lambda: set_action("replace")).grid(row=0, column=0, padx=5, pady=2)
-            ttk.Button(button_frame, text="Buat Baru", width=15,
-                      command=lambda: set_action("rename")).grid(row=0, column=1, padx=5, pady=2)
-            ttk.Button(button_frame, text="Lewati", width=15,
-                      command=lambda: set_action("skip")).grid(row=0, column=2, padx=5, pady=2)
-
-            # Second row buttons
-            ttk.Button(button_frame, text="Ganti Semua", width=15,
-                      command=lambda: set_action("replace_all")).grid(row=1, column=0, padx=5, pady=2)
-            ttk.Button(button_frame, text="Buat Baru Semua", width=15,
-                      command=lambda: set_action("rename_all")).grid(row=1, column=1, padx=5, pady=2)
-            ttk.Button(button_frame, text="Lewati Semua", width=15,
-                      command=lambda: set_action("skip_all")).grid(row=1, column=2, padx=5, pady=2)
-
-            # Center dialog
-            dialog.update_idletasks()
-            width = dialog.winfo_width()
-            height = dialog.winfo_height()
-            x = (dialog.winfo_screenwidth() // 2) - (width // 2)
-            y = (dialog.winfo_screenheight() // 2) - (height // 2)
-            dialog.geometry(f"{width}x{height}+{x}+{y}")
-
-            dialog.protocol("WM_DELETE_WINDOW", lambda: set_action("skip"))
-            dialog.wait_window()
-
-        # Show dialog in main thread
-        self.after(0, show_dialog)
-        future.wait()  # Wait for dialog result
-        return result["path"]
 
     def move_files(self):
         if self.operation_running:
@@ -680,6 +570,11 @@ class RelocateFiles(ttk.LabelFrame):
             dialog.title("File sudah ada")
             dialog.transient(self)
             dialog.grab_set()
+
+            # Set icon
+            icon_path = os.path.join(self.BASE_DIR, "Img", "Icon", "rakikon.ico")
+            if os.path.exists(icon_path):
+                dialog.iconbitmap(icon_path)
             
             # Center dialog
             dialog.update_idletasks()
@@ -749,10 +644,6 @@ class RelocateFiles(ttk.LabelFrame):
             self.update()
             self.after(100)  # Add small delay to reduce CPU usage
 
-    def _get_resolved_path(self):
-        return self._resolved_path
-
-    # Update existing helper methods
     def _update_progress_text(self, text):
         style = ttk.Style()
         style.configure('Location.Horizontal.TProgressbar', text=text)

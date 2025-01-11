@@ -130,7 +130,7 @@ class ProjectNameInput(ttk.LabelFrame):
 
     def _update_formatted_name(self, *args):
         project_name = self.project_name_value.get()
-        project_name = project_name[:40]
+        project_name = project_name[:100]
 
         formatted_name = ""
         invalid_char_detected = False

@@ -182,8 +182,7 @@ class ProjectGenerator(ttk.LabelFrame):
         self.initial_root_folder = root_folder.get()  # Save initial root folder value
 
         # Schedule the check for project_name every 1000ms
-        self.check_project_name()
-        self.check_sync_project_name()
+        self.check_project_name_sync()
 
     def _create_project_path(self, *args):
         """
@@ -303,11 +302,16 @@ class ProjectGenerator(ttk.LabelFrame):
         for i in range(repeat_count):
             project_folder = base_project_path
             if i > 0:
+                # Untuk pengulangan lebih dari satu, tambahkan _2, _3, dst
                 project_folder = f"{base_project_path}_{i+1}"
+            
+            # Jika folder sudah ada, cari nomor berikutnya yang tersedia
             counter = 1
-            while os.path.exists(project_folder):
-                project_folder = f"{base_project_path}_{i+1}_{counter}"
+            temp_folder = project_folder
+            while os.path.exists(temp_folder):
+                temp_folder = f"{base_project_path}_{counter}"
                 counter += 1
+            project_folder = temp_folder
 
             try:
                 os.makedirs(project_folder)
@@ -571,22 +575,25 @@ Selesai: false
 """)
         print(f"File Markdown telah dibuat di {markdown_file_path}.")
 
-    def check_project_name(self):
+    def check_project_name_sync(self):
         """
-        Check if project_name is empty or only 1 character and update the UI accordingly.
+        Ensure project name synchronization and validate state
         """
-        if len(self.project_name.get()) == 1:
-            # Check if project_name in ProjectNameInput is empty
-            if not self.main_window.project_name_input.get_project_name():
-                self.project_name.set("")  # Clear project_name in ProjectGenerator
-
-        if not self.project_name.get():
+        project_name_input = self.main_window.project_name_input.get_project_name()
+        
+        # Sync check
+        if self.project_name.get() != project_name_input:
+            self.project_name.set(project_name_input)
+            self._create_project_path()
+        
+        # Validation check
+        if len(self.project_name.get()) <= 1:
+            self.project_name.set("")
             self.create_project_button.config(state=tk.DISABLED)
         else:
             self.create_project_button.config(state=tk.NORMAL)
-        
-        # Schedule the next check after 1000ms
-        self.after(1000, self.check_project_name)
+
+        self.after(1000, self.check_project_name_sync)
 
     def update_project_name(self, new_name):
         """
@@ -594,18 +601,6 @@ Selesai: false
         """
         self.project_name.set(new_name)
         self._create_project_path()
-
-    def check_sync_project_name(self):
-        """
-        Ensure project_name in ProjectGenerator and ProjectNameInput are synchronized.
-        """
-        project_name_input = self.main_window.project_name_input.get_project_name()
-        if self.project_name.get() != project_name_input:
-            self.project_name.set(project_name_input)
-            self._create_project_path()
-
-        # Schedule the next check after 1000ms
-        self.after(1000, self.check_sync_project_name)
 
     def check_update_project_name(self):
         """
