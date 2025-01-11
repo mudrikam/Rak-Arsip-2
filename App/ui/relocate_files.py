@@ -33,6 +33,7 @@ from tkinter import filedialog
 import os
 import shutil
 import csv
+import threading  # Add this import
 
 class RelocateFiles(ttk.LabelFrame):
     def __init__(self, parent, BASE_DIR, main_window):
@@ -52,6 +53,16 @@ class RelocateFiles(ttk.LabelFrame):
         self.replace_all = False
         self.rename_all = False
         self.skip_all = False
+        self._resolved_path = None  # Add this line
+        self.operation_running = False  # Add this line
+        self.stats = {
+            'replaced': 0,
+            'renamed': 0,
+            'skipped': 0,
+            'success': 0,
+            'failed': 0
+        }
+        self.moved_files = []  # Add this to track successfully moved files
 
     def create_widgets(self):
         # Configure equal width columns
@@ -296,6 +307,10 @@ class RelocateFiles(ttk.LabelFrame):
         if not os.path.exists(dst_path):
             return dst_path
 
+        # Create a Future object to handle async result
+        future = threading.Event()
+        result = {"path": None}
+
         # Check existing "all" decisions
         if self.replace_all:
             return dst_path
@@ -309,198 +324,442 @@ class RelocateFiles(ttk.LabelFrame):
         elif self.skip_all:
             return None
 
-        # Create and configure dialog
-        dialog = tk.Toplevel()
-        dialog.title("File sudah ada")
-        dialog.transient(self)
-        dialog.grab_set()
-        
-        # Set icon
-        icon_path = os.path.join(self.BASE_DIR, "Img", "Icon", "rakikon.ico")
-        if os.path.exists(icon_path):
-            dialog.iconbitmap(icon_path)
+        def show_dialog():
+            # Create and configure dialog
+            dialog = tk.Toplevel()
+            dialog.title("File sudah ada")
+            dialog.transient(self)
+            dialog.grab_set()
+            
+            # Set icon
+            icon_path = os.path.join(self.BASE_DIR, "Img", "Icon", "rakikon.ico")
+            if os.path.exists(icon_path):
+                dialog.iconbitmap(icon_path)
 
-        # Configure grid
-        dialog.grid_columnconfigure(0, weight=1)
-        
-        # Message
-        message = f"'{os.path.basename(dst_path)}' sudah ada di folder tujuan.\nApa yang ingin dilakukan?"
-        ttk.Label(dialog, text=message, padding=10).grid(row=0, column=0, sticky="ew")
+            dialog.grid_columnconfigure(0, weight=1)
+            
+            message = f"'{os.path.basename(dst_path)}' sudah ada di folder tujuan.\nApa yang ingin dilakukan?"
+            ttk.Label(dialog, text=message, padding=10).grid(row=0, column=0, sticky="ew")
 
-        result = {"action": None}
+            def set_action(action):
+                if action == "replace_all":
+                    self.replace_all = True
+                    result["path"] = dst_path
+                elif action == "replace":
+                    result["path"] = dst_path
+                elif action == "rename_all":
+                    self.rename_all = True
+                    base, ext = os.path.splitext(dst_path)
+                    counter = 1
+                    new_path = dst_path
+                    while os.path.exists(new_path):
+                        new_path = f"{base} ({counter}){ext}"
+                        counter += 1
+                    result["path"] = new_path
+                elif action == "rename":
+                    base, ext = os.path.splitext(dst_path)
+                    counter = 1
+                    new_path = dst_path
+                    while os.path.exists(new_path):
+                        new_path = f"{base} ({counter}){ext}"
+                        counter += 1
+                    result["path"] = new_path
+                elif action == "skip_all":
+                    self.skip_all = True
+                    result["path"] = None
+                elif action == "skip":
+                    result["path"] = None
+                
+                dialog.destroy()
+                future.set()  # Signal that we have a result
 
-        def set_action(action):
-            result["action"] = action
-            dialog.destroy()
+            # Button frame
+            button_frame = ttk.Frame(dialog, padding=10)
+            button_frame.grid(row=1, column=0, sticky="ew")
+            button_frame.grid_columnconfigure(0, weight=1)
+            button_frame.grid_columnconfigure(1, weight=1)
+            button_frame.grid_columnconfigure(2, weight=1)
 
-        # Button frame with grid layout
-        button_frame = ttk.Frame(dialog, padding=10)
-        button_frame.grid(row=1, column=0, sticky="ew")
-        button_frame.grid_columnconfigure(0, weight=1)
-        button_frame.grid_columnconfigure(1, weight=1)
-        button_frame.grid_columnconfigure(2, weight=1)
+            # First row buttons
+            ttk.Button(button_frame, text="Ganti", width=15,
+                      command=lambda: set_action("replace")).grid(row=0, column=0, padx=5, pady=2)
+            ttk.Button(button_frame, text="Buat Baru", width=15,
+                      command=lambda: set_action("rename")).grid(row=0, column=1, padx=5, pady=2)
+            ttk.Button(button_frame, text="Lewati", width=15,
+                      command=lambda: set_action("skip")).grid(row=0, column=2, padx=5, pady=2)
 
-        # First row buttons
-        ttk.Button(button_frame, text="Ganti", width=15,
-                  command=lambda: set_action("replace")).grid(row=0, column=0, padx=5, pady=2)
-        ttk.Button(button_frame, text="Buat Baru", width=15,
-                  command=lambda: set_action("rename")).grid(row=0, column=1, padx=5, pady=2)
-        ttk.Button(button_frame, text="Lewati", width=15,
-                  command=lambda: set_action("skip")).grid(row=0, column=2, padx=5, pady=2)
+            # Second row buttons
+            ttk.Button(button_frame, text="Ganti Semua", width=15,
+                      command=lambda: set_action("replace_all")).grid(row=1, column=0, padx=5, pady=2)
+            ttk.Button(button_frame, text="Buat Baru Semua", width=15,
+                      command=lambda: set_action("rename_all")).grid(row=1, column=1, padx=5, pady=2)
+            ttk.Button(button_frame, text="Lewati Semua", width=15,
+                      command=lambda: set_action("skip_all")).grid(row=1, column=2, padx=5, pady=2)
 
-        # Second row buttons
-        ttk.Button(button_frame, text="Ganti Semua", width=15,
-                  command=lambda: set_action("replace_all")).grid(row=1, column=0, padx=5, pady=2)
-        ttk.Button(button_frame, text="Buat Baru Semua", width=15,
-                  command=lambda: set_action("rename_all")).grid(row=1, column=1, padx=5, pady=2)
-        ttk.Button(button_frame, text="Lewati Semua", width=15,
-                  command=lambda: set_action("skip_all")).grid(row=1, column=2, padx=5, pady=2)
+            # Center dialog
+            dialog.update_idletasks()
+            width = dialog.winfo_width()
+            height = dialog.winfo_height()
+            x = (dialog.winfo_screenwidth() // 2) - (width // 2)
+            y = (dialog.winfo_screenheight() // 2) - (height // 2)
+            dialog.geometry(f"{width}x{height}+{x}+{y}")
 
-        # Center dialog on screen
-        dialog.update_idletasks()
-        width = dialog.winfo_width()
-        height = dialog.winfo_height()
-        x = (dialog.winfo_screenwidth() // 2) - (width // 2)
-        y = (dialog.winfo_screenheight() // 2) - (height // 2)
-        dialog.geometry(f"{width}x{height}+{x}+{y}")
+            dialog.protocol("WM_DELETE_WINDOW", lambda: set_action("skip"))
+            dialog.wait_window()
 
-        dialog.wait_window()
-
-        # Handle result
-        if result["action"] == "replace_all":
-            self.replace_all = True
-            return dst_path
-        elif result["action"] == "replace":
-            return dst_path
-        elif result["action"] == "rename_all":
-            self.rename_all = True
-            base, ext = os.path.splitext(dst_path)
-            counter = 1
-            while os.path.exists(dst_path):
-                dst_path = f"{base} ({counter}){ext}"
-                counter += 1
-            return dst_path
-        elif result["action"] == "rename":
-            base, ext = os.path.splitext(dst_path)
-            counter = 1
-            while os.path.exists(dst_path):
-                dst_path = f"{base} ({counter}){ext}"
-                counter += 1
-            return dst_path
-        elif result["action"] == "skip_all":
-            self.skip_all = True
-            return None
-        elif result["action"] == "skip":
-            return None
-        else:
-            return None
+        # Show dialog in main thread
+        self.after(0, show_dialog)
+        future.wait()  # Wait for dialog result
+        return result["path"]
 
     def move_files(self):
-        # Reset the "all" flags at the start of a new operation
-        self.replace_all = False
-        self.rename_all = False
-        self.skip_all = False
-
-        destination_folder = self.selected_destination.get()
-        if not destination_folder:
-            destination_folder = filedialog.askdirectory(title="Pilih Folder Tujuan")
-            if not destination_folder:
-                return
-
-        files = self.file_listbox.get(0, tk.END)
-        if not files:
-            return
-
-        if not tk.messagebox.askyesno("Konfirmasi", "Apakah Kamu yakin ingin memindahkan file yang dipilih?"):
-            return
-
-        self.progress_bar["maximum"] = 100
-        self.progress_bar["value"] = 0
-
-        style = ttk.Style()
-        for file_path in files:
-            try:
-                dst_path = os.path.join(destination_folder, os.path.basename(file_path))
-                resolved_path = self.handle_file_conflict(dst_path)
-                
-                if resolved_path is None:  # User chose to skip
-                    continue
-                    
-                style.configure('Location.Horizontal.TProgressbar', 
-                              text=f"Memindahkan: {os.path.basename(file_path)}")
-                shutil.move(file_path, resolved_path)
-                self.progress_bar["value"] += (100 / len(files))
-                self.update_idletasks()
-            except Exception as e:
-                print(f"Error moving {file_path}: {e}")
-
-        style.configure('Location.Horizontal.TProgressbar', 
-                       text=f"Lokasi: {destination_folder}")
-        self.progress_bar["value"] = 0
-        tk.messagebox.showinfo("Selesai", "Proses pemindahan selesai.")
-        self.main_window.update_status(f"File berhasil dipindahkan ke {destination_folder}")
-        self.reset_files()
-
-    def copy_files(self):
-        # Reset the "all" flags at the start of a new operation
-        self.replace_all = False
-        self.rename_all = False
-        self.skip_all = False
-
-        if not tk.messagebox.askyesno("Konfirmasi", "Apakah Kamu yakin ingin menyalin file yang dipilih?"):
-            return
-
-        destination_folder = self.selected_destination.get()
-        if not destination_folder:
-            destination_folder = filedialog.askdirectory(title="Pilih Folder Tujuan")
-            if not destination_folder:
-                return
-
-        files = self.file_listbox.get(0, tk.END)
-        if not files:
-            return
-
-        self.progress_bar["maximum"] = 100
-        self.progress_bar["value"] = 0
-
-        style = ttk.Style()
-        for file_path in files:
-            try:
-                style.configure('Location.Horizontal.TProgressbar', 
-                              text=f"Menyalin: {os.path.basename(file_path)}")
-                self.copy_file_with_progress(file_path, destination_folder)
-            except Exception as e:
-                print(f"Error copying {file_path}: {e}")
-
-        style.configure('Location.Horizontal.TProgressbar', 
-                       text=f"Lokasi: {destination_folder}")
-        self.progress_bar["value"] = 0
-        tk.messagebox.showinfo("Selesai", "Proses penyalinan selesai.")
-        self.main_window.update_status(f"File berhasil disalin ke {destination_folder}")
-
-    def copy_file_with_progress(self, src, dst_folder):
-        dst_path = os.path.join(dst_folder, os.path.basename(src))
-        resolved_path = self.handle_file_conflict(dst_path)
-        
-        if resolved_path is None:  # User chose to skip
+        if self.operation_running:
             return
             
-        total_size = os.path.getsize(src)
-        copied_size = 0
+        if not tk.messagebox.askyesno("Konfirmasi", "Apakah Kamu yakin ingin memindahkan file yang dipilih?"):
+            self.main_window.update_status("Pemindahan file dibatalkan")
+            return
+            
+        # Reset the "all" flags at the start of a new operation
+        self.replace_all = False
+        self.rename_all = False
+        self.skip_all = False
 
-        with open(src, 'rb') as fsrc, open(resolved_path, 'wb') as fdst:
-            while True:
-                buf = fsrc.read(1024 * 1024)  # Read in chunks of 1MB
-                if not buf:
-                    break
-                fdst.write(buf)
-                copied_size += len(buf)
-                progress = (copied_size / total_size) * 100
-                self.progress_bar["value"] = progress
-                style = ttk.Style()
-                style.configure('Location.Horizontal.TProgressbar', 
-                              text=f"Menyalin: {os.path.basename(src)} ({int(progress)}%)")
-                self.update_idletasks()
+        destination_folder = self.selected_destination.get()
+        if not destination_folder:
+            destination_folder = filedialog.askdirectory(title="Pilih Folder Tujuan")
+            if not destination_folder:
+                return
+
+        files = list(self.file_listbox.get(0, tk.END))  # Convert to list
+        if not files:
+            return
+
+        # Disable buttons during operation
+        self.operation_running = True
+        self.move_button["state"] = "disabled"
+        self.copy_button["state"] = "disabled"
+        
+        # Start operation in background thread
+        thread = threading.Thread(
+            target=self._move_files_thread,
+            args=(files, destination_folder),
+            daemon=True
+        )
+        thread.start()
+
+    def _move_files_thread(self, files, destination_folder):
+        try:
+            total_files = len(files)
+            self.progress_bar["maximum"] = 100
+            self.progress_bar["value"] = 0
+            self._reset_stats()  # Reset stats at start
+            self.moved_files = []  # Reset moved files list
+
+            for index, file_path in enumerate(files, 1):
+                if not os.path.exists(file_path):
+                    continue
+                    
+                filename = os.path.basename(file_path)
+                status_text = f"Memindahkan {index}/{total_files}: {filename}"
+                
+                # Update UI and status in main thread
+                self.after(0, self._update_progress_text, status_text)
+                self.after(0, self.main_window.update_status, status_text)
+                
+                try:
+                    dst_path = os.path.join(destination_folder, filename)
+                    self._resolved_path = None  # Reset before handling conflict
+                    
+                    # Handle conflict in main thread
+                    self.after(0, lambda p=dst_path: self._handle_conflict_async(p))
+                    
+                    # Wait for resolution with timeout
+                    timeout = 0
+                    while self._resolved_path is None and timeout < 300:  # 30 second timeout
+                        self.update()
+                        self.after(100)  # 100ms delay
+                        timeout += 1
+                        
+                    if self._resolved_path is False:  # Skip file
+                        self._update_stats('skipped')
+                        continue
+                    elif self._resolved_path is None:  # Timeout
+                        self._update_stats('failed')
+                        raise TimeoutError("Dialog timeout")
+                    elif self._resolved_path == dst_path:  # Replace
+                        self._update_stats('replaced')
+                    else:  # Renamed
+                        self._update_stats('renamed')
+
+                    # Copy file with progress tracking first
+                    total_size = os.path.getsize(file_path)
+                    
+                    with open(file_path, 'rb') as fsrc, open(self._resolved_path, 'wb') as fdst:
+                        copied_size = 0
+                        while True:
+                            buf = fsrc.read(1024 * 1024)  # 1MB chunks
+                            if not buf:
+                                break
+                            fdst.write(buf)
+                            copied_size += len(buf)
+                            file_progress = (copied_size / total_size) * 100
+                            total_progress = ((index - 1 + (copied_size / total_size)) / total_files) * 100
+                            
+                            status_text = f"Memindahkan {index}/{total_files}: {filename} ({int(file_progress)}%)"
+                            self.after(0, self._update_progress_text, status_text)
+                            self.after(0, self.main_window.update_status, status_text)
+                            self.after(0, self._increment_progress, total_progress)
+                            self.update()  # Keep UI responsive
+
+                    # After successful copy, delete source file
+                    os.remove(file_path)
+                    self._update_stats('success')
+                    self.moved_files.append(file_path)  # Track moved file
+                    
+                except Exception as e:
+                    self._update_stats('failed')
+                    error_msg = f"Error memindahkan {filename}: {str(e)}"
+                    print(error_msg)
+                    self.after(0, self.main_window.update_status, error_msg)
+
+            # Update final status
+            stats_msg = self._get_stats_message("dipindahkan")
+            self.after(0, self.main_window.update_status, f"Selesai memindahkan file - {stats_msg}")
+            
+            # Reset UI in main thread only for moved files
+            self.after(0, self._finish_move_operation, destination_folder)
+            
+        finally:
+            # Re-enable buttons in main thread
+            self.after(0, self._enable_buttons)
+
+    def copy_files(self):
+        if self.operation_running:
+            return
+            
+        if not tk.messagebox.askyesno("Konfirmasi", "Apakah Kamu yakin ingin menyalin file yang dipilih?"):
+            self.main_window.update_status("Penyalinan file dibatalkan")
+            return
+            
+        # Reset the "all" flags at the start of a new operation
+        self.replace_all = False
+        self.rename_all = False
+        self.skip_all = False
+
+        destination_folder = self.selected_destination.get()
+        if not destination_folder:
+            destination_folder = filedialog.askdirectory(title="Pilih Folder Tujuan")
+            if not destination_folder:
+                return
+
+        files = list(self.file_listbox.get(0, tk.END))
+        if not files:
+            return
+
+        # Disable buttons during operation
+        self.operation_running = True
+        self.move_button["state"] = "disabled"
+        self.copy_button["state"] = "disabled"
+
+        # Start operation in background thread
+        thread = threading.Thread(
+            target=self._copy_files_thread,
+            args=(files, destination_folder),
+            daemon=True
+        )
+        thread.start()
+
+    def _copy_files_thread(self, files, destination_folder):
+        try:
+            total_files = len(files)
+            self.progress_bar["maximum"] = 100
+            self.progress_bar["value"] = 0
+            self._reset_stats()  # Reset stats at start
+
+            for index, file_path in enumerate(files, 1):
+                if not os.path.exists(file_path):
+                    continue
+                    
+                filename = os.path.basename(file_path)
+                status_text = f"Menyalin {index}/{total_files}: {filename}"
+                
+                # Update UI and status in main thread
+                self.after(0, self._update_progress_text, status_text)
+                self.after(0, self.main_window.update_status, status_text)
+                
+                try:
+                    dst_path = os.path.join(destination_folder, filename)
+                    self._resolved_path = None  # Reset before handling conflict
+                    
+                    # Handle conflict in main thread
+                    self.after(0, lambda p=dst_path: self._handle_conflict_async(p))
+                    
+                    # Wait for resolution with timeout
+                    timeout = 0
+                    while self._resolved_path is None and timeout < 300:  # 30 second timeout
+                        self.update()
+                        self.after(100)  # 100ms delay
+                        timeout += 1
+                        
+                    if self._resolved_path is False:  # Skip file
+                        self._update_stats('skipped')
+                        continue
+                    elif self._resolved_path is None:  # Timeout
+                        self._update_stats('failed')
+                        raise TimeoutError("Dialog timeout")
+                    elif self._resolved_path == dst_path:  # Replace
+                        self._update_stats('replaced')
+                    else:  # Renamed
+                        self._update_stats('renamed')
+
+                    # Copy file with progress tracking
+                    total_size = os.path.getsize(file_path)
+                    
+                    with open(file_path, 'rb') as fsrc, open(self._resolved_path, 'wb') as fdst:
+                        copied_size = 0
+                        while True:
+                            buf = fsrc.read(1024 * 1024)  # 1MB chunks
+                            if not buf:
+                                break
+                            fdst.write(buf)
+                            copied_size += len(buf)
+                            file_progress = (copied_size / total_size) * 100
+                            total_progress = ((index - 1 + (copied_size / total_size)) / total_files) * 100
+                            
+                            status_text = f"Menyalin {index}/{total_files}: {filename} ({int(file_progress)}%)"
+                            self.after(0, self._update_progress_text, status_text)
+                            self.after(0, self.main_window.update_status, status_text)
+                            self.after(0, self._increment_progress, total_progress)
+                            self.update()  # Keep UI responsive
+                            
+                    self._update_stats('success')
+                    
+                except Exception as e:
+                    self._update_stats('failed')
+                    error_msg = f"Error menyalin {filename}: {str(e)}"
+                    print(error_msg)
+                    self.after(0, self.main_window.update_status, error_msg)
+
+            # Update final status
+            stats_msg = self._get_stats_message("disalin")
+            self.after(0, self.main_window.update_status, f"Selesai menyalin file - {stats_msg}")
+            
+            # Reset UI in main thread
+            self.after(0, self._finish_copy_operation, destination_folder)
+            
+        finally:
+            # Re-enable buttons in main thread
+            self.after(0, self._enable_buttons)
+
+    # Add new helper methods for async file conflict handling
+    def _handle_conflict_async(self, dst_path):
+        if not os.path.exists(dst_path):
+            self._resolved_path = dst_path
+            return
+            
+        # Check existing "all" decisions first
+        if self.replace_all:
+            self._resolved_path = dst_path
+            return
+        elif self.rename_all:
+            base, ext = os.path.splitext(dst_path)
+            counter = 1
+            while os.path.exists(dst_path):
+                dst_path = f"{base} ({counter}){ext}"
+                counter += 1
+            self._resolved_path = dst_path
+            return
+        elif self.skip_all:
+            self._resolved_path = False
+            return
+
+        # Create dialog in main thread
+        def show_dialog():
+            dialog = tk.Toplevel(self)
+            dialog.title("File sudah ada")
+            dialog.transient(self)
+            dialog.grab_set()
+            
+            # Center dialog
+            dialog.update_idletasks()
+            x = (self.winfo_screenwidth() - dialog.winfo_width()) // 2
+            y = (self.winfo_screenheight() - dialog.winfo_height()) // 2
+            dialog.geometry(f"+{x}+{y}")
+
+            message = f"'{os.path.basename(dst_path)}' sudah ada.\nApa yang ingin dilakukan?"
+            ttk.Label(dialog, text=message, padding=10).pack()
+
+            def on_button(action):
+                if action == "replace_all":
+                    self.replace_all = True
+                    self._resolved_path = dst_path
+                elif action == "replace":
+                    self._resolved_path = dst_path
+                elif action == "rename_all":
+                    self.rename_all = True
+                    base, ext = os.path.splitext(dst_path)
+                    counter = 1
+                    new_path = dst_path
+                    while os.path.exists(new_path):
+                        new_path = f"{base} ({counter}){ext}"
+                        counter += 1
+                    self._resolved_path = new_path
+                elif action == "rename":
+                    base, ext = os.path.splitext(dst_path)
+                    counter = 1
+                    new_path = dst_path
+                    while os.path.exists(new_path):
+                        new_path = f"{base} ({counter}){ext}"
+                        counter += 1
+                    self._resolved_path = new_path
+                elif action in ("skip_all", "skip"):
+                    self.skip_all = True if action == "skip_all" else False
+                    self._resolved_path = False
+                dialog.destroy()
+
+            button_frame = ttk.Frame(dialog, padding=(10, 5))
+            button_frame.pack(fill="x")
+
+            buttons = [
+                ("Ganti", "replace"),
+                ("Buat Baru", "rename"),
+                ("Lewati", "skip"),
+                ("Ganti Semua", "replace_all"),
+                ("Buat Baru Semua", "rename_all"), 
+                ("Lewati Semua", "skip_all")
+            ]
+
+            for i, (text, action) in enumerate(buttons):
+                row = i // 3
+                col = i % 3
+                ttk.Button(
+                    button_frame, 
+                    text=text,
+                    command=lambda a=action: on_button(a),
+                    width=15
+                ).grid(row=row, column=col, padx=5, pady=2)
+
+            dialog.protocol("WM_DELETE_WINDOW", lambda: on_button("skip"))
+            dialog.wait_window()
+
+        # Run dialog and wait for result
+        self.after(0, show_dialog)
+        while self._resolved_path is None:
+            self.update()
+            self.after(100)  # Add small delay to reduce CPU usage
+
+    def _get_resolved_path(self):
+        return self._resolved_path
+
+    # Update existing helper methods
+    def _update_progress_text(self, text):
+        style = ttk.Style()
+        style.configure('Location.Horizontal.TProgressbar', text=text)
+        
+    def _increment_progress(self, value):
+        self.progress_bar["value"] = value
+        self.update_idletasks()
 
     def reset_files(self):
         # Reset the "all" flags
@@ -539,3 +798,75 @@ class RelocateFiles(ttk.LabelFrame):
         folder_path = self.selected_destination.get()
         if folder_path and os.path.exists(folder_path):
             os.startfile(folder_path)
+
+    def _enable_buttons(self):
+        """Re-enable buttons after operation completes"""
+        self.operation_running = False
+        if len(self.file_listbox.get(0, tk.END)) > 0 and self.selected_destination.get():
+            self.move_button["state"] = "normal"
+            self.copy_button["state"] = "normal"
+        else:
+            self.move_button["state"] = "disabled" 
+            self.copy_button["state"] = "disabled"
+        
+        self.update_idletasks()
+
+    def _finish_move_operation(self, destination_folder):
+        """Finish up move operation"""
+        self._update_progress_text(f"Lokasi: {destination_folder}")
+        self.progress_bar["value"] = 0
+        
+        # Remove only successfully moved files from listbox
+        if self.moved_files:
+            items = list(self.file_listbox.get(0, tk.END))
+            remaining_items = [item for item in items if item not in self.moved_files]
+            self.file_listbox.delete(0, tk.END)
+            for item in remaining_items:
+                self.file_listbox.insert(tk.END, item)
+                
+        tk.messagebox.showinfo("Selesai", "Proses pemindahan selesai.")
+        self.main_window.update_status(f"File berhasil dipindahkan ke {destination_folder}")
+        
+        # Update button states based on remaining files
+        self.update_button_states()
+        
+        # Clear moved files list
+        self.moved_files = []
+
+    def _finish_copy_operation(self, destination_folder):
+        """Finish up copy operation"""
+        self._update_progress_text(f"Lokasi: {destination_folder}")
+        self.progress_bar["value"] = 0 
+        tk.messagebox.showinfo("Selesai", "Proses penyalinan selesai.")
+        self.main_window.update_status(f"File berhasil disalin ke {destination_folder}")
+
+    def _reset_stats(self):
+        """Reset operation statistics"""
+        self.stats = {
+            'replaced': 0,
+            'renamed': 0,
+            'skipped': 0,
+            'success': 0,
+            'failed': 0
+        }
+
+    def _update_stats(self, action):
+        """Update operation statistics"""
+        if action in self.stats:
+            self.stats[action] += 1
+
+    def _get_stats_message(self, operation=""):
+        """Generate statistics message for status bar"""
+        msg = []
+        if self.stats['success'] > 0:
+            msg.append(f"{self.stats['success']} berhasil {operation}")
+        if self.stats['replaced'] > 0:
+            msg.append(f"{self.stats['replaced']} diganti")
+        if self.stats['renamed'] > 0:
+            msg.append(f"{self.stats['renamed']} dibuat baru")
+        if self.stats['skipped'] > 0:
+            msg.append(f"{self.stats['skipped']} dilewati")
+        if self.stats['failed'] > 0:
+            msg.append(f"{self.stats['failed']} gagal")
+            
+        return ", ".join(msg) if msg else "Dibatalkan"
