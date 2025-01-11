@@ -980,27 +980,6 @@ class RelocateFiles(ttk.LabelFrame):
         else:
             self.overlay_label.place_forget()
 
-    def _verify_file(self, src_path, dst_path):
-        """Verifikasi file setelah penyalinan"""
-        try:
-            src_size = os.path.getsize(src_path)
-            dst_size = os.path.getsize(dst_path)
-            
-            if src_size != dst_size:
-                error_msg = (
-                    f"Verifikasi gagal untuk {os.path.basename(src_path)}\n"
-                    f"Ukuran file sumber: {src_size:,} bytes\n"
-                    f"Ukuran file tujuan: {dst_size:,} bytes"
-                )
-                raise Exception(error_msg)
-                
-            return True
-            
-        except Exception as e:
-            if os.path.exists(dst_path):
-                os.remove(dst_path)
-            raise Exception(str(e))
-
     def confirm_exit(self):
         """Konfirmasi keluar saat operasi sedang berjalan"""
         if self.operation_running:
