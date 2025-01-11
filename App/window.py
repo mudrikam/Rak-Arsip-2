@@ -55,6 +55,9 @@ class MainWindow(tk.Tk):
         self.title("Rak Arsip 2.0")
         self.geometry("700x600")
         self.resizable(True, True)  # Allow resizing
+        
+        # Add this method call to center the window
+        self.center_window()
 
         # Pengaturan direktori dasar
         BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -108,6 +111,21 @@ class MainWindow(tk.Tk):
             "Siap...!"
         ]
         self.message_index = 0
+        
+    def center_window(self):
+        """Center the window on the screen."""
+        # Get screen width and height
+        screen_width = self.winfo_screenwidth()
+        screen_height = self.winfo_screenheight()
+        
+        # Calculate position coordinates
+        window_width = 700
+        window_height = 600
+        pos_x = (screen_width - window_width) // 2
+        pos_y = (screen_height - window_height) // 2
+        
+        # Set the position
+        self.geometry(f"{window_width}x{window_height}+{pos_x}+{pos_y}")
         
     def update_date(self):
         """Perbarui tanggal setiap hari."""
