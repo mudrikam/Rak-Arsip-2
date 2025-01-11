@@ -95,6 +95,19 @@ class MainWindow(tk.Tk):
         self.date_var = tk.StringVar(value=date.today().strftime("%Y_%B_%d"))
         self.project_name = tk.StringVar()
         self.project_name.trace_add("write", self.update_project_path)
+
+        # Add this list of fun messages
+        self.loading_messages = [
+            "Let's Go....!",
+            "Meluncuuur...",
+            "Dikit lagi nyampe...",
+            "Sabaaarrr...",
+            "Dikiiiiitttt lagi...",
+            "Rak-nya aku rapikan dulu...",
+            "Aku siapin arsip kamu...",
+            "Siap...!"
+        ]
+        self.message_index = 0
         
     def update_date(self):
         """Perbarui tanggal setiap hari."""
@@ -238,26 +251,23 @@ class MainWindow(tk.Tk):
 
     def start_loading(self):
         """Mulai proses pemuatan dan inisialisasi UI."""
-        self.status_message = "Meluncuuur"
+        self.status_message = self.loading_messages[0]
         self.update_status(self.status_message)
-        self.animate_ellipsis()
-        self.after(100, self.initialize_ui)
+        self.animate_messages()
+        self.after(4000, self.initialize_ui)
 
-    def animate_ellipsis(self):
-        """Animasi titik-titik pada pesan status."""
-        current_text = self.status_message
-        if (current_text.endswith("...")):
-            self.status_message = "Meluncuuur"
-        else:
-            self.status_message += "."
+    def animate_messages(self):
+        """Animasi pergantian pesan pada status."""
+        self.message_index = (self.message_index + 1) % len(self.loading_messages)
+        self.status_message = self.loading_messages[self.message_index]
         self.update_status(self.status_message)
-        self.ellipsis_animation = self.after(100, self.animate_ellipsis)  # Ubah titik-titik setiap 500 ms
+        self.message_animation = self.after(500, self.animate_messages)  # Ganti pesan setiap 1000ms (1 detik)
 
     def initialize_ui(self):
         """Inisialisasi semua elemen UI setelah pemuatan selesai."""
-        # Hentikan animasi titik-titik
-        if hasattr(self, 'ellipsis_animation'):
-            self.after_cancel(self.ellipsis_animation)
+        # Hentikan animasi pesan
+        if hasattr(self, 'message_animation'):
+            self.after_cancel(self.message_animation)
         
         self.BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
