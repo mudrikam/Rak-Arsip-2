@@ -47,6 +47,7 @@ from App.ui.template_creator import TemplateCreator
 from App.ui.splash_screen import SplashScreen
 from App.ui.database_backup import DatabaseBackup
 from App.ui.relocate_files import RelocateFiles
+import windnd  # Tambahkan ini
 
 class MainWindow(tk.Tk):
     def __init__(self):

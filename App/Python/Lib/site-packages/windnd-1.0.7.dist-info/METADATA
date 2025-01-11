@@ -1,0 +1,17 @@
+Metadata-Version: 2.1
+Name: windnd
+Version: 1.0.7
+Summary: windows drag icon & drop load.
+Home-page: https://pypi.org/project/windnd/
+Author: vilame
+Author-email: opaquism@hotmail.com
+License: MIT
+Keywords: windnd
+Platform: UNKNOWN
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Programming Language :: Python
+Classifier: Intended Audience :: Developers
+
+import windnd;help(windnd)
+
+

@@ -31,9 +31,9 @@ import tkinter as tk
 from tkinter import ttk
 from tkinter import filedialog
 import os
-import shutil
 import csv
 import threading  # Add this import
+import windnd  # Tambahkan ini
 
 class RelocateFiles(ttk.LabelFrame):
     def __init__(self, parent, BASE_DIR, main_window):
@@ -63,13 +63,15 @@ class RelocateFiles(ttk.LabelFrame):
             'failed': 0
         }
         self.moved_files = []  # Add this to track successfully moved files
+        self.file_paths = []  # Add this line to store initial file paths
+        self.update_dropzone_overlay()  # Add this line
 
     def create_widgets(self):
         # Configure equal width columns
         self.columnconfigure(0, weight=1, uniform="group1")
         self.columnconfigure(1, weight=1, uniform="group1")
 
-        # Create left panel (Source)
+        # Create left panel (Source) with drag and drop support
         self.left_panel = ttk.LabelFrame(self, text="Sumber :", padding=10)
         self.left_panel.grid(row=1, column=0, padx=(0, 10), sticky="nsew")
 
@@ -86,13 +88,32 @@ class RelocateFiles(ttk.LabelFrame):
         select_folder_button = ttk.Button(top_panel, text="Pilih Folder", command=self.select_folder, padding=5)
         select_folder_button.pack(side="left", padx=(0, 5))
 
-        self.file_listbox = tk.Listbox(self.left_panel, selectmode=tk.MULTIPLE)
+        # Create drop frame to contain both listbox and overlay
+        self.drop_frame = ttk.Frame(self.left_panel)
+        self.drop_frame.pack(fill="both", expand=True)
+
+        # Create file listbox inside drop frame
+        self.file_listbox = tk.Listbox(self.drop_frame, selectmode=tk.MULTIPLE)
         self.file_listbox.pack(fill="both", expand=True)
 
-        # Make listbox fill space
-        self.left_panel.columnconfigure(0, weight=1)
-        self.left_panel.rowconfigure(1, weight=1)
-        self.file_listbox.pack(fill="both", expand=True)
+        # Create overlay label inside drop frame
+        self.overlay_label = ttk.Label(
+            self.drop_frame,
+            text="Seret dan lepaskan,\nfile atau folder\nke sini.\n\nBiar aku Relokasi\nfile-filemu ke\nRak Arsip. (^_-)",
+            background='#FFFFFF',
+            foreground='#999999',
+            font=('Segoe UI', 12),
+            anchor='center'
+        )
+        
+        # Enable drag and drop for both the listbox and the frame
+        windnd.hook_dropfiles(self.file_listbox, func=self.handle_drop)
+        windnd.hook_dropfiles(self.drop_frame, func=self.handle_drop)
+        windnd.hook_dropfiles(self.overlay_label, func=self.handle_drop)
+
+        # Make overlay label semi-transparent and lift it
+        self.overlay_label.lift()
+        self.overlay_label.place(relx=0.5, rely=0.5, anchor='center')
 
         # Create right panel (Destination)
         self.right_panel = ttk.LabelFrame(self, text="Tujuan :", padding=10)
@@ -288,18 +309,38 @@ class RelocateFiles(ttk.LabelFrame):
     def select_files(self):
         file_paths = filedialog.askopenfilenames(title="Pilih File", filetypes=[("All Files", "*.*")])
         if file_paths:
-            self.file_listbox.delete(0, tk.END)
+            duplicates = []
+            # Tidak menghapus list yang ada, langsung menambahkan
             for file_path in file_paths:
-                self.file_listbox.insert(tk.END, file_path)
+                # Cek duplikasi sebelum menambahkan
+                if file_path not in self.file_listbox.get(0, tk.END):
+                    self.file_listbox.insert(tk.END, file_path)
+                else:
+                    duplicates.append(os.path.basename(file_path))
+            
+            if duplicates:
+                self.main_window.update_status(f"File sudah ada dalam daftar: {', '.join(duplicates)}")
+                
+            self.update_dropzone_overlay()
             self.update_button_states()
 
     def select_folder(self):
         folder_path = filedialog.askdirectory(title="Pilih Folder")
         if folder_path:
             folder_files = [os.path.join(folder_path, f) for f in os.listdir(folder_path)]
-            self.file_listbox.delete(0, tk.END)
+            duplicates = []
+            # Tidak menghapus list yang ada, langsung menambahkan
             for file_path in folder_files:
-                self.file_listbox.insert(tk.END, file_path)
+                # Cek duplikasi sebelum menambahkan
+                if file_path not in self.file_listbox.get(0, tk.END):
+                    self.file_listbox.insert(tk.END, file_path)
+                else:
+                    duplicates.append(os.path.basename(file_path))
+
+            if duplicates:
+                self.main_window.update_status(f"File sudah ada dalam daftar: {', '.join(duplicates)}")
+                
+            self.update_dropzone_overlay()
             self.update_button_states()
 
     def move_files(self):
@@ -660,6 +701,7 @@ class RelocateFiles(ttk.LabelFrame):
 
         # Clear file listbox
         self.file_listbox.delete(0, tk.END)
+        self.update_dropzone_overlay()  # Add this line
         
         # Clear treeview selection
         self.tree.selection_remove(self.tree.selection())
@@ -761,3 +803,46 @@ class RelocateFiles(ttk.LabelFrame):
             msg.append(f"{self.stats['failed']} gagal")
             
         return ", ".join(msg) if msg else "Dibatalkan"
+
+    def handle_drop(self, files):
+        """Handle drag and drop file events"""
+        duplicates = []
+        
+        # Process each dropped file/folder
+        for path in files:
+            # Convert bytes to string if needed
+            if isinstance(path, bytes):
+                path = path.decode('utf-8')
+                
+            if os.path.isdir(path):
+                # If it's a directory, add all files in it
+                folder_files = [os.path.join(path, f) for f in os.listdir(path)]
+                for file_path in folder_files:
+                    if os.path.isfile(file_path):  # Only add files, not subdirectories
+                        # Cek duplikasi sebelum menambahkan
+                        if file_path not in self.file_listbox.get(0, tk.END):
+                            self.file_listbox.insert(tk.END, file_path)
+                        else:
+                            duplicates.append(os.path.basename(file_path))
+            else:
+                # If it's a file, add it directly if belum ada
+                if path not in self.file_listbox.get(0, tk.END):
+                    self.file_listbox.insert(tk.END, path)
+                else:
+                    duplicates.append(os.path.basename(path))
+        
+        if duplicates:
+            self.main_window.update_status(f"File sudah ada dalam daftar: {', '.join(duplicates)}")
+        
+        # Update button states after adding files
+        self.update_dropzone_overlay()
+        self.update_button_states()
+        
+        return "ok"  # Required by some systems
+
+    def update_dropzone_overlay(self):
+        """Update overlay visibility based on listbox content"""
+        if self.file_listbox.size() == 0:
+            self.overlay_label.place(relx=0.5, rely=0.5, anchor='center')
+        else:
+            self.overlay_label.place_forget()
