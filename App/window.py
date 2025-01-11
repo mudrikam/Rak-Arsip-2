@@ -47,7 +47,7 @@ from App.ui.template_creator import TemplateCreator
 from App.ui.splash_screen import SplashScreen
 from App.ui.database_backup import DatabaseBackup
 from App.ui.relocate_files import RelocateFiles
-import windnd  # Tambahkan ini
+from App.ui.personalize_settings import PersonalizeSettings  # Add this import
 
 class MainWindow(tk.Tk):
     def __init__(self):
@@ -56,32 +56,29 @@ class MainWindow(tk.Tk):
         self.geometry("700x600")
         self.resizable(True, True)  # Allow resizing
         
-        # Add this method call to center the window
+        # Setup BASE_DIR
+        self.BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+        
+        # Setup style with vista theme
+        self.style = ttk.Style()
+        self.style.theme_use('vista')
+        
+        # Center the window
         self.center_window()
 
-        # Pengaturan direktori dasar
-        BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-
         # Memuat ikon aplikasi
-        ICON_PATH = os.path.join(BASE_DIR, "Img", "icon", "rakikon.ico")  # Path ikon yang benar
+        ICON_PATH = os.path.join(self.BASE_DIR, "Img", "icon", "rakikon.ico")  # Path ikon yang benar
         if os.path.exists(ICON_PATH):
             self.iconbitmap(ICON_PATH)
         else:
             print(f"Ikon tidak ditemukan di: {ICON_PATH}")
 
-        # Terapkan tema ke Tkinter
-        style = ttk.Style()
-        try:
-            style.theme_use('vista')  # Gunakan tema 'vista'
-        except tk.TclError:
-            style.theme_use('default')  # Gunakan tema default jika vista tidak tersedia
-
         # Tambahkan gambar header ke jendela
-        self.header = HeaderImage(self, BASE_DIR)  # Buat instance HeaderImage
+        self.header = HeaderImage(self, self.BASE_DIR)  # Buat instance HeaderImage
         self.header.add_header_image()  # Panggil metode untuk menampilkan gambar header tanpa padding dan border
 
         # Inisialisasi splash screen untuk proses pemuatan
-        self.splash_screen = SplashScreen(self, BASE_DIR)  # Buat instance SplashScreen
+        self.splash_screen = SplashScreen(self, self.BASE_DIR)  # Buat instance SplashScreen
         self.splash_screen.show()  # Tampilkan splash screen
 
         # Tambahkan status bar
@@ -281,11 +278,22 @@ class MainWindow(tk.Tk):
         self.update_status(self.status_message)
         self.message_animation = self.after(500, self.animate_messages)  # Ganti pesan setiap 1000ms (1 detik)
 
+    def load_theme_from_config(self):
+        """Always use vista theme"""
+        try:
+            self.style.theme_use('vista')
+        except tk.TclError:
+            print("Vista theme not available, using default")
+            self.style.theme_use('default')
+
     def initialize_ui(self):
         """Inisialisasi semua elemen UI setelah pemuatan selesai."""
         # Hentikan animasi pesan
         if hasattr(self, 'message_animation'):
             self.after_cancel(self.message_animation)
+        
+        # Style already initialized in __init__, no need to create new one
+        style = self.style  # Use existing style instance
         
         self.BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
@@ -300,24 +308,37 @@ class MainWindow(tk.Tk):
         # Buat objek style untuk notebook
         style = ttk.Style()
 
-        # Konfigurasi umum tab
+        # Konfigurasi umum tab - Perbaikan untuk kompatibilitas tema
         style.configure(
             "TNotebook.Tab",
-            padding=[10, 5],
-            background="#f0f0f0",  # Warna tab tidak aktif
+            padding=[12, 6],  # Menambah padding untuk semua tema
+            background="#f0f0f0",
             relief="flat",
         )
 
         # Hilangkan border aktif dan atur warna latar belakang tab
         style.map(
             "TNotebook.Tab",
-            background=[("selected", "#ff7d19")],  # Warna tab aktif
-            foreground=[("selected", "black")],  # Warna teks tab aktif
-            relief=[("selected", "flat")],  # Hilangkan border untuk tab aktif
+            padding=[("selected", [12, 6])],  # Memastikan padding tetap saat tab dipilih
+            background=[("selected", "#ff7d19")],
+            foreground=[("selected", "black")],
+            relief=[("selected", "flat")],
             bordercolor=[('selected', '#F0F0F0')],
-            focuscolor=[("!selected", "transparent")],  # Hilangkan garis titik-titik di tab tak aktif
+            focuscolor=[("!selected", "transparent")],
         )
         
+        # Tambahan konfigurasi khusus untuk tema vista
+        if style.theme_use() == 'vista':
+            style.configure(
+                "TNotebook", 
+                tabmargins=[2, 5, 2, 0]  # [left, top, right, bottom]
+            )
+            style.configure(
+                "TNotebook.Tab",
+                padding=[12, 6],
+                expand=[("selected", [1, 1, 1, 0])]  # Ekspansi tab yang dipilih
+            )
+
         # Notebook Utama
         self.notebook = ttk.Notebook(self)
         self.notebook.pack(fill='both', expand=True)
@@ -401,6 +422,10 @@ class MainWindow(tk.Tk):
         # Tab Cadangkan
         self.backup_tab = ttk.Frame(self.nested_notebook)
         self.nested_notebook.add(self.backup_tab, text="Cadangkan")
+        
+        # Tab Personalisasi
+        self.personalize_tab = ttk.Frame(self.nested_notebook)
+        self.nested_notebook.add(self.personalize_tab, text="Personalisasi")
 
         # Pemilih disk
         self.disk_selector = DiskSelector(self.project_tab, BASE_DIR=self.BASE_DIR, main_window=self)
@@ -445,6 +470,10 @@ class MainWindow(tk.Tk):
         # Add DatabaseBackup to the Cadangkan tab
         self.database_backup = DatabaseBackup(self.backup_tab, BASE_DIR=self.BASE_DIR, main_window=self)
         self.database_backup.pack(fill="both", expand=True, padx=10, pady=10)
+        
+        # Add PersonalizeSettings to the Personalisasi tab
+        self.personalize_settings = PersonalizeSettings(self.personalize_tab, BASE_DIR=self.BASE_DIR, main_window=self)
+        self.personalize_settings.pack(fill="both", expand=True, padx=10, pady=10)
         
         # Sembunyikan splash screen setelah pemuatan selesai
         self.splash_screen.hide()

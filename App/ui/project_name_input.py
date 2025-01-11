@@ -33,6 +33,7 @@ from tkinter import ttk
 from tkinter import messagebox
 
 from App.ui.core_scan import forbidden_words
+from App.ui.personalize_settings import PersonalizeSettings
 
 class ProjectNameInput(ttk.LabelFrame):
     def __init__(self, parent, BASE_DIR, main_window):
@@ -73,7 +74,8 @@ class ProjectNameInput(ttk.LabelFrame):
         self.formatted_project_name_label.place(x=10, y=55)  # Posisi di bawah entry
 
         # Checkbox untuk sanitasi karakter spesial
-        self.skip_sanitization_var = tk.BooleanVar(value=True)
+        checkbox_states = PersonalizeSettings.get_checkbox_states(self.BASE_DIR)
+        self.skip_sanitization_var = tk.BooleanVar(value=checkbox_states.get('sanitize_name', True))
         self.skip_sanitization_var.trace_add("write", self._on_sanitization_change)
         self.skip_sanitization_checkbox = ttk.Checkbutton(
             self, 
@@ -237,6 +239,11 @@ class ProjectNameInput(ttk.LabelFrame):
         """
         Tangani perubahan pada checkbox sanitasi.
         """
+        # Save state to config
+        states = PersonalizeSettings.get_checkbox_states(self.BASE_DIR)
+        states['sanitize_name'] = self.skip_sanitization_var.get()
+        PersonalizeSettings.save_checkbox_states(self.BASE_DIR, states)
+
         if self.skip_sanitization_var.get():
             self.main_window.update_status("Serahkan padaku! nama Arsip akan disanitasi supaya aman. (^_-)")
         else:
