@@ -1,4 +1,4 @@
-![Rak `Arsip` User Guide](App/Img/User-Guide/user_guide_header.png)
+![Rak `Arsip` User Guide](App/Img/User-Guide/user_guide_krea_header.png)
 
 # Panduan Pembuatan Arsip Baru.
 
