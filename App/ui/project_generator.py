@@ -225,16 +225,17 @@ class ProjectGenerator(ttk.LabelFrame):
     def _update_folder_combobox(self, *args):
         """
         Memperbarui dropdown combobox dengan folder dari disk yang dipilih,
-        mengabaikan $RECYCLE.BIN, folder yang diawali titik (.) atau underscore (_).
+        mengabaikan $RECYCLE.BIN, System Volume Information, folder yang diawali titik (.) atau underscore (_).
         """
         selected_disk_value = self.selected_disk.get()
         if selected_disk_value:
             try:
-                # Ambil daftar folder dari disk yang dipilih dan filter out $RECYCLE.BIN, '.' dan '_'
+                # Tambahkan "System Volume Information" ke daftar folder yang difilter
                 folders = sorted([
                     f for f in os.listdir(selected_disk_value)
                     if os.path.isdir(os.path.join(selected_disk_value, f)) and 
-                    f != "$RECYCLE.BIN" and not f.startswith(('.', '_'))
+                    f not in ["$RECYCLE.BIN", "System Volume Information"] and 
+                    not f.startswith(('.', '_'))
                 ])
                 current_selection = self.root_folder.get()  # Save current selection
                 self.folder_combobox['values'] = folders
@@ -267,11 +268,12 @@ class ProjectGenerator(ttk.LabelFrame):
         selected_disk_value = self.selected_disk.get()
         if selected_disk_value:
             try:
-                # Ambil daftar folder dari disk yang dipilih dan filter out $RECYCLE.BIN, '.' dan '_'
+                # Tambahkan "System Volume Information" ke daftar folder yang difilter
                 current_folders = set(
                     f for f in os.listdir(selected_disk_value)
                     if os.path.isdir(os.path.join(selected_disk_value, f)) and 
-                    f != "$RECYCLE.BIN" and not f.startswith(('.', '_'))
+                    f not in ["$RECYCLE.BIN", "System Volume Information"] and 
+                    not f.startswith(('.', '_'))
                 )
                 previous_folders = set(self.folder_combobox['values'])
                 if current_folders != previous_folders:
@@ -298,6 +300,7 @@ class ProjectGenerator(ttk.LabelFrame):
             return
 
         base_project_path = self.project_label.cget("text")
+        original_project_name = self.project_name.get()
         open_explorer = self.open_explorer.get()
         selected_template = self.template_var.get()
 
@@ -312,16 +315,22 @@ class ProjectGenerator(ttk.LabelFrame):
 
         # Implementasi pembuatan Arsip
         for i in range(repeat_count):
-            project_folder = base_project_path
-            if i > 0:
-                # Untuk pengulangan lebih dari satu, tambahkan _2, _3, dst
-                project_folder = f"{base_project_path}_{i+1}"
+            current_project_name = original_project_name
+            if repeat_count > 1:
+                # Hanya tambahkan nomor jika repeat_count > 1
+                current_project_name = f"{original_project_name}_{i+1}"
+                self.project_name.set(current_project_name)
+                # Update base_project_path with new project name
+                self._create_project_path()
+                base_project_path = self.project_label.cget("text")
             
+            project_folder = base_project_path
+                
             # Jika folder sudah ada, cari nomor berikutnya yang tersedia
             counter = 1
             temp_folder = project_folder
             while os.path.exists(temp_folder):
-                temp_folder = f"{base_project_path}_{counter}"
+                temp_folder = f"{project_folder}_{counter}"
                 counter += 1
             project_folder = temp_folder
 
@@ -332,8 +341,11 @@ class ProjectGenerator(ttk.LabelFrame):
             except Exception as e:
                 messagebox.showerror("Error", f"Gagal membuat direktori:\n\nError:\n\n {project_folder}\n\n {e}\n\nPeriksa kembali nama Arsip.")
                 self.main_window.update_status("Karakter seperti [<>:\"/\\|?*] tidak didukung saat membuat nama folder")
+                # Reset project name back to original
+                self.project_name.set(original_project_name)
+                self._create_project_path()
                 return
-            
+
             # Refresh folder_combobox after creating a new folder
             self._update_folder_combobox()
 
@@ -353,6 +365,10 @@ class ProjectGenerator(ttk.LabelFrame):
 
             # Update CSV file
             self.update_csv(project_folder)
+
+        # Reset project name back to original after loop completes
+        self.project_name.set(original_project_name)
+        self._create_project_path()
 
         # Simpan project_name ke clipboard
         self.clipboard_clear()

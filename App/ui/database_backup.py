@@ -37,7 +37,7 @@ import time
 
 class DatabaseBackup(ttk.LabelFrame):
     def __init__(self, parent, BASE_DIR, main_window):
-        super().__init__(parent, text="Cadangkan Database", padding=10)
+        super().__init__(parent, text="Cadangkan Database :", padding=10)
         self.grid(row=0, column=0, padx=10, pady=10, sticky="nsew")
         self.BASE_DIR = BASE_DIR
         self.main_window = main_window

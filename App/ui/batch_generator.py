@@ -173,7 +173,7 @@ class BatchGenerator(ttk.LabelFrame):
 
     def create_csv_template(self):
         """Membuat file template CSV."""
-        template = "Sub Folder1/Sub Folder3/Sub Folder4/Dst"  # Contoh struktur template
+        template = "Sub Folder 1/Sub Folder 2/Sub Folder 3/Dst"  # Contoh struktur template
         file_path = filedialog.asksaveasfilename(defaultextension=".csv", filetypes=[["CSV Files", "*.csv"]])
         if file_path:
             try:
