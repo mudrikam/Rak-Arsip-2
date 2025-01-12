@@ -41,13 +41,13 @@ class ProjectLibrary(ttk.LabelFrame):
         self.grid(row=0, column=0, padx=10, pady=10, sticky="nsew")
         self.main_window = main_window
 
+        # Setup directory and file paths
         self.BASE_DIR = os.path.join(BASE_DIR, "Database", "Library")
-        os.makedirs(self.BASE_DIR, exist_ok=True)
-
         self.csv_file_path = os.path.join(self.BASE_DIR, "project_library.csv")
-        self.create_csv_if_not_exists()
-
-        self.last_modified_time = os.path.getmtime(self.csv_file_path)
+        self.last_modified_time = 0
+        
+        # Initialize directory and file first
+        self.initialize_library()
 
         # Frame untuk tombol pencarian dan buka
         self.search_frame = ttk.Frame(self)
@@ -119,22 +119,64 @@ class ProjectLibrary(ttk.LabelFrame):
         # Bind the configure event to adjust widget sizes dynamically
         self.bind("<Configure>", self.on_resize)
 
-    def create_csv_if_not_exists(self):
-        if not os.path.exists(self.csv_file_path):
-            with open(self.csv_file_path, mode="w", newline="") as file:
-                writer = csv.writer(file)
-                writer.writerow(["No", "Tanggal", "Nama", "Lokasi"])
+    def initialize_library(self):
+        """Initialize directory and library file"""
+        try:
+            # Create directory if not exists
+            os.makedirs(self.BASE_DIR, exist_ok=True)
+            
+            # Create file if not exists
+            if not os.path.exists(self.csv_file_path):
+                with open(self.csv_file_path, mode="w", newline="", encoding="utf-8") as file:
+                    writer = csv.writer(file)
+                    writer.writerow(["No", "Tanggal", "Nama", "Lokasi"])
+                self.main_window.update_status("Daftar Pustaka baru telah dibuat.")
+            
+            # Set initial modification time
+            self.last_modified_time = os.path.getmtime(self.csv_file_path)
+            return True
+            
+        except Exception as e:
+            self.main_window.update_status(f"Error initializing library: {str(e)}")
+            messagebox.showerror("Error", f"Gagal membuat direktori/file:\n{e}")
+            return False
 
     def load_library(self):
+        """Load library data from CSV file with validation."""
         self.tree.delete(*self.tree.get_children())
-        rows = []
-        with open(self.csv_file_path, mode="r", encoding="utf-8") as file:
-            reader = csv.reader(file)
-            next(reader, None)
-            rows = [row for row in reader]
-        rows.sort(key=lambda x: int(x[0]), reverse=True)
-        for row in rows:
-            self.tree.insert("", "end", values=row)
+        
+        if not os.path.exists(self.csv_file_path):
+            if not self.initialize_library():
+                return
+            
+        try:
+            rows = []
+            with open(self.csv_file_path, mode="r", encoding="utf-8") as file:
+                reader = csv.reader(file)
+                header = next(reader, None)
+                
+                # Validate header
+                if header != ["No", "Tanggal", "Nama", "Lokasi"]:
+                    raise ValueError("Format CSV tidak valid")
+                
+                # Validate and load rows
+                for row in reader:
+                    if len(row) != 4:
+                        continue
+                    try:
+                        int(row[0])  # Validate No is numeric
+                        rows.append(row)
+                    except ValueError:
+                        continue
+                        
+            if rows:
+                rows.sort(key=lambda x: int(x[0]), reverse=True)
+                for row in rows:
+                    self.tree.insert("", "end", values=row)
+                    
+        except Exception as e:
+            self.main_window.update_status(f"Error loading library: {str(e)}")
+            messagebox.showerror("Error", f"Gagal memuat Daftar Pustaka:\n{e}")
 
     def on_row_select(self, event):
         selected_item = self.tree.selection()
@@ -155,16 +197,19 @@ class ProjectLibrary(ttk.LabelFrame):
             messagebox.showwarning("Periksa!", "Sepertinya ada masalah pada lokasi file")
 
     def check_for_upDates(self):
+        """Check for file updates"""
         try:
             current_modified_time = os.path.getmtime(self.csv_file_path)
             if current_modified_time != self.last_modified_time:
                 self.last_modified_time = current_modified_time
                 self.load_library()
         except FileNotFoundError:
-            self.create_csv_if_not_exists()
-            self.main_window.update_status(f"Daftar Pustaka baru telah dibuat.")
-            self.load_library()
-        else:
+            # If file is deleted, try to recreate it
+            if self.initialize_library():
+                self.load_library()
+        except Exception as e:
+            self.main_window.update_status(f"Error checking updates: {str(e)}")
+        finally:
             self.after(1000, self.check_for_upDates)
 
     def search_library(self, event=None):
@@ -277,4 +322,14 @@ class ProjectLibrary(ttk.LabelFrame):
         remaining_width = width - fixed_width
         self.tree.column("Nama", width=int(remaining_width * 0.35))
         self.tree.column("Lokasi", width=int(remaining_width * 0.65))
+
+    def ensure_library_exists(self):
+        """Public method to ensure library exists and is initialized"""
+        if not os.path.exists(self.csv_file_path):
+            return self.initialize_library()
+        return True
+
+    def get_library_path(self):
+        """Return the path to the library file"""
+        return self.csv_file_path
 

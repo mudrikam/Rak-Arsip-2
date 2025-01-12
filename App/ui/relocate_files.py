@@ -32,9 +32,11 @@ from tkinter import ttk
 from tkinter import filedialog
 import os
 import csv
-import threading  # Add this import
+import threading
+from tkinter import messagebox  # Add this import
 import windnd  # Tambahkan ini
 import time  # Add this with other imports
+from App.ui.project_library import ProjectLibrary
 
 class RelocateFiles(ttk.LabelFrame):
     def __init__(self, parent, BASE_DIR, main_window):
@@ -43,14 +45,27 @@ class RelocateFiles(ttk.LabelFrame):
         self.parent = parent
         self.BASE_DIR = BASE_DIR
         self.main_window = main_window
+        
+        # Create ProjectLibrary instance to get CSV path
         self.csv_file_path = os.path.join(BASE_DIR, "Database", "Library", "project_library.csv")
+        
+        # Initialize library before proceeding
+        if not ProjectLibrary.ensure_library_exists(self):
+            messagebox.showerror("Error", "Gagal menginisialisasi daftar pustaka")
+            return
+
+        # Continue with existing initialization
         self.selected_destination = tk.StringVar()
         self.move_button = None
         self.copy_button = None
         self.create_widgets()
         self.update_button_states()
-        self.last_modified_time = os.path.getmtime(self.csv_file_path)
-        self.after(1000, self.check_for_updates)
+        
+        # Monitor CSV file changes
+        if os.path.exists(self.csv_file_path):
+            self.last_modified_time = os.path.getmtime(self.csv_file_path)
+            self.after(1000, self.check_for_updates)
+            
         self.replace_all = False
         self.rename_all = False
         self.skip_all = False
@@ -221,37 +236,49 @@ class RelocateFiles(ttk.LabelFrame):
         self.tree.column("name", width=total_width - num_width)
 
     def check_for_updates(self):
+        """Check for file updates"""
         try:
+            if not self.csv_file_path or not os.path.exists(self.csv_file_path):
+                return
+                
             current_modified_time = os.path.getmtime(self.csv_file_path)
             if current_modified_time != self.last_modified_time:
                 self.last_modified_time = current_modified_time
                 self.load_destinations()
-                if self.search_var.get().strip():
-                    self.search_destinations()
-        except FileNotFoundError:
-            pass
+        except Exception as e:
+            self.main_window.update_status(f"Error checking updates: {str(e)}")
         finally:
             self.after(1000, self.check_for_updates)
 
     def load_destinations(self):
-        if os.path.exists(self.csv_file_path):
+        """Load destinations using ProjectLibrary's CSV"""
+        if not os.path.exists(self.csv_file_path):
+            # Let ProjectLibrary handle initialization
+            if not self.project_library.ensure_library_exists():
+                return
+            self.csv_file_path = self.project_library.get_library_path()
+            
+        # Continue with existing loading logic
+        try:
             with open(self.csv_file_path, 'r', encoding='utf-8') as file:
                 reader = csv.reader(file)
                 next(reader)  # Skip header
                 
-                # Store complete row data (number, date, name, location)
+                # Store complete row data
                 self.destinations = []
                 for row in reader:
-                    if len(row) >= 4:  # Ensure row has all required fields
+                    if len(row) >= 4:
                         self.destinations.append((row[0], row[1], row[2], row[3]))
                 
-                # Sort by number in reverse order
+                # Sort and update treeview
                 self.destinations.sort(key=lambda x: int(x[0]), reverse=True)
-                
-                # Update treeview
                 self.tree.delete(*self.tree.get_children())
                 for number, date, name, location in self.destinations:
                     self.tree.insert("", "end", values=(number, name))
+                    
+        except Exception as e:
+            self.main_window.update_status(f"Error loading destinations: {str(e)}")
+            messagebox.showerror("Error", f"Gagal memuat lokasi tujuan:\n{e}")
 
     def search_destinations(self, event=None):
         keyword = self.search_var.get().strip().lower()
