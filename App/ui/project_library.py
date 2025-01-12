@@ -35,18 +35,51 @@ from tkinter import messagebox
 from tkinter import filedialog
 import webbrowser
 
+class LibraryManager:
+    def __init__(self, base_dir):
+        self.BASE_DIR = os.path.join(base_dir, "Database", "Library")
+        self.csv_file_path = os.path.join(self.BASE_DIR, "project_library.csv")
+
+    def initialize_library(self):
+        """Initialize directory and library file"""
+        try:
+            os.makedirs(self.BASE_DIR, exist_ok=True)
+            
+            if not os.path.exists(self.csv_file_path):
+                with open(self.csv_file_path, mode="w", newline="", encoding="utf-8") as file:
+                    writer = csv.writer(file)
+                    writer.writerow(["No", "Tanggal", "Nama", "Lokasi"])
+                return "new"  # Return "new" if file was created
+            return "exists"  # Return "exists" if file already existed
+            
+        except Exception as e:
+            return False
+
+    def ensure_library_exists(self):
+        """Ensure library exists and is initialized"""
+        if not os.path.exists(self.csv_file_path):
+            return self.initialize_library()
+        return True
+
+    def get_library_path(self):
+        """Return the path to the library file"""
+        return self.csv_file_path
+
 class ProjectLibrary(ttk.LabelFrame):
     def __init__(self, parent, BASE_DIR, main_window):
         super().__init__(parent, text="Daftar Arsip yang telah dibuat :", padding=10)
         self.grid(row=0, column=0, padx=10, pady=10, sticky="nsew")
         self.main_window = main_window
-
-        # Setup directory and file paths
+        
+        # Create LibraryManager instance
+        self.library_manager = LibraryManager(BASE_DIR)
+        
+        # Setup directory and file paths through library manager
         self.BASE_DIR = os.path.join(BASE_DIR, "Database", "Library")
-        self.csv_file_path = os.path.join(self.BASE_DIR, "project_library.csv")
+        self.csv_file_path = self.library_manager.get_library_path()
         self.last_modified_time = 0
         
-        # Initialize directory and file first
+        # Initialize directory and file first through library manager
         self.initialize_library()
 
         # Frame untuk tombol pencarian dan buka
@@ -121,25 +154,16 @@ class ProjectLibrary(ttk.LabelFrame):
 
     def initialize_library(self):
         """Initialize directory and library file"""
-        try:
-            # Create directory if not exists
-            os.makedirs(self.BASE_DIR, exist_ok=True)
-            
-            # Create file if not exists
-            if not os.path.exists(self.csv_file_path):
-                with open(self.csv_file_path, mode="w", newline="", encoding="utf-8") as file:
-                    writer = csv.writer(file)
-                    writer.writerow(["No", "Tanggal", "Nama", "Lokasi"])
-                self.main_window.update_status("Daftar Pustaka baru telah dibuat.")
-            
-            # Set initial modification time
-            self.last_modified_time = os.path.getmtime(self.csv_file_path)
-            return True
-            
-        except Exception as e:
-            self.main_window.update_status(f"Error initializing library: {str(e)}")
-            messagebox.showerror("Error", f"Gagal membuat direktori/file:\n{e}")
-            return False
+        result = self.library_manager.initialize_library()
+        if result == "new":
+            self.last_modified_time = os.path.getmtime(self.library_manager.get_library_path())
+            self.main_window.update_status("Daftar Pustaka baru telah dibuat.")
+        elif result == "exists":
+            self.last_modified_time = os.path.getmtime(self.library_manager.get_library_path())
+        else:
+            self.main_window.update_status("Error initializing library")
+            messagebox.showerror("Error", "Gagal membuat direktori/file")
+        return result in ["new", "exists"]
 
     def load_library(self):
         """Load library data from CSV file with validation."""

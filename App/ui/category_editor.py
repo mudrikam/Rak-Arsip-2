@@ -142,10 +142,17 @@ class CategoryEditor(ttk.LabelFrame):
     def load_subcategories(self, category):
         subcategory_file = os.path.join(self.SUB_CATEGORY_DIR, f"{category}.txt")
         self.subcategory_text.delete(1.0, tk.END)
-        if os.path.exists(subcategory_file):
-            with open(subcategory_file, "r") as file:
-                subcategories = file.read()
-            self.subcategory_text.insert(tk.END, subcategories)
+        
+        # Create subcategory file if it doesn't exist
+        if not os.path.exists(subcategory_file):
+            with open(subcategory_file, "w") as file:
+                pass
+            self.main_window.update_status(f"File sub kategori untuk '{category}' telah dibuat!")
+        
+        # Read existing content
+        with open(subcategory_file, "r") as file:
+            subcategories = file.read()
+        self.subcategory_text.insert(tk.END, subcategories)
 
     def sanitize_category_entry(self, event):
         sanitized_text = self.sanitize_category_text(self.category_entry.get())
@@ -175,6 +182,11 @@ class CategoryEditor(ttk.LabelFrame):
     def save_subcategory_text(self, event):
         if self.selected_category:
             subcategory_file = os.path.join(self.SUB_CATEGORY_DIR, f"{self.selected_category}.txt")
+            # Create directory only if it doesn't exist
+            if not os.path.exists(self.SUB_CATEGORY_DIR):
+                os.makedirs(self.SUB_CATEGORY_DIR)
+            
+            # Save the content
             with open(subcategory_file, "w") as file:
                 file.write(self.subcategory_text.get(1.0, tk.END))
 

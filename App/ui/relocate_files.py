@@ -36,7 +36,7 @@ import threading
 from tkinter import messagebox  # Add this import
 import windnd  # Tambahkan ini
 import time  # Add this with other imports
-from App.ui.project_library import ProjectLibrary
+from App.ui.project_library import LibraryManager
 
 class RelocateFiles(ttk.LabelFrame):
     def __init__(self, parent, BASE_DIR, main_window):
@@ -46,11 +46,14 @@ class RelocateFiles(ttk.LabelFrame):
         self.BASE_DIR = BASE_DIR
         self.main_window = main_window
         
-        # Create ProjectLibrary instance to get CSV path
-        self.csv_file_path = os.path.join(BASE_DIR, "Database", "Library", "project_library.csv")
+        # Create LibraryManager instance
+        self.library_manager = LibraryManager(BASE_DIR)
+        
+        # Get CSV path through library manager
+        self.csv_file_path = self.library_manager.get_library_path()
         
         # Initialize library before proceeding
-        if not ProjectLibrary.ensure_library_exists(self):
+        if not self.library_manager.ensure_library_exists():
             messagebox.showerror("Error", "Gagal menginisialisasi daftar pustaka")
             return
 
