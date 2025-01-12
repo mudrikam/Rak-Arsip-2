@@ -207,11 +207,12 @@ class MainWindow(tk.Tk):
             
             # Terapkan gaya ke tag HTML tertentu
             tag_styles = {
-                "p": "font-size: 12px; line-height: 1.5; font-weight: normal;",
-                "h1": "font-size: 18px; color: #ff7d19; font-weight: normal;",
-                "h2": "font-size: 16px; font-weight: normal;",
-                "h3": "font-size: 14px; font-weight: normal;",
-                "li": "font-size: 12px; list-style-type: disc; font-weight: normal;",
+                "p": "font-size: 12px; line-height: 1.5; font-weight: normal; color: #555;)",
+                "h1": "font-size: 20px; color: #ff7d19; font-weight: normal;",
+                "h2": "font-size: 14px; font-weight: normal;",
+                "h3": "font-size: 10px; font-weight: light; color: #ff7d19; ",
+                "li": "font-size: 12px; list-style-type: disc; font-weight: normal; color: #555;",
+                "ol": "font-size: 12px; font-weight: normal; color: #555;",
             }
             
             new_html_content = self.replace_tags(html_content, tag_styles)
@@ -222,7 +223,7 @@ class MainWindow(tk.Tk):
                 html=new_html_content,
                 background="white",
                 padx=100,
-                pady=100
+                pady=10,
             )
             html_label.pack(fill="both", expand=True)
             html_label.config(cursor="hand2")
@@ -423,9 +424,9 @@ class MainWindow(tk.Tk):
         self.backup_tab = ttk.Frame(self.nested_notebook)
         self.nested_notebook.add(self.backup_tab, text="Cadangkan")
         
-        # Tab Personalisasi
-        self.personalize_tab = ttk.Frame(self.nested_notebook)
-        self.nested_notebook.add(self.personalize_tab, text="Personalisasi")
+        # # Tab Personalisasi
+        # self.personalize_tab = ttk.Frame(self.nested_notebook)
+        # self.nested_notebook.add(self.personalize_tab, text="Personalisasi")
 
         # Pemilih disk
         self.disk_selector = DiskSelector(self.project_tab, BASE_DIR=self.BASE_DIR, main_window=self)
@@ -471,9 +472,9 @@ class MainWindow(tk.Tk):
         self.database_backup = DatabaseBackup(self.backup_tab, BASE_DIR=self.BASE_DIR, main_window=self)
         self.database_backup.pack(fill="both", expand=True, padx=10, pady=10)
         
-        # Add PersonalizeSettings to the Personalisasi tab
-        self.personalize_settings = PersonalizeSettings(self.personalize_tab, BASE_DIR=self.BASE_DIR, main_window=self)
-        self.personalize_settings.pack(fill="both", expand=True, padx=10, pady=10)
+        # # Add PersonalizeSettings to the Personalisasi tab
+        # self.personalize_settings = PersonalizeSettings(self.personalize_tab, BASE_DIR=self.BASE_DIR, main_window=self)
+        # self.personalize_settings.pack(fill="both", expand=True, padx=10, pady=10)
         
         # Sembunyikan splash screen setelah pemuatan selesai
         self.splash_screen.hide()
