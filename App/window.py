@@ -48,11 +48,12 @@ from App.ui.splash_screen import SplashScreen
 from App.ui.database_backup import DatabaseBackup
 from App.ui.relocate_files import RelocateFiles
 from App.ui.personalize_settings import PersonalizeSettings  # Add this import
+from App.config import CURRENT_VERSION  # Update the import to use config
 
 class MainWindow(tk.Tk):
     def __init__(self):
         super().__init__()
-        self.title("Rak Arsip 2.0")
+        self.title(f"Rak Arsip {CURRENT_VERSION}")  # Use version from Launcher
         self.geometry("700x600")
         self.resizable(True, True)  # Allow resizing
         
@@ -167,7 +168,7 @@ class MainWindow(tk.Tk):
         # Label tutorial di kanan
         tutorial_label = tk.Label(
             status_frame,
-            text="Tutorial v2.0.2",
+            text=f"Tutorial v{CURRENT_VERSION}",  # Use version from Launcher
             anchor="e",
             background="#f6f8f9",
             foreground="#0066cc",
@@ -505,9 +506,11 @@ class MainWindow(tk.Tk):
         self.category_editor.pack_configure(fill="both", expand=True)
 
     def update_project_path(self, *args):
-        """Update project path in real-time."""
-        if hasattr(self, 'project_generator'):
-            self.project_generator._create_project_path()
-        else:
-            print("ProjectGenerator instance not found.")
+        """Update project path in real-time if ProjectGenerator is initialized."""
+        if hasattr(self, 'project_generator') and self.project_generator:
+            try:
+                self.project_generator._create_project_path()
+            except Exception as e:
+                print(f"Could not update project path: {e}")
+        # Silently ignore if ProjectGenerator is not yet initialized
 
