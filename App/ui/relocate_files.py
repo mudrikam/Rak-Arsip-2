@@ -37,6 +37,7 @@ from tkinter import messagebox  # Add this import
 import windnd  # Tambahkan ini
 import time  # Add this with other imports
 from App.ui.project_library import LibraryManager
+from PIL import Image, ImageTk
 
 class RelocateFiles(ttk.LabelFrame):
     def __init__(self, parent, BASE_DIR, main_window):
@@ -46,21 +47,41 @@ class RelocateFiles(ttk.LabelFrame):
         self.BASE_DIR = BASE_DIR
         self.main_window = main_window
         
-        # Create LibraryManager instance
-        self.library_manager = LibraryManager(BASE_DIR)
-        
-        # Get CSV path through library manager
-        self.csv_file_path = self.library_manager.get_library_path()
-        
-        # Initialize library before proceeding
-        if not self.library_manager.ensure_library_exists():
-            messagebox.showerror("Error", "Gagal menginisialisasi daftar pustaka")
-            return
-
-        # Continue with existing initialization
+        # Initialize all instance variables first
+        self.file_paths = {}  # Change to dictionary to store both path and name
+        self.thumbnail_cache = {}
+        self.default_icon = None
         self.selected_destination = tk.StringVar()
         self.move_button = None
         self.copy_button = None
+        self.replace_all = False
+        self.rename_all = False
+        self.skip_all = False
+        self._resolved_path = None
+        self.operation_running = False
+        self.moved_files = []
+        self.stats = {
+            'replaced': 0,
+            'renamed': 0,
+            'skipped': 0,
+            'success': 0,
+            'failed': 0
+        }
+        
+        # Create LibraryManager instance
+        try:
+            self.library_manager = LibraryManager(BASE_DIR)
+            self.csv_file_path = self.library_manager.get_library_path()
+            
+            if not self.library_manager.ensure_library_exists():
+                raise Exception("Failed to initialize library")
+                
+        except Exception as e:
+            messagebox.showerror("Error", f"Gagal inisialisasi: {str(e)}")
+            return
+
+        # Initialize UI and load resources
+        self.load_default_icon()
         self.create_widgets()
         self.update_button_states()
         
@@ -69,20 +90,34 @@ class RelocateFiles(ttk.LabelFrame):
             self.last_modified_time = os.path.getmtime(self.csv_file_path)
             self.after(1000, self.check_for_updates)
             
-        self.replace_all = False
-        self.rename_all = False
-        self.skip_all = False
-        self._resolved_path = None  # Add this line
-        self.operation_running = False  # Add this line
-        self.stats = {
-            'replaced': 0,
-            'renamed': 0,
-            'skipped': 0,
-            'success': 0,
-            'failed': 0
-        }
-        self.moved_files = []  # Add this to track successfully moved files
-        self.update_dropzone_overlay()  # Add this line
+        self.update_dropzone_overlay()
+
+    def load_default_icon(self):
+        """Load default icon for non-image files"""
+        try:
+            # Create a gray rectangle as default icon
+            img = Image.new('RGB', (32, 32), '#E0E0E0')
+            self.default_icon = ImageTk.PhotoImage(img)
+        except Exception:
+            self.default_icon = None
+
+    def get_thumbnail(self, file_path):
+        """Generate thumbnail for file"""
+        if file_path in self.thumbnail_cache:
+            return self.thumbnail_cache[file_path]
+            
+        try:
+            # Check if file is an image
+            img = Image.open(file_path)
+            # Resize to thumbnail
+            img.thumbnail((32, 32))
+            # Convert to PhotoImage
+            thumb = ImageTk.PhotoImage(img)
+            self.thumbnail_cache[file_path] = thumb
+            return thumb
+        except Exception:
+            # Return default icon for non-image files
+            return self.default_icon
 
     def create_widgets(self):
         # Configure equal width columns
@@ -110,9 +145,31 @@ class RelocateFiles(ttk.LabelFrame):
         self.drop_frame = ttk.Frame(self.left_panel)
         self.drop_frame.pack(fill="both", expand=True)
 
-        # Create file listbox inside drop frame
-        self.file_listbox = tk.Listbox(self.drop_frame, selectmode=tk.MULTIPLE)
+        # Replace Listbox with Text widget
+        self.file_listbox = tk.Text(
+            self.drop_frame,
+            wrap="none",  # Ubah ke none untuk mencegah wrap
+            relief="flat",
+            height=10,
+            cursor="arrow",
+            font=("Segoe UI", 10),
+            padx=5,
+            pady=2  # Tambah padding y
+        )
         self.file_listbox.pack(fill="both", expand=True)
+        
+        # Configure tags for alignment and selection
+        self.file_listbox.tag_configure("item", lmargin1=5, lmargin2=40)  # Adjust margins for items
+        self.file_listbox.tag_configure("selected", background="#0078D7", foreground="white")
+        
+        # Add selection support
+        self.file_listbox.tag_configure("selected", background="#0078D7", foreground="white")
+        self.file_listbox.bind("<Button-1>", self.on_text_click)
+
+        # Add horizontal scrollbar
+        h_scroll = ttk.Scrollbar(self.drop_frame, orient="horizontal", command=self.file_listbox.xview)
+        h_scroll.pack(fill="x", side="bottom")
+        self.file_listbox.configure(xscrollcommand=h_scroll.set)
 
         # Create overlay label inside drop frame
         self.overlay_label = ttk.Label(
@@ -230,6 +287,7 @@ class RelocateFiles(ttk.LabelFrame):
 
         # Add bindings for listbox and tree selection
         self.file_listbox.bind('<<ListboxSelect>>', self.update_button_states)
+        self.file_listbox.bind('<Configure>', self.redraw_thumbnails)
         self.tree.bind('<<TreeviewSelect>>', lambda e: (self.on_select_destination(e), self.update_button_states()))
 
     def on_treeview_configure(self, event):
@@ -343,17 +401,36 @@ class RelocateFiles(ttk.LabelFrame):
             style.configure('Location.Horizontal.TProgressbar', text="Belum ada lokasi tujuan yang dipilih")
             self.progress_bar["value"] = 0
 
+    def add_file_to_list(self, file_path, thumb):
+        """Helper method to add file with thumbnail to list"""
+        if file_path not in self.file_paths:
+            name = os.path.basename(file_path)
+            # Truncate filename if too long (40 chars)
+            if len(name) > 40:
+                base, ext = os.path.splitext(name)
+                name = base[:37-len(ext)] + "..." + ext
+                
+            self.file_paths[file_path] = {
+                'name': name,
+                'thumb': thumb
+            }
+            
+            # Insert file info as single line with proper spacing
+            self.file_listbox.insert(tk.END, " ")  # Small initial space
+            self.file_listbox.image_create(tk.END, image=thumb)
+            self.file_listbox.insert(tk.END, f" {name}\n", "item")
+            return True
+        return False
+
     def select_files(self):
         file_paths = filedialog.askopenfilenames(title="Pilih File", filetypes=[("All Files", "*.*")])
         if file_paths:
             duplicates = []
-            # Tidak menghapus list yang ada, langsung menambahkan
             for file_path in file_paths:
-                # Cek duplikasi sebelum menambahkan
-                if file_path not in self.file_listbox.get(0, tk.END):
-                    self.file_listbox.insert(tk.END, file_path)
-                else:
-                    duplicates.append(os.path.basename(file_path))
+                thumb = self.get_thumbnail(file_path)
+                if thumb:
+                    if not self.add_file_to_list(file_path, thumb):
+                        duplicates.append(os.path.basename(file_path))
             
             if duplicates:
                 self.main_window.update_status(f"File sudah ada dalam daftar: {', '.join(duplicates)}")
@@ -366,13 +443,12 @@ class RelocateFiles(ttk.LabelFrame):
         if folder_path:
             folder_files = [os.path.join(folder_path, f) for f in os.listdir(folder_path)]
             duplicates = []
-            # Tidak menghapus list yang ada, langsung menambahkan
             for file_path in folder_files:
-                # Cek duplikasi sebelum menambahkan
-                if file_path not in self.file_listbox.get(0, tk.END):
-                    self.file_listbox.insert(tk.END, file_path)
-                else:
-                    duplicates.append(os.path.basename(file_path))
+                if os.path.isfile(file_path):
+                    thumb = self.get_thumbnail(file_path)
+                    if thumb:
+                        if not self.add_file_to_list(file_path, thumb):
+                            duplicates.append(os.path.basename(file_path))
 
             if duplicates:
                 self.main_window.update_status(f"File sudah ada dalam daftar: {', '.join(duplicates)}")
@@ -384,303 +460,219 @@ class RelocateFiles(ttk.LabelFrame):
         if self.operation_running:
             return
             
-        if not tk.messagebox.askyesno("Konfirmasi", "Apakah Kamu yakin ingin memindahkan file yang dipilih?"):
-            self.main_window.update_status("Pemindahan file dibatalkan")
+        if not self._validate_operation("move"):
             return
             
-        # Reset the "all" flags at the start of a new operation
+        # Reset all flags at start of new operation
         self.replace_all = False
         self.rename_all = False
         self.skip_all = False
-
-        destination_folder = self.selected_destination.get()
-        if not destination_folder:
-            destination_folder = filedialog.askdirectory(title="Pilih Folder Tujuan")
-            if not destination_folder:
-                return
-
-        files = list(self.file_listbox.get(0, tk.END))  # Convert to list
-        if not files:
-            return
-
-        # Disable buttons during operation
-        self.operation_running = True
-        self.move_button["state"] = "disabled"
-        self.copy_button["state"] = "disabled"
         
-        # Start operation in background thread
+        self.operation_running = True
+        self._disable_buttons()
+        
         thread = threading.Thread(
-            target=self._move_files_thread,
-            args=(files, destination_folder),
+            target=self._process_files_thread,
+            args=(self.file_paths, self.selected_destination.get(), "move"),
             daemon=True
         )
         thread.start()
-
-    def _move_files_thread(self, files, destination_folder):
-        try:
-            total_files = len(files)
-            self.progress_bar["maximum"] = 100
-            self.progress_bar["value"] = 0
-            self._reset_stats()
-            self.moved_files = []
-
-            for index, file_path in enumerate(files, 1):
-                if not os.path.exists(file_path):
-                    continue
-                    
-                filename = os.path.basename(file_path)
-                status_text = f"Memindahkan {index}/{total_files}: {filename}"
-                
-                self.after(0, self._update_progress_text, status_text)
-                self.after(0, self.main_window.update_status, status_text)
-                
-                try:
-                    dst_path = os.path.join(destination_folder, filename)
-                    original_path = dst_path  # Simpan path asli untuk pengecekan
-                    self._resolved_path = None
-                    
-                    # Cek apakah file sudah ada sebelum menampilkan dialog
-                    if os.path.exists(dst_path):
-                        self.after(0, lambda p=dst_path: self._handle_conflict_async(p))
-                        
-                        timeout = 0
-                        while self._resolved_path is None and timeout < 300:
-                            self.update()
-                            self.after(100)
-                            timeout += 1
-                            
-                        if self._resolved_path is False:
-                            self._update_stats('skipped')
-                            continue
-                        elif self._resolved_path is None:
-                            self._update_stats('failed')
-                            raise TimeoutError("Dialog timeout")
-                    else:
-                        self._resolved_path = dst_path
-
-                    # Baca ukuran file sumber
-                    src_size = os.path.getsize(file_path)
-                    if src_size == 0:
-                        raise Exception("File sumber kosong (0 bytes)")
-
-                    BUFFER_SIZE = 32 * 1024 * 1024  # 32MB buffer
-                    copied_size = 0
-                    start_time = time.time()
-                    
-                    # Gunakan with untuk memastikan file ditutup dengan benar
-                    try:
-                        with open(file_path, 'rb') as fsrc:
-                            with open(self._resolved_path, 'wb') as fdst:
-                                last_update = time.time()  # Tambahkan ini
-                                while True:
-                                    buf = fsrc.read(BUFFER_SIZE)
-                                    if not buf:
-                                        break
-                                    fdst.write(buf)
-                                    fdst.flush()  # Pastikan data ditulis ke disk
-                                    copied_size += len(buf)
-                                    
-                                    current_time = time.time()
-                                    # Update progress setiap 50ms
-                                    if current_time - last_update >= 0.05:  # 50ms
-                                        file_progress = (copied_size / src_size) * 100
-                                        total_progress = ((index - 1 + (copied_size / src_size)) / total_files) * 100
-                                        speed = copied_size / (current_time - start_time)
-                                        speed_text = f"{speed / (1024 * 1024):.2f} MB/s" if speed > 1024 * 1024 else f"{speed / 1024:.2f} KB/s"
-                                        
-                                        status_text = f"Memindahkan {index}/{total_files}: {filename} ({int(file_progress)}%) - {speed_text}"
-                                        self.after(0, self._update_progress_text, status_text)
-                                        self.after(0, self.main_window.update_status, status_text)
-                                        self.after(0, self._increment_progress, total_progress)
-                                        self.update()
-                                        last_update = current_time
-
-                    except Exception as e:
-                        # Jika terjadi error saat copy, hapus file tujuan yang tidak lengkap
-                        if os.path.exists(self._resolved_path):
-                            os.remove(self._resolved_path)
-                        raise Exception(f"Error saat menyalin: {str(e)}")
-
-                    # Verifikasi ukuran file setelah copy
-                    dst_size = os.path.getsize(self._resolved_path)
-                    if dst_size != src_size:
-                        if os.path.exists(self._resolved_path):
-                            os.remove(self._resolved_path)
-                        raise Exception(f"Verifikasi gagal - ukuran tidak sama (sumber: {src_size}, tujuan: {dst_size})")
-
-                    # Setelah verifikasi sukses, hapus file sumber dan hitung statistik
-                    os.remove(file_path)
-                    if original_path == self._resolved_path:  # Jika path tetap sama (tidak berubah)
-                        if os.path.exists(original_path):  # Dan file sudah ada sebelumnya
-                            self._update_stats('replaced')  # Berarti file diganti
-                    elif self._resolved_path != original_path:  # Jika path berubah
-                        self._update_stats('renamed')  # Berarti file diberi nama baru
-                    self._update_stats('success')
-                    self.moved_files.append(file_path)
-                    
-                except Exception as e:
-                    self._update_stats('failed')
-                    error_msg = f"Error memindahkan {filename}: {str(e)}"
-                    print(error_msg)
-                    self.after(0, self.main_window.update_status, error_msg)
-
-            stats_msg = self._get_stats_message("dipindahkan")
-            self.after(0, self.main_window.update_status, f"Selesai memindahkan file - {stats_msg}")
-            self.after(0, self._finish_move_operation, destination_folder)
-            
-        finally:
-            self.after(0, self._enable_buttons)
 
     def copy_files(self):
         if self.operation_running:
             return
             
-        if not tk.messagebox.askyesno("Konfirmasi", "Apakah Kamu yakin ingin menyalin file yang dipilih?"):
-            self.main_window.update_status("Penyalinan file dibatalkan")
+        if not self._validate_operation("copy"):
             return
             
-        # Reset the "all" flags at the start of a new operation
+        # Reset all flags at start of new operation  
         self.replace_all = False
         self.rename_all = False
         self.skip_all = False
-
-        destination_folder = self.selected_destination.get()
-        if not destination_folder:
-            destination_folder = filedialog.askdirectory(title="Pilih Folder Tujuan")
-            if not destination_folder:
-                return
-
-        files = list(self.file_listbox.get(0, tk.END))
-        if not files:
-            return
-
-        # Disable buttons during operation
+        
         self.operation_running = True
-        self.move_button["state"] = "disabled"
-        self.copy_button["state"] = "disabled"
-
-        # Start operation in background thread
+        self._disable_buttons()
+        
         thread = threading.Thread(
-            target=self._copy_files_thread,
-            args=(files, destination_folder),
+            target=self._process_files_thread,
+            args=(self.file_paths, self.selected_destination.get(), "copy"),
             daemon=True
         )
         thread.start()
 
-    def _copy_files_thread(self, files, destination_folder):
+    def _do_file_operation(self, src_path, dst_path, operation="copy"):
+        """Helper for file copy/move operations with proper error handling"""
+        try:
+            if not os.path.exists(src_path):
+                raise FileNotFoundError(f"File sumber tidak ditemukan: {src_path}")
+                
+            # Check permissions
+            if not os.access(src_path, os.R_OK):
+                raise PermissionError(f"Tidak ada akses baca ke file: {src_path}")
+                
+            if os.path.exists(dst_path) and not os.access(dst_path, os.W_OK):
+                raise PermissionError(f"Tidak ada akses tulis ke tujuan: {dst_path}")
+                
+            src_size = os.path.getsize(src_path)
+            if src_size == 0:
+                raise ValueError("File sumber kosong (0 bytes)")
+
+            # Copy operation with progress
+            BUFFER_SIZE = 32 * 1024 * 1024
+            copied_size = 0
+            start_time = time.time()
+            last_update = time.time()
+
+            with open(src_path, 'rb') as fsrc:
+                with open(dst_path, 'wb') as fdst:
+                    while True:
+                        buf = fsrc.read(BUFFER_SIZE)
+                        if not buf:
+                            break
+                        fdst.write(buf)
+                        fdst.flush()
+                        copied_size += len(buf)
+                        
+                        current_time = time.time()
+                        if current_time - last_update >= 0.05:
+                            yield copied_size, src_size, current_time - start_time
+                            last_update = current_time
+
+            # Verify size
+            dst_size = os.path.getsize(dst_path)
+            if dst_size != src_size:
+                if os.path.exists(dst_path):
+                    os.remove(dst_path)
+                raise ValueError(f"Verifikasi gagal - ukuran tidak sama (sumber: {src_size}, tujuan: {dst_size})")
+
+            # Delete source if moving
+            if operation == "move":
+                os.remove(src_path)
+                
+            return True
+
+        except Exception as e:
+            if os.path.exists(dst_path):
+                try:
+                    os.remove(dst_path)
+                except:
+                    pass
+            raise e
+
+    def _process_files_thread(self, files, destination_folder, operation="copy"):
+        """Combined function for move/copy operations"""
         try:
             total_files = len(files)
-            self.progress_bar["maximum"] = 100
-            self.progress_bar["value"] = 0
             self._reset_stats()
+            self.moved_files = []
 
-            for index, file_path in enumerate(files, 1):
-                if not os.path.exists(file_path):
-                    continue
-                    
-                filename = os.path.basename(file_path)
-                status_text = f"Menyalin {index}/{total_files}: {filename}"
-                
-                self.after(0, self._update_progress_text, status_text)
-                self.after(0, self.main_window.update_status, status_text)
-                
+            for index, (file_path, info) in enumerate(files.items(), 1):
                 try:
+                    if not os.path.exists(file_path):
+                        continue
+                        
+                    filename = info['name']
                     dst_path = os.path.join(destination_folder, filename)
-                    original_path = dst_path  # Simpan path asli untuk pengecekan
+                    
+                    # Reset resolved path untuk setiap file
                     self._resolved_path = None
                     
-                    # Cek apakah file sudah ada sebelum menampilkan dialog
+                    # Handle conflicts terlebih dahulu sebelum operasi file
                     if os.path.exists(dst_path):
+                        # Panggil dialog di main thread dan tunggu hasilnya
                         self.after(0, lambda p=dst_path: self._handle_conflict_async(p))
                         
+                        # Tunggu sampai user memberi keputusan
                         timeout = 0
                         while self._resolved_path is None and timeout < 300:
-                            self.update()
-                            self.after(100)
+                            time.sleep(0.1)
                             timeout += 1
                             
-                        if self._resolved_path is False:
+                        # Cek hasil keputusan user
+                        if self._resolved_path is False:  # User memilih skip
                             self._update_stats('skipped')
                             continue
-                        elif self._resolved_path is None:
+                        elif self._resolved_path is None:  # Dialog timeout
                             self._update_stats('failed')
                             raise TimeoutError("Dialog timeout")
-                    else:
-                        self._resolved_path = dst_path
+                            
+                        # Gunakan path yang sudah diresolve
+                        dst_path = self._resolved_path
 
-                    # Baca ukuran file sumber
-                    src_size = os.path.getsize(file_path)
-                    if src_size == 0:
-                        raise Exception("File sumber kosong (0 bytes)")
+                    # Update status sebelum memulai operasi
+                    status = f"Memproses {index}/{total_files}: {filename}"
+                    self.after(0, self._update_progress_text, status)
 
-                    BUFFER_SIZE = 32 * 1024 * 1024  # 32MB buffer
-                    copied_size = 0
-                    start_time = time.time()
-                    
-                    # Gunakan with untuk memastikan file ditutup dengan benar
                     try:
-                        with open(file_path, 'rb') as fsrc:
-                            with open(self._resolved_path, 'wb') as fdst:
-                                last_update = time.time()  # Tambahkan ini
-                                while True:
-                                    buf = fsrc.read(BUFFER_SIZE)
-                                    if not buf:
-                                        break
-                                    fdst.write(buf)
-                                    fdst.flush()  # Pastikan data ditulis ke disk
-                                    copied_size += len(buf)
-                                    
-                                    current_time = time.time()
-                                    # Update progress setiap 50ms
-                                    if current_time - last_update >= 0.05:  # 50ms
-                                        file_progress = (copied_size / src_size) * 100
-                                        total_progress = ((index - 1 + (copied_size / src_size)) / total_files) * 100
-                                        speed = copied_size / (current_time - start_time)
-                                        speed_text = f"{speed / (1024 * 1024):.2f} MB/s" if speed > 1024 * 1024 else f"{speed / 1024:.2f} KB/s"
-                                        
-                                        status_text = f"Menyalin {index}/{total_files}: {filename} ({int(file_progress)}%) - {speed_text}"
-                                        self.after(0, self._update_progress_text, status_text)
-                                        self.after(0, self.main_window.update_status, status_text)
-                                        self.after(0, self._increment_progress, total_progress)
-                                        self.update()
-                                        last_update = current_time
+                        # Lakukan operasi file setelah konflik resolved
+                        for copied_size, total_size, elapsed in self._do_file_operation(
+                            file_path, dst_path, operation
+                        ):
+                            progress = (copied_size / total_size) * 100
+                            total_progress = ((index - 1 + (copied_size / total_size)) / total_files) * 100
+                            speed = copied_size / elapsed
+                            speed_text = f"{speed / (1024 * 1024):.2f} MB/s" if speed > 1024 * 1024 else f"{speed / 1024:.2f} KB/s"
+                            
+                            status = f"{operation.capitalize()}ing {index}/{total_files}: {filename} ({int(progress)}%) - {speed_text}"
+                            self.after(0, self._update_progress_text, status)
+                            self.after(0, self._increment_progress, total_progress)
 
+                        # Update stats setelah operasi sukses
+                        self._update_stats('success')
+                        if operation == "move":
+                            self.moved_files.append(file_path)
+                            
                     except Exception as e:
-                        # Jika terjadi error saat copy, hapus file tujuan yang tidak lengkap
-                        if os.path.exists(self._resolved_path):
-                            os.remove(self._resolved_path)
-                        raise Exception(f"Error saat menyalin: {str(e)}")
+                        self._update_stats('failed')
+                        self.after(0, self.main_window.update_status, f"Error: {str(e)}")
+                        continue
 
-                    # Verifikasi ukuran file setelah copy
-                    dst_size = os.path.getsize(self._resolved_path)
-                    if dst_size != src_size:
-                        if os.path.exists(self._resolved_path):
-                            os.remove(self._resolved_path)
-                        raise Exception(f"Verifikasi gagal - ukuran tidak sama (sumber: {src_size}, tujuan: {dst_size})")
-
-                    # Hitung statistik setelah verifikasi berhasil
-                    if original_path == self._resolved_path:  # Jika path tetap sama (tidak berubah)
-                        if os.path.exists(original_path) and self.replace_all:  # Tambahkan pengecekan replace_all
-                            self._update_stats('replaced')  # Berarti file diganti
-                    elif self._resolved_path != original_path:  # Jika path berubah
-                        self._update_stats('renamed')  # Berarti file diberi nama baru
-                    self._update_stats('success')
-                    
                 except Exception as e:
-                    self._update_stats('failed')
-                    error_msg = f"Error menyalin {filename}: {str(e)}"
-                    print(error_msg)
-                    self.after(0, self.main_window.update_status, error_msg)
+                    self._update_stats('failed') 
+                    self.after(0, self.main_window.update_status, f"Error: {str(e)}")
 
             # Update final status
-            stats_msg = self._get_stats_message("disalin")
-            self.after(0, self.main_window.update_status, f"Selesai menyalin file - {stats_msg}")
-            self.after(0, self._finish_copy_operation, destination_folder)
+            stats_msg = self._get_stats_message(f"di{operation}")
+            self.after(0, self.main_window.update_status, f"Selesai {operation} file - {stats_msg}")
             
+            # Call appropriate finish handler
+            if operation == "move":
+                self.after(0, self._finish_move_operation, destination_folder)
+            else:
+                self.after(0, self._finish_copy_operation, destination_folder)
+                
         finally:
             self.after(0, self._enable_buttons)
 
-    # Add new helper methods for async file conflict handling
+    def _validate_operation(self, op_type):
+        """Validate operation before starting"""
+        if not self.file_paths:
+            messagebox.showwarning("Peringatan", "Tidak ada file yang dipilih!")
+            return False
+            
+        if not self.selected_destination.get():
+            messagebox.showwarning("Peringatan", "Pilih lokasi tujuan terlebih dahulu!")
+            return False
+            
+        if not os.path.exists(self.selected_destination.get()):
+            messagebox.showerror("Error", "Folder tujuan tidak ditemukan!")
+            return False
+            
+        if not tk.messagebox.askyesno(
+            "Konfirmasi", 
+            f"Apakah Kamu yakin ingin {op_type} file yang dipilih?"
+        ):
+            self.main_window.update_status(f"{op_type.capitalize()} file dibatalkan")
+            return False
+            
+        return True
+
+    def _disable_buttons(self):
+        """Disable buttons during operation"""
+        self.move_button["state"] = "disabled"
+        self.copy_button["state"] = "disabled"
+        self.update_idletasks()
+
     def _handle_conflict_async(self, dst_path):
         if not os.path.exists(dst_path):
             self._resolved_path = dst_path
@@ -792,8 +784,11 @@ class RelocateFiles(ttk.LabelFrame):
         self.rename_all = False
         self.skip_all = False
 
-        # Clear file listbox
-        self.file_listbox.delete(0, tk.END)
+        # Clear stored paths
+        self.file_paths.clear()
+        
+        # Clear text widget
+        self.file_listbox.delete("1.0", tk.END)
         self.update_dropzone_overlay()
         
         # Clear treeview selection
@@ -814,7 +809,7 @@ class RelocateFiles(ttk.LabelFrame):
         self.open_folder_button["state"] = "disabled"
 
     def update_button_states(self, event=None):
-        has_files = len(self.file_listbox.get(0, tk.END)) > 0
+        has_files = bool(self.file_paths)  # Use stored paths instead
         has_destination = bool(self.selected_destination.get())
         
         state = "normal" if (has_files and has_destination) else "disabled"
@@ -836,12 +831,12 @@ class RelocateFiles(ttk.LabelFrame):
     def _enable_buttons(self):
         """Re-enable buttons after operation completes"""
         self.operation_running = False
-        if len(self.file_listbox.get(0, tk.END)) > 0 and self.selected_destination.get():
-            self.move_button["state"] = "normal"
-            self.copy_button["state"] = "normal"
-        else:
-            self.move_button["state"] = "disabled" 
-            self.copy_button["state"] = "disabled"
+        has_files = bool(self.file_paths)  # Gunakan file_paths dictionary
+        has_destination = bool(self.selected_destination.get())
+        
+        state = "normal" if (has_files and has_destination) else "disabled"
+        self.move_button["state"] = state
+        self.copy_button["state"] = state
         
         self.update_idletasks()
 
@@ -976,44 +971,36 @@ class RelocateFiles(ttk.LabelFrame):
         return ", ".join(msg) if msg else "Dibatalkan"
 
     def handle_drop(self, files):
-        """Handle drag and drop file events"""
-        duplicates = []  # Define duplicates list here
-        
-        # Process each dropped file/folder
+        duplicates = []
         for path in files:
-            # Convert bytes to string if needed
             if isinstance(path, bytes):
                 path = path.decode('utf-8')
                 
             if os.path.isdir(path):
-                # If it's a directory, add all files in it
                 folder_files = [os.path.join(path, f) for f in os.listdir(path)]
                 for file_path in folder_files:
-                    if os.path.isfile(file_path):  # Only add files, not subdirectories
-                        # Cek duplikasi sebelum menambahkan
-                        if file_path not in self.file_listbox.get(0, tk.END):
-                            self.file_listbox.insert(tk.END, file_path)
-                        else:
-                            duplicates.append(os.path.basename(file_path))
+                    if os.path.isfile(file_path):
+                        thumb = self.get_thumbnail(file_path)
+                        if thumb:
+                            if not self.add_file_to_list(file_path, thumb):
+                                duplicates.append(os.path.basename(file_path))
             else:
-                # If it's a file, add it directly if belum ada
-                if path not in self.file_listbox.get(0, tk.END):  # Fixed extra parenthesis
-                    self.file_listbox.insert(tk.END, path)
-                else:
-                    duplicates.append(os.path.basename(path))
+                if os.path.isfile(path):
+                    thumb = self.get_thumbnail(path)
+                    if thumb:
+                        if not self.add_file_to_list(path, thumb):
+                            duplicates.append(os.path.basename(path))
         
         if duplicates:
             self.main_window.update_status(f"File sudah ada dalam daftar: {', '.join(duplicates)}")
         
-        # Update button states after adding files
         self.update_dropzone_overlay()
         self.update_button_states()
-        
-        return "ok"  # Required by some systems
+        return "ok"
 
     def update_dropzone_overlay(self):
-        """Update overlay visibility based on listbox content"""
-        if self.file_listbox.size() == 0:
+        """Update overlay visibility based on stored paths"""
+        if not self.file_paths:
             self.overlay_label.place(relx=0.5, rely=0.5, anchor='center')
         else:
             self.overlay_label.place_forget()
@@ -1026,5 +1013,56 @@ class RelocateFiles(ttk.LabelFrame):
                 "Operasi file sedang berjalan.\nYakin ingin keluar?"
             )
         return True
+
+    def redraw_thumbnails(self, event=None):
+        """Redraw all thumbnails in text widget"""
+        try:
+            self.file_listbox.delete("1.0", tk.END)
+            for file_path, info in self.file_paths.items():
+                thumb = info['thumb']
+                if thumb:
+                    self.file_listbox.insert(tk.END, " ")  # Small initial space
+                    self.file_listbox.image_create(tk.END, image=thumb)
+                    self.file_listbox.insert(tk.END, f" {info['name']}\n", "item")
+        except Exception as e:
+            print(f"Error redrawing thumbnails: {e}")
+
+    def _get_files(self):
+        """Helper to get current files in text widget"""
+        return list(self.file_paths.keys())  # Return stored file paths instead of parsing text
+
+    def on_text_click(self, event):
+        """Handle text widget clicks for selection"""
+        self.file_listbox.tag_remove("selected", "1.0", tk.END)
+        try:
+            index = self.file_listbox.index(f"@{event.x},{event.y}")
+            line = int(float(index))
+            if line % 2 == 1:  # Only select text lines, not spacing lines
+                self.file_listbox.tag_add("selected", f"{line}.0", f"{line}.end")
+        except:
+            pass
+        self.update_button_states()
+
+    def get_selected_files(self):
+        """Get selected files from text widget"""
+        selected = []
+        try:
+            content = self.file_listbox.get("1.0", tk.END)
+            lines = content.split('\n')
+            ranges = self.file_listbox.tag_ranges("selected")
+            
+            for i in range(0, len(ranges), 2):
+                start_line = int(float(str(ranges[i]).split('.')[0]))
+                if start_line < len(lines):
+                    selected_text = lines[start_line-1].strip()
+                    if selected_text:
+                        # Find matching file path from stored paths
+                        for path, info in self.file_paths.items():
+                            if info['name'] in selected_text:
+                                selected.append(path)
+                                break
+        except Exception as e:
+            print(f"Error getting selected files: {e}")
+        return selected
 
 # ...end of class...

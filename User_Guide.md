@@ -2,8 +2,6 @@
 
 # Panduan Pembuatan Arsip Baru.
 
-## Ringkasan :
-
 Pernah merasa repot sama tumpukan folder yang berantakan di komputer? 
 
 Nah, `Rak Arsip` hadir untuk membantu kamu! Aplikasi ini bakal bikin hidup kamu lebih mudah dengan mengelola file dan folder secara sistematis. Nggak perlu lagi deh bikin folder bersarang (folder di dalam folder) secara manual. Semua proses pembuatan folder akan ditangani oleh `Rak Arsip`. Jadi, kamu bisa lebih fokus ke pekerjaan dan santai sejenak tanpa pusing mikirin folder-folder itu.
