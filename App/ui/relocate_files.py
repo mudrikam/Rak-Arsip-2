@@ -107,16 +107,37 @@ class RelocateFiles(ttk.LabelFrame):
             return self.thumbnail_cache[file_path]
             
         try:
-            # Check if file is an image
-            img = Image.open(file_path)
-            # Resize to thumbnail
-            img.thumbnail((32, 32))
-            # Convert to PhotoImage
-            thumb = ImageTk.PhotoImage(img)
-            self.thumbnail_cache[file_path] = thumb
-            return thumb
-        except Exception:
-            # Return default icon for non-image files
+            # Get file extension
+            ext = os.path.splitext(file_path)[1].lower().lstrip('.')
+            
+            # Check if there's an icon for this extension
+            icon_path = os.path.join(self.BASE_DIR, "Img", "Icon", "Extension", f"{ext}.png")
+            
+            if os.path.exists(icon_path):
+                # Load and use custom icon for this extension
+                img = Image.open(icon_path)
+                img.thumbnail((32, 32))
+                thumb = ImageTk.PhotoImage(img)
+                self.thumbnail_cache[file_path] = thumb
+                return thumb
+                
+            # Try to handle as image if no custom icon exists
+            try:
+                img = Image.open(file_path)
+                # Check if it's actually an image by accessing format
+                if img.format:
+                    img.thumbnail((32, 32))
+                    thumb = ImageTk.PhotoImage(img)
+                    self.thumbnail_cache[file_path] = thumb
+                    return thumb
+            except:
+                pass
+                
+            # If all else fails, return default icon
+            return self.default_icon
+                
+        except Exception as e:
+            print(f"Error generating thumbnail for {file_path}: {e}")
             return self.default_icon
 
     def create_widgets(self):
@@ -289,6 +310,7 @@ class RelocateFiles(ttk.LabelFrame):
         self.file_listbox.bind('<<ListboxSelect>>', self.update_button_states)
         self.file_listbox.bind('<Configure>', self.redraw_thumbnails)
         self.tree.bind('<<TreeviewSelect>>', lambda e: (self.on_select_destination(e), self.update_button_states()))
+        self.tree.bind('<Double-1>', self.on_treeview_double_click)  # Add double click handler
 
     def on_treeview_configure(self, event):
         total_width = event.width
@@ -372,7 +394,9 @@ class RelocateFiles(ttk.LabelFrame):
                 if str(dest_number) == number:
                     self.selected_destination.set(dest_location)
                     self.update_location_label(dest_location)
-                    self.open_folder_button["state"] = "normal"  # Sudah benar disini
+                    self.open_folder_button["state"] = "normal"
+                    # Update status bar with location
+                    self.main_window.update_status(f"Lokasi: {dest_location}")
                     break
         else:
             # Cek apakah ada folder yang dipilih manual
@@ -380,6 +404,21 @@ class RelocateFiles(ttk.LabelFrame):
                 self.open_folder_button["state"] = "normal"
             else:
                 self.open_folder_button["state"] = "disabled"
+
+    def on_treeview_double_click(self, event):
+        """Handle double click on treeview item"""
+        selection = self.tree.selection()
+        if selection:
+            item_values = self.tree.item(selection[0])['values']
+            number = str(item_values[0])
+            # Find matching destination using number
+            for dest_number, dest_date, dest_name, dest_location in self.destinations:
+                if str(dest_number) == number:
+                    if os.path.exists(dest_location):
+                        os.startfile(dest_location)
+                    else:
+                        messagebox.showerror("Error", f"Folder tidak ditemukan:\n{dest_location}")
+                    break
 
     def select_destination_folder(self):
         folder = filedialog.askdirectory()
