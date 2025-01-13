@@ -847,11 +847,25 @@ class RelocateFiles(ttk.LabelFrame):
         
         # Remove only successfully moved files from listbox
         if self.moved_files:
-            items = list(self.file_listbox.get(0, tk.END))
-            remaining_items = [item for item in items if item not in self.moved_files]
-            self.file_listbox.delete(0, tk.END)
-            for item in remaining_items:
-                self.file_listbox.insert(tk.END, item)
+            # Get content using correct Text widget indices
+            content = self.file_listbox.get("1.0", tk.END)
+            lines = content.split('\n')
+            remaining_lines = []
+            
+            # Filter out moved files
+            for line in lines:
+                if not any(os.path.basename(moved) in line for moved in self.moved_files):
+                    remaining_lines.append(line)
+                    
+            # Clear and reinsert remaining lines
+            self.file_listbox.delete("1.0", tk.END)
+            if remaining_lines:
+                self.file_listbox.insert("1.0", "\n".join(remaining_lines))
+                
+            # Update file_paths dictionary
+            for moved_file in self.moved_files:
+                if moved_file in self.file_paths:
+                    del self.file_paths[moved_file]
         
         # Buat pesan detail
         detail_msg = []
@@ -859,7 +873,7 @@ class RelocateFiles(ttk.LabelFrame):
             # Tambahkan daftar file yang berhasil
             success_files = [os.path.basename(f) for f in self.moved_files]
             files_msg = "\n".join(success_files)
-            detail_msg.append(f"File yang berhasil dipindahkan:\n{files_msg}\n")
+            detail_msg.append(f"File yang berhasil dipindahkan:\n\n{files_msg}\n")
             detail_msg.append(f"Ke: {destination_folder}")
             
             # Tambahkan statistik tambahan jika ada
@@ -878,10 +892,13 @@ class RelocateFiles(ttk.LabelFrame):
             tk.messagebox.showinfo("Selesai", "\n".join(detail_msg))
             self.main_window.update_status(f"File berhasil dipindahkan ke {destination_folder}")
         else:
-            error_files = [item for item in items if item not in self.moved_files]
-            if error_files:
-                files_msg = "\n".join([os.path.basename(f) for f in error_files])
-                detail_msg.append(f"File yang gagal dipindahkan:\n{files_msg}\n")
+            # Get remaining files for error message
+            content = self.file_listbox.get("1.0", tk.END)
+            remaining_files = [line.strip() for line in content.split('\n') if line.strip()]
+            
+            if remaining_files:
+                files_msg = "\n".join(remaining_files)
+                detail_msg.append(f"File yang gagal dipindahkan:\n\n{files_msg}\n")
             
             if self.stats['failed'] > 0:
                 detail_msg.append(f"Total {self.stats['failed']} file gagal dipindahkan")
