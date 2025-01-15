@@ -78,7 +78,6 @@ class ProjectLibrary(ttk.LabelFrame):
         # Setup directory and file paths through library manager
         self.BASE_DIR = os.path.join(BASE_DIR, "Database", "Library")
         self.csv_file_path = self.library_manager.get_library_path()
-        self.last_modified_time = 0
         
         # Initialize directory and file first through library manager
         self.initialize_library()
@@ -103,6 +102,7 @@ class ProjectLibrary(ttk.LabelFrame):
         self.open_icon = self._load_icon(os.path.join(BASE_DIR, "Img", "icon", "ui", "folder.png"))
         self.backup_icon = self._load_icon(os.path.join(BASE_DIR, "Img", "icon", "ui", "backup.png"))
         self.import_icon = self._load_icon(os.path.join(BASE_DIR, "Img", "icon", "ui", "import.png"))
+        self.restore_icon = self._load_icon(os.path.join(BASE_DIR, "Img", "icon", "ui", "restore.png"))
 
         # Update open button with icon
         self.open_button = ttk.Button(
@@ -170,7 +170,18 @@ class ProjectLibrary(ttk.LabelFrame):
             command=self.import_existing_library,
             padding=5
         )
-        self.import_button.pack(side=tk.LEFT)
+        self.import_button.pack(side=tk.LEFT, padx=(0, 10))
+
+        self.restore_button = ttk.Button(
+            self.button_frame,
+            text="Pulihkan",
+            image=self.restore_icon,
+            compound='left',
+            command=self.restore_library,
+            padding=5,
+            state="disabled"
+        )
+        self.restore_button.pack(side=tk.LEFT)
 
         self.reminder_label = ttk.Label(self.button_frame, text="Buatlah cadangan berkala untuk menghindari kehilangan akses daftar pustaka.", foreground="#999999")
         self.reminder_label.pack(side=tk.LEFT, padx=10)
@@ -209,19 +220,17 @@ class ProjectLibrary(ttk.LabelFrame):
                 reader = csv.reader(file)
                 header = next(reader, None)
                 
-                # Validate header
                 if header != ["No", "Tanggal", "Nama", "Lokasi"]:
                     raise ValueError("Format CSV tidak valid")
                 
-                # Validate and load rows
+                # Perbaiki validasi row untuk lebih efisien
                 for row in reader:
-                    if len(row) != 4:
-                        continue
-                    try:
-                        int(row[0])  # Validate No is numeric
-                        rows.append(row)
-                    except ValueError:
-                        continue
+                    if len(row) == 4:
+                        try:
+                            int(row[0])  # Validate No is numeric
+                            rows.append(row)
+                        except ValueError:
+                            continue
                         
             if rows:
                 rows.sort(key=lambda x: int(x[0]), reverse=True)
@@ -251,12 +260,15 @@ class ProjectLibrary(ttk.LabelFrame):
             messagebox.showwarning("Periksa!", "Sepertinya ada masalah pada lokasi file")
 
     def check_for_upDates(self):
-        """Check for file updates"""
+        """Check for file updates and .old file existence"""
         try:
             current_modified_time = os.path.getmtime(self.csv_file_path)
             if current_modified_time != self.last_modified_time:
                 self.last_modified_time = current_modified_time
                 self.load_library()
+            # Only call update_restore_button if it exists and has been initialized
+            if hasattr(self, 'restore_button'):
+                self.update_restore_button()
         except FileNotFoundError:
             # If file is deleted, try to recreate it
             if self.initialize_library():
@@ -326,47 +338,104 @@ class ProjectLibrary(ttk.LabelFrame):
 
     def import_existing_library(self):
         try:
-            # Tampilkan dialog untuk memilih file CSV yang akan diimpor
             import_file_path = filedialog.askopenfilename(
                 filetypes=[("CSV files", "*.csv"), ("All files", "*.*")]
             )
             if not import_file_path:
-                return  # Jika pengguna membatalkan dialog, keluar dari fungsi
+                return
 
-            # Baca data dari file CSV yang dipilih
-            with open(import_file_path, mode="r", encoding="utf-8") as import_file:
-                reader = csv.reader(import_file)
-                next(reader, None)  # Lewati baris header
-                import_rows = [row for row in reader]
+            # Backup existing file with .old extension first
+            if os.path.exists(self.csv_file_path):
+                backup_path = f"{self.csv_file_path}.old"
+                os.replace(self.csv_file_path, backup_path)
 
-            # Baca data dari project_library.csv
-            with open(self.csv_file_path, mode="r", encoding="utf-8") as existing_file:
-                existing_reader = csv.reader(existing_file)
-                existing_rows = [row for row in existing_reader]
+            # Read existing data from backup
+            existing_rows = []
+            last_no = 0
+            with open(backup_path, 'r', encoding='utf-8') as existing_file:
+                reader = csv.reader(existing_file)
+                header = next(reader)  # Skip header
+                for row in reader:
+                    existing_rows.append(row)
+                    try:
+                        last_no = max(last_no, int(row[0]))
+                    except ValueError:
+                        continue
 
-            # Jika project_library.csv kosong, gantikan dengan data dari file yang diimpor
-            if len(existing_rows) <= 1:  # <= 1 karena baris pertama adalah header
-                with open(self.csv_file_path, mode="w", newline="", encoding="utf-8") as existing_file:
-                    writer = csv.writer(existing_file)
-                    writer.writerow(["No", "Tanggal", "Nama", "Lokasi"])
-                    for row in import_rows:
-                        writer.writerow(row)
-            else:
-                # Jika project_library.csv sudah ada isinya, tambahkan data dari file yang diimpor
-                last_no = int(existing_rows[-1][0])  # Ambil nomor terakhir dari project_library.csv
-                with open(self.csv_file_path, mode="a", newline="", encoding="utf-8") as existing_file:
-                    writer = csv.writer(existing_file)
-                    for row in import_rows:
+            # Read and process imported data
+            imported_rows = []
+            with open(import_file_path, 'r', encoding='utf-8') as source:
+                reader = csv.reader(source)
+                header = next(reader)  # Get header row
+                
+                # Validate header
+                if header != ["No", "Tanggal", "Nama", "Lokasi"]:
+                    raise ValueError("Format CSV tidak valid")
+                
+                # Add imported data with new numbers and _import suffix
+                for row in reader:
+                    if len(row) == 4:
                         last_no += 1
-                        new_name = f"{row[2]}_import"  # Tambahkan suffix _import pada nama file
-                        new_row = [last_no, row[1], new_name, row[3]]
-                        writer.writerow(new_row)
+                        new_row = row.copy()
+                        new_row[0] = str(last_no)  # Update number
+                        new_row[2] = f"{row[2]}_import"  # Add _import to name
+                        imported_rows.append(new_row)
 
-            messagebox.showinfo("Berhasil", "Daftar Pustaka telah diimpor dengan sukses.")
-            self.main_window.update_status("Daftar Pustaka telah diimpor dengan sukses.")
-            self.load_library()  # Muat ulang data di Treeview
+            # Write combined data to library file
+            with open(self.csv_file_path, 'w', newline='', encoding='utf-8') as dest:
+                writer = csv.writer(dest)
+                writer.writerow(["No", "Tanggal", "Nama", "Lokasi"])  # Write header
+                writer.writerows(existing_rows)  # Write existing data
+                writer.writerows(imported_rows)  # Append imported data
+
+            messagebox.showinfo("Berhasil", 
+                f"Berhasil menambahkan {len(imported_rows)} data baru ke Daftar Pustaka.\n" +
+                "Data lama telah dicadangkan dengan ekstensi .old")
+            self.main_window.update_status("Data baru berhasil ditambahkan dan data lama dicadangkan")
+            self.load_library()
+            self.update_restore_button()
+
+        except ValueError as ve:
+            messagebox.showerror("Error", str(ve))
         except Exception as e:
             messagebox.showerror("Error", f"Gagal mengimpor Daftar Pustaka:\n{e}")
+
+    def restore_library(self):
+        """Restore library from .old file"""
+        if not messagebox.askyesno("Konfirmasi Pemulihan", 
+            "Tindakan ini akan:\n"
+            "1. Menghapus daftar pustaka yang baru diimpor\n"
+            "2. Memulihkan daftar pustaka yang lama\n\n"
+            "Kamu yakin ingin melanjutkan?"):
+            return
+
+        try:
+            old_file = f"{self.csv_file_path}.old"
+            if os.path.exists(old_file):
+                # Remove current file
+                if os.path.exists(self.csv_file_path):
+                    os.remove(self.csv_file_path)
+                
+                # Restore .old file
+                os.rename(old_file, self.csv_file_path)
+                
+                messagebox.showinfo("Sukses", "Daftar pustaka berhasil dipulihkan ke versi sebelumnya")
+                self.main_window.update_status("Daftar pustaka berhasil dipulihkan")
+                self.load_library()
+                self.update_restore_button()
+            else:
+                messagebox.showinfo("Informasi", "Tidak ada file cadangan yang dapat dipulihkan")
+                
+        except Exception as e:
+            messagebox.showerror("Error", f"Gagal memulihkan daftar pustaka:\n{e}")
+
+    def update_restore_button(self):
+        """Enable/disable restore button based on existence of .old file"""
+        old_file = f"{self.csv_file_path}.old"
+        if os.path.exists(old_file):
+            self.restore_button.configure(state="normal")
+        else:
+            self.restore_button.configure(state="disabled")
 
     def on_resize(self, event):
         """Adjust column widths dynamically based on window size."""
@@ -376,16 +445,6 @@ class ProjectLibrary(ttk.LabelFrame):
         remaining_width = width - fixed_width
         self.tree.column("Nama", width=int(remaining_width * 0.35))
         self.tree.column("Lokasi", width=int(remaining_width * 0.65))
-
-    def ensure_library_exists(self):
-        """Public method to ensure library exists and is initialized"""
-        if not os.path.exists(self.csv_file_path):
-            return self.initialize_library()
-        return True
-
-    def get_library_path(self):
-        """Return the path to the library file"""
-        return self.csv_file_path
 
     def _load_icon(self, icon_path, size=(16, 16)):
         """Helper function to load and process icons"""
