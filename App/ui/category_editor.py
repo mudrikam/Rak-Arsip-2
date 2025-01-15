@@ -58,9 +58,13 @@ class CategoryEditor(ttk.LabelFrame):
         except FileNotFoundError:
             self.last_modified_time = None
 
-        # Buat LabelFrame kiri untuk "Kategori :"
+        # Tambahkan variabel untuk menyimpan konten terakhir
+        self.last_content = self.get_category_content()
+
+        # Buat LabelFrame kiri untuk "Kategori :" dengan lebar tetap
         self.left_frame = ttk.LabelFrame(self, text="Kategori :", padding=10)
-        self.left_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, pady=0, padx=(0, 5))
+        self.left_frame.pack(side=tk.LEFT, fill=tk.Y, expand=False, pady=0, padx=(0, 10))
+        self.left_frame.configure(width=200)  # Set lebar tetap
 
         # Tambahkan Frame untuk Entry dan Tombol tambah kategori
         self.entry_button_frame = ttk.Frame(self.left_frame)
@@ -72,10 +76,32 @@ class CategoryEditor(ttk.LabelFrame):
         self.category_entry.bind("<KeyRelease>", self.sanitize_category_entry)
         self.category_entry.bind("<FocusIn>", self.disable_delete_button)
         self.category_entry.bind("<FocusOut>", self.enable_delete_button)
-        self.category_entry.bind("<Return>", lambda event: self.add_category())
+        self.category_entry.bind("<Return>", lambda e: (self.handle_category_entry_return(), self.focus_text_without_newline()))
+
+        # Load and resize icons
+        plus_icon_path = os.path.join(BASE_DIR, "Img", "icon", "ui", "plus.png")
+        delete_icon_path = os.path.join(BASE_DIR, "Img", "icon", "ui", "delete.png")
+        
+        # Create PhotoImage objects and resize them to 16x16
+        if os.path.exists(plus_icon_path):
+            plus_img = tk.PhotoImage(file=plus_icon_path)
+            self.plus_icon = plus_img.subsample(plus_img.width()//16, plus_img.height()//16)
+        else:
+            self.plus_icon = None
+            
+        if os.path.exists(delete_icon_path):
+            delete_img = tk.PhotoImage(file=delete_icon_path)
+            self.delete_icon = delete_img.subsample(delete_img.width()//16, delete_img.height()//16)
+        else:
+            self.delete_icon = None
 
         # Tambahkan Tombol untuk menambah kategori baru
-        self.add_category_button = ttk.Button(self.entry_button_frame, text="+", command=self.add_category)
+        self.add_category_button = ttk.Button(
+            self.entry_button_frame,
+            image=self.plus_icon if self.plus_icon is not None else "",
+            command=self.add_category,
+            width=1,  # Set fixed width
+        )
         self.add_category_button.pack(side=tk.LEFT, padx=(5, 0))
 
         # Buat Frame untuk Treeview dan scrollbar
@@ -98,7 +124,15 @@ class CategoryEditor(ttk.LabelFrame):
         self.delete_button_frame.pack(side=tk.BOTTOM, fill=tk.X, pady=(10, 0))
 
         # Tambahkan Tombol Hapus di bawah Treeview
-        self.delete_category_button = ttk.Button(self.delete_button_frame, text="Hapus", command=self.delete_category, state=tk.DISABLED, padding=5)
+        self.delete_category_button = ttk.Button(
+            self.delete_button_frame, 
+            text="Hapus",
+            image=self.delete_icon if self.delete_icon is not None else "",
+            compound='left',  # Show icon to the left of text
+            command=self.delete_category, 
+            state=tk.DISABLED, 
+            padding=5
+        )
         self.delete_category_button.pack(fill=tk.X)
 
         # Muat kategori dari Category.txt
@@ -106,13 +140,37 @@ class CategoryEditor(ttk.LabelFrame):
 
         # Buat LabelFrame kanan untuk "Sub Kategori :"
         self.right_frame = ttk.LabelFrame(self, text="Sub Kategori :", padding=10)
-        self.right_frame.pack(side=tk.RIGHT, fill=tk.BOTH, expand=True, pady=0, padx=(5, 0))
+        self.right_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, pady=0)  # Ubah RIGHT menjadi LEFT
 
-        # Buat widget Text untuk sub-kategori
+        # Add rename frame and controls
+        self.rename_frame = ttk.Frame(self.right_frame)
+        self.rename_frame.pack(fill=tk.X, pady=(0, 10))
+        self.rename_frame.grid_columnconfigure(0, weight=1)
+
+        self.rename_entry = ttk.Entry(self.rename_frame, font=("Arial", 12))
+        self.rename_entry.grid(row=0, column=0, sticky="ew", padx=(0, 5))
+        self.rename_entry.bind("<Return>", lambda e: (self.handle_rename_entry_return(), self.focus_text_without_newline()))
+
+        # Load rename icon
+        self.rename_icon = tk.PhotoImage(file=os.path.join(BASE_DIR, "Img", "icon", "ui", "rename.png"))
+        self.rename_icon = self.rename_icon.subsample(self.rename_icon.width() // 16, self.rename_icon.height() // 16)
+
+        ttk.Button(self.rename_frame, 
+                  text="Ganti",
+                  command=self.rename_current_category,
+                  image=self.rename_icon,
+                  compound=tk.LEFT,
+                  padding=3,
+                  width=8).grid(row=0, column=1)
+
+        # Buat widget Text untuk sub-kategori dengan binding yang dimodifikasi
         self.subcategory_text = scrolledtext.ScrolledText(self.right_frame, wrap=tk.WORD)
         self.subcategory_text.pack(side=tk.TOP, fill=tk.BOTH, expand=True)
+        
+        # Sederhanakan binding
         self.subcategory_text.bind("<KeyPress>", self.replace_special_characters)
         self.subcategory_text.bind("<KeyRelease>", self.save_subcategory_text)
+        self.subcategory_text.bind("<FocusIn>", self.handle_text_focus_in)
 
         # Variabel untuk menyimpan kategori yang dipilih saat ini
         self.selected_category = None
@@ -120,14 +178,23 @@ class CategoryEditor(ttk.LabelFrame):
         # Mulai memonitor Category.txt untuk perubahan
         self.check_for_updates()
 
-    def load_categories(self):
+    def load_categories(self, preserve_selection=None):
+        """Load categories and optionally preserve selection"""
+        # Simpan item yang sedang dipilih jika tidak ada parameter preserve_selection
+        if preserve_selection is None and self.category_tree.selection():
+            preserve_selection = self.category_tree.item(self.category_tree.selection()[0])['values'][0]
+
         self.category_tree.delete(*self.category_tree.get_children())  # Hapus kategori yang ada
         if os.path.exists(self.category_file):
             with open(self.category_file, "r") as file:
                 categories = file.readlines()
             categories = sorted([category.strip() for category in categories])  # Sort categories alphabetically
             for category in categories:
-                self.category_tree.insert("", tk.END, values=(category,))
+                item = self.category_tree.insert("", tk.END, values=(category,))
+                # Pilih kembali item yang sebelumnya dipilih
+                if preserve_selection and category == preserve_selection:
+                    self.category_tree.selection_set(item)
+                    self.category_tree.see(item)
 
     def on_category_select(self, event):
         selected_item = self.category_tree.selection()
@@ -135,24 +202,34 @@ class CategoryEditor(ttk.LabelFrame):
             self.selected_category = self.category_tree.item(selected_item[0], "values")[0]
             self.load_subcategories(self.selected_category)
             self.delete_category_button.config(state=tk.NORMAL)
+            # Update rename entry with current category name
+            self.rename_entry.delete(0, tk.END)
+            self.rename_entry.insert(0, self.selected_category)
         else:
             self.selected_category = None
             self.delete_category_button.config(state=tk.DISABLED)
+            self.rename_entry.delete(0, tk.END)
 
     def load_subcategories(self, category):
+        """Load subcategories dengan penanganan error yang lebih baik"""
         subcategory_file = os.path.join(self.SUB_CATEGORY_DIR, f"{category}.txt")
         self.subcategory_text.delete(1.0, tk.END)
         
-        # Create subcategory file if it doesn't exist
-        if not os.path.exists(subcategory_file):
-            with open(subcategory_file, "w") as file:
-                pass
-            self.main_window.update_status(f"File sub kategori untuk '{category}' telah dibuat!")
+        try:
+            if not os.path.exists(subcategory_file):
+                with open(subcategory_file, "w") as file:
+                    pass
+                self.main_window.update_status(f"File sub kategori untuk '{category}' telah dibuat!")
+            
+            with open(subcategory_file, "r") as file:
+                content = file.read().rstrip('\n')
+                if content:
+                    self.subcategory_text.insert(tk.END, content)
+            
+        except Exception as e:
+            self.main_window.update_status(f"Error loading subcategory: {str(e)}")
         
-        # Read existing content
-        with open(subcategory_file, "r") as file:
-            subcategories = file.read()
-        self.subcategory_text.insert(tk.END, subcategories)
+        return self.subcategory_text.get(1.0, tk.END).rstrip('\n')
 
     def sanitize_category_entry(self, event):
         sanitized_text = self.sanitize_category_text(self.category_entry.get())
@@ -180,15 +257,18 @@ class CategoryEditor(ttk.LabelFrame):
             return "break"
 
     def save_subcategory_text(self, event):
-        if self.selected_category:
-            subcategory_file = os.path.join(self.SUB_CATEGORY_DIR, f"{self.selected_category}.txt")
-            # Create directory only if it doesn't exist
-            if not os.path.exists(self.SUB_CATEGORY_DIR):
-                os.makedirs(self.SUB_CATEGORY_DIR)
+        """Simpan teks dengan penanganan error yang lebih baik"""
+        if not self.selected_category:
+            return
             
-            # Save the content
+        try:
+            subcategory_file = os.path.join(self.SUB_CATEGORY_DIR, f"{self.selected_category}.txt")
+            os.makedirs(self.SUB_CATEGORY_DIR, exist_ok=True)
+            
             with open(subcategory_file, "w") as file:
                 file.write(self.subcategory_text.get(1.0, tk.END))
+        except Exception as e:
+            self.main_window.update_status(f"Error saving subcategory: {str(e)}")
 
     def add_category(self):
         new_category = self.category_entry.get().strip()
@@ -218,9 +298,30 @@ class CategoryEditor(ttk.LabelFrame):
             # Muat ulang kategori
             self.load_categories()
             self.category_entry.delete(0, tk.END)
+            
+            # Pilih kategori baru di treeview
+            for item in self.category_tree.get_children():
+                if self.category_tree.item(item)['values'][0] == new_category:
+                    self.category_tree.selection_set(item)
+                    self.category_tree.see(item)
+                    self.selected_category = new_category
+                    # Load content terlebih dahulu
+                    self.load_subcategories(new_category)
+                    # Kemudian fokus setelah konten dimuat
+                    self.focus_text_without_newline()
+                    break
+            
+            # Fokus ke area teks sub-kategori tanpa menambah newline
+            if new_category:
+                # ...existing code...
+                # Modifikasi bagian fokus
+                self.focus_text_without_newline()
+                # Hapus newline yang mungkin ditambahkan saat focus_set
+                content = self.subcategory_text.get("1.0", tk.END)
+                if content == '\n':  # Jika hanya berisi newline
+                    self.subcategory_text.delete("1.0", tk.END)
         else:
             messagebox.showwarning("Peringatan", "Nama kategori tidak boleh kosong!")
-
 
     def delete_category(self):
         if self.selected_category:
@@ -261,19 +362,125 @@ class CategoryEditor(ttk.LabelFrame):
         else:
             self.delete_category_button.config(state=tk.DISABLED)
 
-    def check_for_updates(self):
-        try:
-            current_modified_time = os.path.getmtime(self.category_file)
-            if current_modified_time != self.last_modified_time:
-                self.last_modified_time = current_modified_time
-                self.load_categories()
-        except FileNotFoundError:
-            # Create the Category.txt file if not found
-            with open(self.category_file, "w") as file:
-                pass
-            self.main_window.update_status("File Category.txt tidak ditemukan, membuat file baru!")
-        except Exception as e:
-            messagebox.showerror("Error", f"Terjadi kesalahan: {e}")
+    def rename_current_category(self):
+        if not self.selected_category:
+            return
 
-        # Jadwalkan pemeriksaan berikutnya
-        self.after(1000, self.check_for_updates)
+        new_name = self.rename_entry.get().strip()
+        if not new_name or new_name == self.selected_category:
+            return
+
+        # Sanitize the new name
+        new_name = self.sanitize_category_text(new_name)
+
+        # Check if new name already exists 
+        category_file = os.path.join(self.BASE_DIR, "Category.txt")
+        with open(category_file, "r") as file:
+            categories = [line.strip() for line in file]
+            if new_name in categories:
+                messagebox.showwarning("Peringatan", f"Kategori '{new_name}' sudah ada!")
+                return
+
+        # Store current subcategory text content and selection
+        current_content = self.subcategory_text.get("1.0", tk.END)
+        
+        # Rename category in Category.txt
+        with open(category_file, "r") as file:
+            categories = file.readlines()
+        with open(category_file, "w") as file:
+            for category in categories:
+                if category.strip() == self.selected_category:
+                    file.write(new_name + "\n")
+                else:
+                    file.write(category)
+
+        # Rename subcategory file
+        old_file = os.path.join(self.SUB_CATEGORY_DIR, f"{self.selected_category}.txt")
+        new_file = os.path.join(self.SUB_CATEGORY_DIR, f"{new_name}.txt")
+        if os.path.exists(old_file):
+            os.rename(old_file, new_file)
+
+        # Update UI
+        self.main_window.update_status(f"Kategori '{self.selected_category}' telah diubah menjadi '{new_name}'")
+        self.selected_category = new_name
+        self.load_categories()
+        
+        # Pilih kategori yang baru diganti nama
+        for item in self.category_tree.get_children():
+            if self.category_tree.item(item)['values'][0] == new_name:
+                self.category_tree.selection_set(item)
+                self.category_tree.see(item)
+                break
+
+        # Restore content dulu
+        self.subcategory_text.delete("1.0", tk.END)
+        self.subcategory_text.insert("1.0", current_content.rstrip('\n'))
+        
+        # Kemudian set fokus
+        self.focus_text_without_newline()
+        
+        # Select text jika ada konten
+        if current_content.strip():
+            self.after(100, lambda: (
+                self.subcategory_text.tag_add(tk.SEL, "1.0", "end-1c"),
+                self.subcategory_text.mark_set(tk.INSERT, "1.0"),
+                self.subcategory_text.see("1.0")
+            ))
+
+    def get_category_content(self):
+        """Get current content of category file"""
+        try:
+            with open(self.category_file, "r") as file:
+                return file.read()
+        except FileNotFoundError:
+            return ""
+        except Exception:
+            return ""
+
+    def check_for_updates(self):
+        """Optimisasi pengecekan update"""
+        try:
+            current_content = self.get_category_content()
+            if current_content != self.last_content:
+                self.last_content = current_content
+                currently_selected = None
+                if self.category_tree.selection():
+                    currently_selected = self.category_tree.item(self.category_tree.selection()[0])['values'][0]
+                self.load_categories(preserve_selection=currently_selected)
+        except Exception as e:
+            if isinstance(e, FileNotFoundError):
+                with open(self.category_file, "w") as file:
+                    pass
+                self.main_window.update_status("File Category.txt tidak ditemukan, membuat file baru!")
+                self.last_content = ""
+            else:
+                messagebox.showerror("Error", f"Terjadi kesalahan: {e}")
+        finally:
+            self.after(1000, self.check_for_updates)
+
+    def handle_category_entry_return(self):
+        """Handle Enter key press in category entry"""
+        self.add_category()
+        return 'break'
+        
+    def handle_rename_entry_return(self):
+        """Handle Enter key press in rename entry"""
+        self.rename_current_category()
+        return 'break'
+
+    def handle_text_focus_in(self, event):
+        """Handler yang lebih efisien untuk focus in"""
+        content = self.subcategory_text.get("1.0", tk.END)
+        if content == '\n':
+            self.subcategory_text.delete("1.0", tk.END)
+        return 'break'
+
+    def focus_text_without_newline(self):
+        """Fokus ke text widget dengan cara yang lebih efisien"""
+        def safe_focus():
+            self.subcategory_text.focus_set()
+            content = self.subcategory_text.get("1.0", tk.END)
+            if content == '\n':
+                self.subcategory_text.delete(1.0, tk.END)
+        self.after(10, safe_focus)
+        return 'break'

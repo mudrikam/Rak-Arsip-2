@@ -48,13 +48,14 @@ from App.ui.splash_screen import SplashScreen
 from App.ui.database_backup import DatabaseBackup
 from App.ui.relocate_files import RelocateFiles
 from App.ui.personalize_settings import PersonalizeSettings  # Add this import
-from App.config import CURRENT_VERSION  # Update the import to use config
+from App.config import CURRENT_VERSION, WINDOW_SIZE  # Update the import to use config
+from PIL import Image, ImageTk
 
 class MainWindow(tk.Tk):
     def __init__(self):
         super().__init__()
         self.title(f"Rak Arsip {CURRENT_VERSION}")  # Use version from Launcher
-        self.geometry("700x600")
+        self.geometry(WINDOW_SIZE)
         self.resizable(True, True)  # Allow resizing
         
         # Setup BASE_DIR
@@ -186,7 +187,8 @@ class MainWindow(tk.Tk):
         Tampilkan tutorial dalam window baru dengan format HTML
         """
         tutorial_window = tk.Toplevel(self)
-        tutorial_window.title("Tutorial Rak Arsip 2.0")
+        
+        tutorial_window.title(F"Tutorial Rak Arsip {CURRENT_VERSION}")  # Use version from Launcher
         tutorial_window.geometry("800x600")
 
         # Set ikon window
@@ -271,7 +273,7 @@ class MainWindow(tk.Tk):
         self.status_message = self.loading_messages[0]
         self.update_status(self.status_message)
         self.animate_messages()
-        self.after(4000, self.initialize_ui)
+        self.after(100, self.initialize_ui) # Loading time
 
     def animate_messages(self):
         """Animasi pergantian pesan pada status."""
@@ -288,40 +290,47 @@ class MainWindow(tk.Tk):
             print("Vista theme not available, using default")
             self.style.theme_use('default')
 
-    def initialize_ui(self):
-        """Inisialisasi semua elemen UI setelah pemuatan selesai."""
-        # Hentikan animasi pesan
-        if hasattr(self, 'message_animation'):
-            self.after_cancel(self.message_animation)
-        
-        # Style already initialized in __init__, no need to create new one
-        style = self.style  # Use existing style instance
-        
-        self.BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+    def _load_icon(self, icon_path, size=(16, 16)):
+        """Helper function to load and process icons"""
+        if not os.path.exists(icon_path):
+            return None
+            
+        try:
+            with Image.open(icon_path) as img:
+                if (img.mode != 'RGBA'):
+                    img = img.convert('RGBA')
+                img = img.resize(size, Image.Resampling.LANCZOS)
+                return ImageTk.PhotoImage(img)
+        except Exception as e:
+            print(f"Error loading icon {icon_path}: {e}")
+            return None
 
-        # Cek apakah direktori "Database" ada, jika tidak buatkan
-        database_dir = os.path.join(self.BASE_DIR, "Database")
-        if not os.path.exists(database_dir):
-            os.makedirs(database_dir)
-            print(f"Direktori 'Database' telah dibuat di: {database_dir}")
+    def create_tab(self, parent, text, icon_path, notebook=None, nested=False):
+        """Unified function to create both main and nested tabs"""
+        tab_frame = ttk.Frame(parent)
+        target_notebook = notebook if nested else self.notebook
+        
+        icon_image = self._load_icon(icon_path)
+        if icon_image:
+            tab_frame.icon_image = icon_image
+            target_notebook.add(tab_frame, text=text, image=icon_image, compound='left')
         else:
-            print(f"Direktori 'Database' sudah ada di: {database_dir}")
+            target_notebook.add(tab_frame, text=text)
+            
+        return tab_frame
 
-        # Buat objek style untuk notebook
-        style = ttk.Style()
-
-        # Konfigurasi umum tab - Perbaikan untuk kompatibilitas tema
-        style.configure(
+    def configure_notebook_style(self):
+        """Configure notebook styles"""
+        self.style.configure(
             "TNotebook.Tab",
-            padding=[12, 6],  # Menambah padding untuk semua tema
+            padding=[12, 6],
             background="#f0f0f0",
             relief="flat",
         )
 
-        # Hilangkan border aktif dan atur warna latar belakang tab
-        style.map(
+        self.style.map(
             "TNotebook.Tab",
-            padding=[("selected", [12, 6])],  # Memastikan padding tetap saat tab dipilih
+            padding=[("selected", [12, 6])],
             background=[("selected", "#ff7d19")],
             foreground=[("selected", "black")],
             relief=[("selected", "flat")],
@@ -329,165 +338,171 @@ class MainWindow(tk.Tk):
             focuscolor=[("!selected", "transparent")],
         )
         
-        # Tambahan konfigurasi khusus untuk tema vista
-        if style.theme_use() == 'vista':
-            style.configure(
+        if self.style.theme_use() == 'vista':
+            self.style.configure(
                 "TNotebook", 
-                tabmargins=[2, 5, 2, 0]  # [left, top, right, bottom]
+                tabmargins=[2, 5, 2, 0]
             )
-            style.configure(
+            self.style.configure(
                 "TNotebook.Tab",
                 padding=[12, 6],
-                expand=[("selected", [1, 1, 1, 0])]  # Ekspansi tab yang dipilih
+                expand=[("selected", [1, 1, 1, 0])]
             )
 
-        # Notebook Utama
+    def initialize_ui(self):
+        """Inisialisasi semua elemen UI setelah pemuatan selesai."""
+        if hasattr(self, 'message_animation'):
+            self.after_cancel(self.message_animation)
+
+        # Setup database directory
+        database_dir = os.path.join(self.BASE_DIR, "Database")
+        os.makedirs(database_dir, exist_ok=True)
+
+        # Configure notebook styles
+        self.configure_notebook_style()
+
+        # Create main notebook
         self.notebook = ttk.Notebook(self)
         self.notebook.pack(fill='both', expand=True)
 
-        # Tab Buat Arsip
-        self.project_tab = ttk.Frame(self.notebook)
-        self.notebook.add(self.project_tab, text="Buat Arsip")
+        # Initialize all tabs
+        self._create_main_tabs()
+        self._create_ai_tabs()
+        self._create_settings_tabs()
+        self._setup_widgets()
 
-        # Tab Relokasi
-        self.relocation_tab = ttk.Frame(self.notebook)
-        self.notebook.add(self.relocation_tab, text="Relokasi")
+        # Hide splash screen
+        self.splash_screen.hide()
 
-        # Tab Pustaka
-        self.library_tab = ttk.Frame(self.notebook)
-        self.notebook.add(self.library_tab, text="Pustaka")
+        # Configure grid and bind resize event
+        self._configure_grid()
+        self.bind("<Configure>", self.on_resize)
 
-        # Tab Masal
-        self.batch_generator_tab = ttk.Frame(self.notebook)
-        self.notebook.add(self.batch_generator_tab, text="Massal")
-        
-        # Tab AI
-        self.ai_tab = ttk.Frame(self.notebook)
-        self.notebook.add(self.ai_tab, text="Ai")
+    def _create_main_tabs(self):
+        """Create main navigation tabs"""
+        tab_configs = {
+            'project_tab': ("Arsip", "add_folder.png"),
+            'library_tab': ("Pustaka", "library.png"),
+            'tools_tab': ("Alat", "tools.png"),  # New tools tab
+            'ai_tab': ("AI", "ai.png"),
+            'setting_tab': ("Setting", "settings.png"),
+            'help_tab': ("Bantuan", "help.png")
+        }
 
-        # Notebook bersarang untuk AI
+        for attr_name, (text, icon_name) in tab_configs.items():
+            icon_path = os.path.join(self.BASE_DIR, "Img", "icon", "ui", icon_name)
+            setattr(self, attr_name, self.create_tab(self.notebook, text, icon_path))
+
+        # Create nested notebooks for tools
+        self.tools_nested_notebook = ttk.Notebook(self.tools_tab)
+        self.tools_nested_notebook.pack(fill='both', expand=True, pady=(5,5))
+
+        # Create nested tabs for tools
+        tools_nested_tab_configs = [
+            ("Relokasi", "move_files.png", "relocation_tab"),
+            ("Massal", "batch.png", "batch_generator_tab")
+        ]
+
+        for text, icon_filename, attr_name in tools_nested_tab_configs:
+            icon_path = os.path.join(self.BASE_DIR, "Img", "icon", "ui", icon_filename)
+            tab = self.create_tab(self.tools_nested_notebook, text, icon_path, 
+                                notebook=self.tools_nested_notebook, nested=True)
+            setattr(self, attr_name, tab)
+
+    def _setup_widgets(self):
+        """Setup all UI widgets"""
+        # Project tab widgets
+        self.disk_selector = DiskSelector(self.project_tab, BASE_DIR=self.BASE_DIR, main_window=self)
+        self.project_name_input = ProjectNameInput(self.project_tab, BASE_DIR=self.BASE_DIR, main_window=self)
+        self.category_selector = CategorySelector(self.project_tab, BASE_DIR=self.BASE_DIR, main_window=self)
+        self.project_generator = ProjectGenerator(self.project_tab, BASE_DIR=self.BASE_DIR, main_window=self,
+                                               selected_disk=self.selected_disk, root_folder=self.root_folder,
+                                               category=self.category, sub_category=self.sub_category,
+                                               date_var=self.date_var, project_name=self.project_name)
+
+        # Grid layout for project tab
+        self.disk_selector.grid(row=0, column=0, padx=10, pady=(10,0), sticky="nsew")
+        self.project_name_input.grid(row=0, column=1, padx=10, pady=(10,0), sticky="nsew")
+        self.category_selector.grid(row=1, column=0, padx=10, pady=5, sticky="nsew")
+        self.project_generator.grid(row=1, column=1, padx=10, pady=5, sticky="nsew")
+
+        # Other tab widgets
+        widgets = {
+            'relocate_files': (RelocateFiles, self.relocation_tab),
+            'load_help_file': (LoadHelpFile, self.help_tab),
+            'template_creator': (TemplateCreator, self.template_tab),
+            'batch_generator': (BatchGenerator, self.batch_generator_tab),
+            'project_library': (ProjectLibrary, self.library_tab),
+            'category_editor': (CategoryEditor, self.category_editor_tab),
+            'database_backup': (DatabaseBackup, self.backup_tab)
+        }
+
+        for attr_name, (widget_class, parent) in widgets.items():
+            widget = widget_class(parent, BASE_DIR=self.BASE_DIR, main_window=self)
+            setattr(self, attr_name, widget)
+            widget.pack(fill="both", expand=True, padx=10, pady=10)
+
+    def _configure_grid(self):
+        """Configure grid weights and constraints"""
+        self.project_tab.columnconfigure(0, weight=0, minsize=200)
+        self.project_tab.columnconfigure(1, weight=3)
+        self.project_tab.rowconfigure(0, weight=0)
+        self.project_tab.rowconfigure(1, weight=1)
+
+    def _create_ai_tabs(self):
+        """Create AI nested tabs"""
         self.ai_nested_notebook = ttk.Notebook(self.ai_tab)
         self.ai_nested_notebook.pack(fill='both', expand=True, pady=(5,5))
 
-        # Tab AI Sub Tab 1
-        self.ai_sub_tab1 = ttk.Frame(self.ai_nested_notebook)
-        self.ai_nested_notebook.add(self.ai_sub_tab1, text="Segera ditambahkan...!")
+        ai_nested_tab_configs = [
+            ("Segera ditambahkan...!", "ai.png", "ai_sub_tab1"),
+            ("Tunggu updatenya...!", "ai.png", "ai_sub_tab2")
+        ]
 
-        # Add description and list of AI features to AI Sub Tab 1
-        ai_features_label = ttk.Label(
-            self.ai_sub_tab1,
-            text=(
-            "Fitur AI yang ingin ditambahkan:\n\n"
-            "- Deteksi Gambar dan Video\n"
-            "- Generate Metadata Otomatis\n"
-            "- Nama Otomatis\n"
-            "- Generate Template\n"
-            "- Sub Kategori Otomatis\n"
-            "- Moderasi Teks\n"
-            "- Pengenalan Teks (OCR)\n"
-            "- Klasifikasi Dokumen\n"
-            "- Ekstraksi Metadata Otomatis\n"
-            "- Deteksi Duplikasi\n"
-            "- Ringkasan Dokumen Otomatis\n"
-            "- Fitur AI Berguna untuk Arsip Lainnya\n\n"
-            "Jika kamu punya ide atau saran, \nsilakan beri tahu kami dengan membuat issue di GitHub."
-            ),
-            justify="left",
-            padding=10
-        )
-        ai_features_label.pack(anchor="n", fill="both", expand=True, padx=10, pady=10)
+        for text, icon_filename, attr_name in ai_nested_tab_configs:
+            icon_path = os.path.join(self.BASE_DIR, "Img", "icon", "ui", icon_filename)
+            tab = self.create_tab(self.ai_nested_notebook, text, icon_path, notebook=self.ai_nested_notebook, nested=True)
+            setattr(self, attr_name, tab)
 
-        # Tab AI Sub Tab 2
-        self.ai_sub_tab2 = ttk.Frame(self.ai_nested_notebook)
-        self.ai_nested_notebook.add(self.ai_sub_tab2, text="Tunggu updatenya...!")
+            if attr_name == "ai_sub_tab1":
+                ai_features_label = ttk.Label(
+                    tab,
+                    text=(
+                        "Fitur AI yang ingin ditambahkan:\n\n"
+                        "- Deteksi Gambar dan Video\n"
+                        "- Generate Metadata Otomatis\n"
+                        "- Nama Otomatis\n"
+                        "- Generate Template\n"
+                        "- Sub Kategori Otomatis\n"
+                        "- Moderasi Teks\n"
+                        "- Pengenalan Teks (OCR)\n"
+                        "- Klasifikasi Dokumen\n"
+                        "- Ekstraksi Metadata Otomatis\n"
+                        "- Deteksi Duplikasi\n"
+                        "- Ringkasan Dokumen Otomatis\n"
+                        "- Fitur AI Berguna untuk Arsip Lainnya\n\n"
+                        "Jika kamu punya ide atau saran, \nsilakan beri tahu kami dengan membuat issue di GitHub."
+                    ),
+                    justify="left",
+                    padding=10
+                )
+                ai_features_label.pack(anchor="n", fill="both", expand=True, padx=10, pady=10)
 
-        # Tab Bantuan
-        self.help_tab = ttk.Frame(self.notebook)
-        self.notebook.add(self.help_tab, text="?")
-
-        # Tab Atur dengan Notebook bersarang
-        self.setting_tab = ttk.Frame(self.notebook)
-        self.notebook.insert(self.notebook.index(self.help_tab), self.setting_tab, text="Setting")
-
-        # Notebook bersarang untuk Template dan Kategori
+    def _create_settings_tabs(self):
+        """Create settings nested tabs"""
         self.nested_notebook = ttk.Notebook(self.setting_tab)
         self.nested_notebook.pack(fill='both', expand=True, pady=(5,0))
 
-        # Tab Template
-        self.template_tab = ttk.Frame(self.nested_notebook)
-        self.nested_notebook.add(self.template_tab, text="Template")
+        nested_tab_configs = [
+            ("Template", "template.png", "template_tab"),
+            ("Kategori", "category.png", "category_editor_tab"), 
+            ("Cadangkan", "backup.png", "backup_tab")
+        ]
 
-        # Tab Kategori
-        self.category_editor_tab = ttk.Frame(self.nested_notebook)
-        self.nested_notebook.add(self.category_editor_tab, text="Kategori")
-
-        # Tab Cadangkan
-        self.backup_tab = ttk.Frame(self.nested_notebook)
-        self.nested_notebook.add(self.backup_tab, text="Cadangkan")
-        
-        # # Tab Personalisasi
-        # self.personalize_tab = ttk.Frame(self.nested_notebook)
-        # self.nested_notebook.add(self.personalize_tab, text="Personalisasi")
-
-        # Pemilih disk
-        self.disk_selector = DiskSelector(self.project_tab, BASE_DIR=self.BASE_DIR, main_window=self)
-        self.disk_selector.grid(row=0, column=0, padx=10, pady=(10,0), sticky="nsew")
-        
-        # Input nama proyek
-        self.project_name_input = ProjectNameInput(self.project_tab, BASE_DIR=self.BASE_DIR, main_window=self)
-        self.project_name_input.grid(row=0, column=1, padx=10, pady=(10,0), sticky="nsew")
-        
-        # Pemilih kategori
-        self.category_selector = CategorySelector(self.project_tab, BASE_DIR=self.BASE_DIR, main_window=self)
-        self.category_selector.grid(row=1, column=0, padx=10, pady=5, sticky="nsew")
-
-        #Relokasi File
-        self.relocate_files = RelocateFiles(self.relocation_tab, BASE_DIR=self.BASE_DIR, main_window=self)
-        self.relocate_files.pack(fill="both", expand=True, padx=10, pady=10)
-        
-        # Generator Proyek
-        self.project_generator = ProjectGenerator(self.project_tab, BASE_DIR=self.BASE_DIR, main_window=self, selected_disk=self.selected_disk, root_folder=self.root_folder, category=self.category, sub_category=self.sub_category, date_var=self.date_var, project_name=self.project_name)
-        self.project_generator.grid(row=1, column=1, padx=10, pady=5, sticky="nsew")
-
-        # File Bantuan
-        self.load_help_file = LoadHelpFile(self.help_tab, BASE_DIR=self.BASE_DIR, main_window=self)
-        self.load_help_file.pack(fill="both", expand=True, padx=10, pady=10)
-        
-        # Pembuat Template Sub Folder
-        self.template_creator = TemplateCreator(self.template_tab, BASE_DIR=self.BASE_DIR, main_window=self)
-        self.template_creator.pack(fill="both", expand=True, padx=10, pady=10)
-        
-        # Pembuat Batch Sub
-        self.batch_generator = BatchGenerator(self.batch_generator_tab, BASE_DIR=self.BASE_DIR, main_window=self)
-        self.batch_generator.pack(fill="both", expand=True, padx=10, pady=10)
-        
-        # Pustaka Proyek
-        self.project_library = ProjectLibrary(self.library_tab, BASE_DIR=self.BASE_DIR, main_window=self)
-        self.project_library.pack(fill="both", expand=True, padx=10, pady=10)
-        
-        # Editor Kategori
-        self.category_editor = CategoryEditor(self.category_editor_tab, BASE_DIR=self.BASE_DIR, main_window=self)
-        self.category_editor.pack(fill="both", expand=True, padx=10, pady=10)
-
-        # Add DatabaseBackup to the Cadangkan tab
-        self.database_backup = DatabaseBackup(self.backup_tab, BASE_DIR=self.BASE_DIR, main_window=self)
-        self.database_backup.pack(fill="both", expand=True, padx=10, pady=10)
-        
-        # # Add PersonalizeSettings to the Personalisasi tab
-        # self.personalize_settings = PersonalizeSettings(self.personalize_tab, BASE_DIR=self.BASE_DIR, main_window=self)
-        # self.personalize_settings.pack(fill="both", expand=True, padx=10, pady=10)
-        
-        # Sembunyikan splash screen setelah pemuatan selesai
-        self.splash_screen.hide()
-
-        # Configure grid to be resizable with weight constraints
-        self.project_tab.columnconfigure(0, weight=0, minsize=200)  # Minimum width for "Pilih Disk"
-        self.project_tab.columnconfigure(1, weight=3)  # More weight for the second column
-        self.project_tab.rowconfigure(0, weight=0) # Resizable row for other widgets
-        self.project_tab.rowconfigure(1, weight=1) # Resizable row for other widgets
-
-        # Bind the configure event to adjust widget sizes dynamically
-        self.bind("<Configure>", self.on_resize)
+        for text, icon_filename, attr_name in nested_tab_configs:
+            icon_path = os.path.join(self.BASE_DIR, "Img", "icon", "ui", icon_filename)
+            tab = self.create_tab(self.nested_notebook, text, icon_path, notebook=self.nested_notebook, nested=True)
+            setattr(self, attr_name, tab)
 
     def on_resize(self, event):
         """Adjust widget sizes dynamically based on window size."""
@@ -512,5 +527,5 @@ class MainWindow(tk.Tk):
                 self.project_generator._create_project_path()
             except Exception as e:
                 print(f"Could not update project path: {e}")
-        # Silently ignore if ProjectGenerator is not yet initialized
+
 

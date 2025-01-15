@@ -48,24 +48,56 @@ class BatchGenerator(ttk.LabelFrame):
         self.main_window = main_window  # Simpan referensi ke MainWindow
         
         self.last_modified_time = None
+
+        # Create main container frame
+        main_container = ttk.Frame(self)
+        main_container.pack(fill="both", expand=True)
         
-        # Frame untuk tombol Pilih Folder Tujuan
-        self.path_button_frame = ttk.Frame(self)  # Di dalam main_frame
+        # Create left frame
+        left_frame = ttk.Frame(main_container)
+        left_frame.pack(side="left", fill="both", expand=True, padx=(0, 5))
+        
+        # Create right frame
+        right_frame = ttk.Frame(main_container)
+        right_frame.pack(side="right", fill="both", expand=True, padx=(5, 0))
+
+        # Left frame contents
+        self.path_button_frame = ttk.Frame(left_frame)
         self.path_button_frame.pack(fill=tk.X, pady=(5,5))
 
         self.choose_button = ttk.Button(self.path_button_frame, text="Pilih Folder", command=self.choose_folder, padding=5, takefocus=0)
         self.choose_button.pack(side=tk.LEFT)
         
-        # Label untuk menampilkan path
-        self.path_label = ttk.Label(self.path_button_frame, text="Belum memilih folder...", font=("Lato Medium", 10), wraplength=600, padding=5, foreground="#999999")
-        self.path_label.pack(fill=tk.X)  # Menggunakan pack agar mengisi lebar, tidak perlu grid dan columnconfigure
-        
-        # Main LabelFrame (dipindahkan ke paling awal)
-        self.main_frame = ttk.LabelFrame(self, text="Gunakan template CSV", padding=10)
-        self.main_frame.pack(fill="both", expand=True, padx=0, pady=5)  # Tambahkan pady
+        self.path_label = ttk.Label(self.path_button_frame, text="Belum memilih folder...", font=("Lato Medium", 10), wraplength=300, padding=5, foreground="#999999")
+        self.path_label.pack(fill=tk.X)
 
-        # Frame untuk tombol Load dan Create CSV
-        self.button_container = ttk.Frame(self.main_frame)  # Di dalam main_frame
+        # Instructions in left frame
+        instructions = ttk.Label(left_frame, text=(
+            "Petunjuk Penggunaan:\n"
+            "1. Pilih folder tujuan dengan klik 'Pilih Folder'\n"
+            "2. Pilih salah satu:\n"
+            "   - Muat file CSV yang sudah ada\n"
+            "   - Buat template CSV baru\n"
+            "3. Edit struktur folder sesuai kebutuhan\n\n"
+            "Tips:\n"
+            "• Tekan TAB untuk membuat sub-folder (/)\n"
+            "• Spasi akan otomatis jadi underscore (_)\n"
+            "• Edit CSV bisa menggunakan Excel/LibreOffice\n"
+            "• Centang 'Abaikan karakter spesial' jika\n"
+            "  diperlukan\n"
+            "• File CSV akan otomatis tersimpan saat\n"
+            "  mengetik\n"
+            "• Folder yang dibuat akan tercatat di\n"
+            "  Daftar Pustaka"
+        ), justify="left", foreground="#999")
+        instructions.pack(fill=tk.X, pady=(10, 0))
+
+        # Right frame contents
+        self.main_frame = ttk.LabelFrame(right_frame, text="Gunakan template CSV", padding=10)
+        self.main_frame.pack(fill="both", expand=True, padx=0, pady=5)
+
+        # Rest of the widgets in main_frame (right side)
+        self.button_container = ttk.Frame(self.main_frame)
         self.button_container.pack(fill=tk.X)
 
         self.load_button = ttk.Button(self.button_container, text="Muat CSV", takefocus=0, command=self.load_csv_file, padding=(5,5))
@@ -82,20 +114,12 @@ class BatchGenerator(ttk.LabelFrame):
         self.text_area.bind("<KeyRelease>", self.validate_text_area)
         self.text_area.bind("<Key>", self.handle_key_press)
 
-        # Checkbox
         self.ignore_special_var = tk.BooleanVar(value=False)
         self.ignore_special_checkbox = ttk.Checkbutton(self.main_frame, text="Abaikan jika ada karakter spesial", variable=self.ignore_special_var, command=self.validate_text_area)
-        self.ignore_special_checkbox.pack(anchor="w", padx=5, pady=10)  # Menggunakan pack
+        self.ignore_special_checkbox.pack(anchor="w", padx=5, pady=10)
 
-        # Tombol Generate folders
-        self.generate_button = ttk.Button(self.main_frame, text="Buat Folder Massal", padding=10, takefocus=0, command=self.generate_folders, state=tk.DISABLED)  # Di dalam main_frame
+        self.generate_button = ttk.Button(self.main_frame, text="Buat Folder Massal", padding=10, takefocus=0, command=self.generate_folders, state=tk.DISABLED)
         self.generate_button.pack(fill=tk.X, pady=(10, 0))
-        
-        # Label Instruksi
-        instructions = ttk.Label(self.main_frame, text="Petunjuk :\n1. Pilih folder tujuan dengan klik 'Pilih Folder'.\n2. Muat file CSV.\n3. Pastikan nama folder di CSV benar.", justify="left")
-        instructions.pack(fill=tk.X, pady=(10, 0))
-        
-
         
     def choose_folder(self):
         """Membuka dialog pemilihan folder dan menampilkan path di Label."""

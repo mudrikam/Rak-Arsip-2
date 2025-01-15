@@ -42,6 +42,23 @@ class CategorySelector(ttk.LabelFrame):
         self.BASE_DIR = BASE_DIR
         self.main_window = main_window
 
+        # Add icon paths and load icons with 16x16 size - MOVE THIS SECTION UP
+        self.add_icon = os.path.join(self.BASE_DIR, "Img", "icon", "ui", "plus.png")
+        self.reset_icon = os.path.join(self.BASE_DIR, "Img", "icon", "ui", "reset.png")
+        
+        # Load and resize images to 16x16
+        self.add_icon_image = tk.PhotoImage(file=self.add_icon)
+        self.add_icon_image = self.add_icon_image.subsample(
+            max(1, self.add_icon_image.width() // 16),
+            max(1, self.add_icon_image.height() // 16)
+        )
+        
+        self.reset_icon_image = tk.PhotoImage(file=self.reset_icon)
+        self.reset_icon_image = self.reset_icon_image.subsample(
+            max(1, self.reset_icon_image.width() // 16),
+            max(1, self.reset_icon_image.height() // 16)
+        )
+
         self.category_value = tk.StringVar()
         self.new_category_value = tk.StringVar()
         self.categories = []
@@ -64,8 +81,16 @@ class CategorySelector(ttk.LabelFrame):
         self.SUB_CATEGORY_DIR = os.path.join(self.BASE_DIR, "Database", "Sub_Category")
         os.makedirs(self.SUB_CATEGORY_DIR, exist_ok=True)
 
-        # Tombol reset ditempatkan di bawah frame subkategori
-        self.reset_button = ttk.Button(self, text="Reset", command=self._reset, state=tk.DISABLED, padding=5)
+        # Replace reset button with icon and text button
+        self.reset_button = ttk.Button(
+            self, 
+            text="Reset",
+            image=self.reset_icon_image,
+            compound=tk.LEFT,  # Show icon to the left of text
+            command=self._reset,
+            state=tk.DISABLED,
+            padding=5
+        )
         self.reset_button.grid(row=2, column=0, padx=10, pady=5, sticky="ew")
 
         # Configure grid to be resizable
@@ -155,8 +180,13 @@ class CategorySelector(ttk.LabelFrame):
 
         self.new_category_entry.bind("<KeyRelease>", on_key_release)
 
-        # Tombol untuk menambah kategori baru
-        add_button = ttk.Button(category_input_frame, text="+", command=self._add_new_category, width=5)
+        # Replace add button with icon button
+        add_button = ttk.Button(
+            category_input_frame, 
+            image=self.add_icon_image,
+            command=self._add_new_category, 
+            width=5
+        )
         add_button.grid(row=0, column=1, padx=(5, 0), sticky="ew")
 
         # Configure grid to be resizable
@@ -356,8 +386,13 @@ class CategorySelector(ttk.LabelFrame):
 
         self.new_subcategory_entry.bind("<KeyRelease>", on_key_release)  # Bind event key release
 
-        # Tombol untuk menambah subkategori baru
-        self.add_subcategory_button = ttk.Button(subcategory_input_frame, text="+", command=self._add_subcategory, width=5)
+        # Add subcategory button with icon
+        self.add_subcategory_button = ttk.Button(
+            subcategory_input_frame,
+            image=self.add_icon_image,
+            command=self._add_subcategory,
+            width=5
+        )
         self.add_subcategory_button.grid(row=0, column=1, padx=(5, 0), sticky="ew")
         self.add_subcategory_button.config(state="disabled")
 

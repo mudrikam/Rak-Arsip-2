@@ -121,7 +121,7 @@ class RelocateFiles(ttk.LabelFrame):
                 self.thumbnail_cache[file_path] = thumb
                 return thumb
                 
-            # Try to handle as image if no custom icon exists
+            # Try to handle as image first
             try:
                 img = Image.open(file_path)
                 # Check if it's actually an image by accessing format
@@ -131,7 +131,14 @@ class RelocateFiles(ttk.LabelFrame):
                     self.thumbnail_cache[file_path] = thumb
                     return thumb
             except:
-                pass
+                # If not an image, use generic file.png
+                generic_icon_path = os.path.join(self.BASE_DIR, "Img", "Icon", "Extension", "file.png")
+                if os.path.exists(generic_icon_path):
+                    img = Image.open(generic_icon_path)
+                    img.thumbnail((32, 32))
+                    thumb = ImageTk.PhotoImage(img)
+                    self.thumbnail_cache[file_path] = thumb
+                    return thumb
                 
             # If all else fails, return default icon
             return self.default_icon
@@ -195,12 +202,12 @@ class RelocateFiles(ttk.LabelFrame):
         # Create overlay label inside drop frame
         self.overlay_label = ttk.Label(
             self.drop_frame,
-            text="Seret dan lepaskan,\nfile atau folder\nke sini.\n\nBiar aku Relokasi\nfile-filemu ke\nRak Arsip. (^_-)",
+            text="Seret dan lepaskan,\nfile atau folder\nke sini.",
             background='#FFFFFF',
             foreground='#999999',
-            font=('Segoe UI', 12),
+            font=('Segoe UI', 11),
             anchor='center',
-            padding=10
+            padding=5
         )
         
         # Enable drag and drop for both the listbox and the frame

@@ -144,8 +144,16 @@ class ProjectGenerator(ttk.LabelFrame):
         self.repeat_entry = ttk.Entry(self.repeat_frame, font=("Arial", 12))
         self.repeat_entry.pack(side=tk.LEFT, fill=tk.X, expand=True)
 
+        # Load icons for buttons
+        self.create_icon = tk.PhotoImage(file=os.path.join(BASE_DIR, "Img", "icon", "ui", "create_archive.png"))
+        self.create_icon = self.create_icon.subsample(self.create_icon.width() // 16, self.create_icon.height() // 16)
+
         # Tambahkan tombol "Buat Arsip"
-        self.create_project_button = ttk.Button(self, text="Buat Arsip", command=self.create_project)
+        self.create_project_button = ttk.Button(self, 
+                                              text="Buat Arsip", 
+                                              command=self.create_project,
+                                              image=self.create_icon,
+                                              compound=tk.LEFT)
         self.create_project_button.pack(side=tk.BOTTOM, fill=tk.X, padx=10, pady=10)
         self.create_project_button.config(style="Custom.TButton")
 
@@ -176,9 +184,16 @@ class ProjectGenerator(ttk.LabelFrame):
         self.color_picker_button.pack(side=tk.LEFT, padx=5)
         self.color_picker_button.bind("<Button-1>", self.open_color_picker)
 
-        # Tambahkan tombol untuk mengacak warna
-        self.randomize_button = ttk.Button(self.picker_frame, text="Acak", command=self.enable_random_color)
-        self.randomize_button.pack(side=tk.LEFT, padx=5)
+        # Load icon untuk random button
+        self.random_icon = tk.PhotoImage(file=os.path.join(BASE_DIR, "Img", "icon", "ui", "random.png"))
+        self.random_icon = self.random_icon.subsample(self.random_icon.width() // 16, self.random_icon.height() // 16)
+
+        # Tambahkan tombol untuk mengacak warna dengan ikon
+        self.randomize_button = ttk.Button(self.picker_frame,
+                                         command=self.enable_random_color,
+                                         image=self.random_icon,
+                                         width=2)
+        self.randomize_button.pack(side=tk.LEFT)
 
         # Bind events untuk mengubah warna label tema dan kotak warna
         self.bind("<Motion>", self._change_theme_color, add="+")  # Ubah warna saat mouse bergerak di atas frame
