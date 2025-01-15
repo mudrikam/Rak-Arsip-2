@@ -69,7 +69,7 @@ class BatchGenerator(ttk.LabelFrame):
         self.path_button_frame.pack(fill=tk.X, pady=(5,5))
 
         # Load button icons
-        self.choose_icon = self._load_icon(os.path.join(BASE_DIR, "Img", "icon", "ui", "folder.png"))
+        self.choose_icon = self._load_icon(os.path.join(BASE_DIR, "Img", "icon", "ui", "add_folder.png"))
         self.load_icon = self._load_icon(os.path.join(BASE_DIR, "Img", "icon", "ui", "load_csv.png"))
         self.template_icon = self._load_icon(os.path.join(BASE_DIR, "Img", "icon", "ui", "template.png"))
         self.generate_icon = self._load_icon(os.path.join(BASE_DIR, "Img", "icon", "ui", "generate.png"))
@@ -120,7 +120,7 @@ class BatchGenerator(ttk.LabelFrame):
         self.load_button.pack(side="left", padx=5, pady=(0, 5))
 
         self.create_csv_button = ttk.Button(self.button_container, 
-            text="Buatkan Template CSV",
+            text="Buat CSV",
             image=self.template_icon, compound='left',
             takefocus=0, command=self.create_csv_template, padding=(5,5))
         self.create_csv_button.pack(side="left", padx=5, pady=(0, 5))

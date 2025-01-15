@@ -48,6 +48,7 @@ from App.ui.splash_screen import SplashScreen
 from App.ui.database_backup import DatabaseBackup
 from App.ui.relocate_files import RelocateFiles
 from App.ui.personalize_settings import PersonalizeSettings  # Add this import
+from App.ui.disk_analyzer import DiskAnalyzer  # Add this import
 from App.config import CURRENT_VERSION, WINDOW_SIZE  # Update the import to use config
 from PIL import Image, ImageTk
 
@@ -400,7 +401,8 @@ class MainWindow(tk.Tk):
         # Create nested tabs for tools
         tools_nested_tab_configs = [
             ("Relokasi", "relocate_files.png", "relocation_tab"),
-            ("Massal", "batch.png", "batch_generator_tab")
+            ("Massal", "batch.png", "batch_generator_tab"),
+            ("Gudang", "disk_analyzer.png", "disk_analyzer_tab")  # Add Disk Analyzer tab
         ]
 
         for text, icon_filename, attr_name in tools_nested_tab_configs:
@@ -434,7 +436,8 @@ class MainWindow(tk.Tk):
             'batch_generator': (BatchGenerator, self.batch_generator_tab),
             'project_library': (ProjectLibrary, self.library_tab),
             'category_editor': (CategoryEditor, self.category_editor_tab),
-            'database_backup': (DatabaseBackup, self.backup_tab)
+            'database_backup': (DatabaseBackup, self.backup_tab),
+            'disk_analyzer': (DiskAnalyzer, self.disk_analyzer_tab)  # Add DiskAnalyzer widget
         }
 
         for attr_name, (widget_class, parent) in widgets.items():
