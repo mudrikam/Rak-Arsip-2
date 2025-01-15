@@ -36,6 +36,7 @@ from tkinter import ttk
 from tkinter import filedialog
 from tkinter import messagebox
 from datetime import datetime
+from PIL import Image, ImageTk
 
 
 class BatchGenerator(ttk.LabelFrame): 
@@ -53,19 +54,31 @@ class BatchGenerator(ttk.LabelFrame):
         main_container = ttk.Frame(self)
         main_container.pack(fill="both", expand=True)
         
-        # Create left frame
+        # Create left frame with fixed width
         left_frame = ttk.Frame(main_container)
-        left_frame.pack(side="left", fill="both", expand=True, padx=(0, 5))
+        left_frame.pack(side="left", fill="y", padx=(0, 5))
+        left_frame.pack_propagate(False)  # Prevent frame from resizing
+        left_frame.configure(width=250)  # Set fixed width
         
-        # Create right frame
+        # Create right frame that expands
         right_frame = ttk.Frame(main_container)
-        right_frame.pack(side="right", fill="both", expand=True, padx=(5, 0))
+        right_frame.pack(side="left", fill="both", expand=True, padx=(5, 0))
 
         # Left frame contents
         self.path_button_frame = ttk.Frame(left_frame)
         self.path_button_frame.pack(fill=tk.X, pady=(5,5))
 
-        self.choose_button = ttk.Button(self.path_button_frame, text="Pilih Folder", command=self.choose_folder, padding=5, takefocus=0)
+        # Load button icons
+        self.choose_icon = self._load_icon(os.path.join(BASE_DIR, "Img", "icon", "ui", "folder.png"))
+        self.load_icon = self._load_icon(os.path.join(BASE_DIR, "Img", "icon", "ui", "load_csv.png"))
+        self.template_icon = self._load_icon(os.path.join(BASE_DIR, "Img", "icon", "ui", "template.png"))
+        self.generate_icon = self._load_icon(os.path.join(BASE_DIR, "Img", "icon", "ui", "generate.png"))
+
+        # Update buttons with icons
+        self.choose_button = ttk.Button(self.path_button_frame, 
+            text="Pilih Folder",
+            image=self.choose_icon, compound='left',
+            command=self.choose_folder, padding=5, takefocus=0)
         self.choose_button.pack(side=tk.LEFT)
         
         self.path_label = ttk.Label(self.path_button_frame, text="Belum memilih folder...", font=("Lato Medium", 10), wraplength=300, padding=5, foreground="#999999")
@@ -100,10 +113,16 @@ class BatchGenerator(ttk.LabelFrame):
         self.button_container = ttk.Frame(self.main_frame)
         self.button_container.pack(fill=tk.X)
 
-        self.load_button = ttk.Button(self.button_container, text="Muat CSV", takefocus=0, command=self.load_csv_file, padding=(5,5))
+        self.load_button = ttk.Button(self.button_container, 
+            text="Muat CSV",
+            image=self.load_icon, compound='left',
+            takefocus=0, command=self.load_csv_file, padding=(5,5))
         self.load_button.pack(side="left", padx=5, pady=(0, 5))
 
-        self.create_csv_button = ttk.Button(self.button_container, text="Buatkan Template CSV", takefocus=0, command=self.create_csv_template, padding=(5,5))
+        self.create_csv_button = ttk.Button(self.button_container, 
+            text="Buatkan Template CSV",
+            image=self.template_icon, compound='left',
+            takefocus=0, command=self.create_csv_template, padding=(5,5))
         self.create_csv_button.pack(side="left", padx=5, pady=(0, 5))
 
         self.file_label = ttk.Label(self.main_frame, text="CSV belum dimuat...", foreground="#999999")
@@ -118,7 +137,11 @@ class BatchGenerator(ttk.LabelFrame):
         self.ignore_special_checkbox = ttk.Checkbutton(self.main_frame, text="Abaikan jika ada karakter spesial", variable=self.ignore_special_var, command=self.validate_text_area)
         self.ignore_special_checkbox.pack(anchor="w", padx=5, pady=10)
 
-        self.generate_button = ttk.Button(self.main_frame, text="Buat Folder Massal", padding=10, takefocus=0, command=self.generate_folders, state=tk.DISABLED)
+        self.generate_button = ttk.Button(self.main_frame, 
+            text="Buat Folder Massal",
+            image=self.generate_icon, compound='left',
+            padding=10, takefocus=0, command=self.generate_folders, 
+            state=tk.DISABLED)
         self.generate_button.pack(fill=tk.X, pady=(10, 0))
         
     def choose_folder(self):
@@ -393,4 +416,19 @@ class BatchGenerator(ttk.LabelFrame):
 
         except Exception as e:
             messagebox.showerror("Error", f"Gagal menulis ke project_library.csv: {e}")
+
+    def _load_icon(self, icon_path, size=(16, 16)):
+        """Helper function to load and process icons"""
+        if not os.path.exists(icon_path):
+            return None
+            
+        try:
+            with Image.open(icon_path) as img:
+                if img.mode != 'RGBA':
+                    img = img.convert('RGBA')
+                img = img.resize(size, Image.Resampling.LANCZOS)
+                return ImageTk.PhotoImage(img)
+        except Exception as e:
+            print(f"Error loading icon {icon_path}: {e}")
+            return None
 

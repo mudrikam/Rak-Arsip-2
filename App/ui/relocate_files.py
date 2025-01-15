@@ -92,6 +92,21 @@ class RelocateFiles(ttk.LabelFrame):
             
         self.update_dropzone_overlay()
 
+    def _load_icon(self, icon_path, size=(16, 16)):
+        """Helper function to load and process icons"""
+        if not os.path.exists(icon_path):
+            return None
+            
+        try:
+            with Image.open(icon_path) as img:
+                if img.mode != 'RGBA':
+                    img = img.convert('RGBA')
+                img = img.resize(size, Image.Resampling.LANCZOS)
+                return ImageTk.PhotoImage(img)
+        except Exception as e:
+            print(f"Error loading icon {icon_path}: {e}")
+            return None
+
     def load_default_icon(self):
         """Load default icon for non-image files"""
         try:
@@ -160,13 +175,26 @@ class RelocateFiles(ttk.LabelFrame):
         top_panel = ttk.Frame(self.left_panel)
         top_panel.pack(pady=(0, 10), fill="x")
 
-        select_files_button = ttk.Button(top_panel, text="Pilih File", command=self.select_files, padding=5)
+        # Load button icons
+        self.select_files_icon = self._load_icon(os.path.join(self.BASE_DIR, "Img", "icon", "ui", "add_file.png"))
+        self.select_folder_icon = self._load_icon(os.path.join(self.BASE_DIR, "Img", "icon", "ui", "add_folder.png"))
+        self.open_icon = self._load_icon(os.path.join(self.BASE_DIR, "Img", "icon", "ui", "folder.png"))
+        self.reset_icon = self._load_icon(os.path.join(self.BASE_DIR, "Img", "icon", "ui", "reset.png"))
+        self.move_icon = self._load_icon(os.path.join(self.BASE_DIR, "Img", "icon", "ui", "move.png"))
+        self.copy_icon = self._load_icon(os.path.join(self.BASE_DIR, "Img", "icon", "ui", "copy.png"))
+
+        # Update buttons with icons
+        select_files_button = ttk.Button(top_panel, text="Pilih File", 
+            image=self.select_files_icon, compound='left',
+            command=self.select_files, padding=5)
         select_files_button.pack(side="left", padx=(0, 5))
 
         or_label = ttk.Label(top_panel, text="atau")
         or_label.pack(side="left", padx=(0, 5))
 
-        select_folder_button = ttk.Button(top_panel, text="Pilih Folder", command=self.select_folder, padding=5)
+        select_folder_button = ttk.Button(top_panel, text="Pilih Folder",
+            image=self.select_folder_icon, compound='left', 
+            command=self.select_folder, padding=5)
         select_folder_button.pack(side="left", padx=(0, 5))
 
         # Create drop frame to contain both listbox and overlay
@@ -242,7 +270,7 @@ class RelocateFiles(ttk.LabelFrame):
         search_entry.bind("<KeyRelease>", self.search_destinations)
 
         # Add folder selection button with fixed width
-        select_folder_btn = ttk.Button(search_frame, text="Pilih Folder", command=self.select_destination_folder, padding=5)
+        select_folder_btn = ttk.Button(search_frame, text="Pilih Folder", image=self.select_folder_icon, command=self.select_destination_folder, padding=5)
         select_folder_btn.grid(row=0, column=2)
 
         # TreeView for saved locations - modified columns configuration
@@ -273,17 +301,25 @@ class RelocateFiles(ttk.LabelFrame):
         
         bottom_panel.columnconfigure(0, weight=1)
 
-        reset_button = ttk.Button(bottom_panel, text="Reset", command=self.reset_files, padding=5)
+        reset_button = ttk.Button(bottom_panel, text="Reset",
+            image=self.reset_icon, compound='left',
+            command=self.reset_files, padding=5)
         reset_button.grid(row=0, column=0, padx=(0, 10), sticky="e")
 
-        self.open_folder_button = ttk.Button(bottom_panel, text="Buka Folder", command=self.open_selected_folder, padding=5)
+        self.open_folder_button = ttk.Button(bottom_panel, text="Buka Folder",
+            image=self.open_icon, compound='left',
+            command=self.open_selected_folder, padding=5)
         self.open_folder_button.grid(row=0, column=1, padx=(0, 10), sticky="e")
         self.open_folder_button["state"] = "disabled"
 
-        self.move_button = ttk.Button(bottom_panel, text="Pindahkan", command=self.move_files, padding=5)
+        self.move_button = ttk.Button(bottom_panel, text="Pindahkan",
+            image=self.move_icon, compound='left',
+            command=self.move_files, padding=5)
         self.move_button.grid(row=0, column=2, padx=(0, 10), sticky="e")
 
-        self.copy_button = ttk.Button(bottom_panel, text="Salin", command=self.copy_files, padding=5)
+        self.copy_button = ttk.Button(bottom_panel, text="Salin",
+            image=self.copy_icon, compound='left',
+            command=self.copy_files, padding=5)
         self.copy_button.grid(row=0, column=3, padx=(0, 0), sticky="e")
 
         # Create progress bar panel - modified to show location

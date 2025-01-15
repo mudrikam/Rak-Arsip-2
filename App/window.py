@@ -399,7 +399,7 @@ class MainWindow(tk.Tk):
 
         # Create nested tabs for tools
         tools_nested_tab_configs = [
-            ("Relokasi", "move_files.png", "relocation_tab"),
+            ("Relokasi", "relocate_files.png", "relocation_tab"),
             ("Massal", "batch.png", "batch_generator_tab")
         ]
 

@@ -34,6 +34,7 @@ from tkinter import ttk
 from tkinter import messagebox
 from tkinter import filedialog
 import webbrowser
+from PIL import Image, ImageTk
 
 class LibraryManager:
     def __init__(self, base_dir):
@@ -98,8 +99,22 @@ class ProjectLibrary(ttk.LabelFrame):
         self.search_entry.bind("<KeyRelease>", self.search_library)
         self.search_entry.bind("<Double-Button-1>", self.clear_search)
 
-        self.open_button = ttk.Button(self.search_frame, text="Buka Folder", command=self.open_file, state=tk.DISABLED, padding=5)
-        self.open_button.grid(row=0, column=2, padx=(5,0), sticky="e")  # sticky right
+        # Load button icons
+        self.open_icon = self._load_icon(os.path.join(BASE_DIR, "Img", "icon", "ui", "folder.png"))
+        self.backup_icon = self._load_icon(os.path.join(BASE_DIR, "Img", "icon", "ui", "backup.png"))
+        self.import_icon = self._load_icon(os.path.join(BASE_DIR, "Img", "icon", "ui", "import.png"))
+
+        # Update open button with icon
+        self.open_button = ttk.Button(
+            self.search_frame, 
+            text="Buka Folder",
+            image=self.open_icon,
+            compound='left',
+            command=self.open_file,
+            state=tk.DISABLED,
+            padding=5
+        )
+        self.open_button.grid(row=0, column=2, padx=(5,0), sticky="e")
 
         self.search_frame.columnconfigure(1, weight=0)  # remove weight from column 1
         self.search_frame.columnconfigure(2, weight=1)  # set weight to 1 for column 2
@@ -136,10 +151,25 @@ class ProjectLibrary(ttk.LabelFrame):
         self.button_frame = ttk.Frame(self)
         self.button_frame.pack(side=tk.BOTTOM, fill=tk.X, pady=(10, 0))
 
-        self.backup_button = ttk.Button(self.button_frame, text="Cadangkan", command=self.backup_library, padding=5)
+        # Update backup and import buttons with icons
+        self.backup_button = ttk.Button(
+            self.button_frame, 
+            text="Cadangkan",
+            image=self.backup_icon,
+            compound='left',
+            command=self.backup_library,
+            padding=5
+        )
         self.backup_button.pack(side=tk.LEFT, padx=(0, 10))
 
-        self.import_button = ttk.Button(self.button_frame, text="Impor", command=self.import_existing_library, padding=5)
+        self.import_button = ttk.Button(
+            self.button_frame, 
+            text="Impor",
+            image=self.import_icon,
+            compound='left', 
+            command=self.import_existing_library,
+            padding=5
+        )
         self.import_button.pack(side=tk.LEFT)
 
         self.reminder_label = ttk.Label(self.button_frame, text="Buatlah cadangan berkala untuk menghindari kehilangan akses daftar pustaka.", foreground="#999999")
@@ -356,4 +386,19 @@ class ProjectLibrary(ttk.LabelFrame):
     def get_library_path(self):
         """Return the path to the library file"""
         return self.csv_file_path
+
+    def _load_icon(self, icon_path, size=(16, 16)):
+        """Helper function to load and process icons"""
+        if not os.path.exists(icon_path):
+            return None
+            
+        try:
+            with Image.open(icon_path) as img:
+                if img.mode != 'RGBA':
+                    img = img.convert('RGBA')
+                img = img.resize(size, Image.Resampling.LANCZOS)
+                return ImageTk.PhotoImage(img)
+        except Exception as e:
+            print(f"Error loading icon {icon_path}: {e}")
+            return None
 

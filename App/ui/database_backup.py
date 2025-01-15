@@ -34,6 +34,7 @@ import tkinter as tk
 from tkinter import ttk, filedialog, messagebox
 import threading
 import time
+from PIL import Image, ImageTk
 
 class DatabaseBackup(ttk.LabelFrame):
     def __init__(self, parent, BASE_DIR, main_window):
@@ -42,20 +43,32 @@ class DatabaseBackup(ttk.LabelFrame):
         self.BASE_DIR = BASE_DIR
         self.main_window = main_window
 
+        # Load button icons
+        self.backup_icon = self._load_icon(os.path.join(BASE_DIR, "Img", "icon", "ui", "backup.png"))
+        self.import_icon = self._load_icon(os.path.join(BASE_DIR, "Img", "icon", "ui", "import.png"))
+        self.restore_icon = self._load_icon(os.path.join(BASE_DIR, "Img", "icon", "ui", "restore.png"))
+
         # Frame for buttons
         self.button_frame = ttk.Frame(self)
         self.button_frame.pack(side=tk.BOTTOM, fill=tk.X, pady=(10, 0))  # Moved to bottom
 
-        # Backup button
-        self.backup_button = ttk.Button(self.button_frame, text="Cadangkan", command=self.export_database, padding=5)
+        # Update buttons with icons
+        self.backup_button = ttk.Button(self.button_frame, 
+            text="Cadangkan",
+            image=self.backup_icon, compound='left',
+            command=self.export_database, padding=5)
         self.backup_button.pack(side=tk.LEFT, padx=(0, 10), pady=5)
 
-        # Import button
-        self.import_button = ttk.Button(self.button_frame, text="Impor", command=self.import_database, padding=5)
+        self.import_button = ttk.Button(self.button_frame,
+            text="Impor",
+            image=self.import_icon, compound='left',
+            command=self.import_database, padding=5)
         self.import_button.pack(side=tk.LEFT, pady=5)
 
-        # Restore button
-        self.restore_button = ttk.Button(self.button_frame, text="Pulihkan", command=self.restore_database, padding=5, state="disabled")
+        self.restore_button = ttk.Button(self.button_frame,
+            text="Pulihkan",
+            image=self.restore_icon, compound='left',
+            command=self.restore_database, padding=5, state="disabled")
         self.restore_button.pack(side=tk.LEFT, padx=(10,0), pady=5)
         
         self.reminder_label = ttk.Label(self.button_frame, text="Cadangkan berkala untuk menghindari kehilangan Database.", foreground="#999999")
@@ -266,3 +279,18 @@ class DatabaseBackup(ttk.LabelFrame):
         self.file_treeview.column("No", width=40, minwidth=40, stretch=False)
         self.file_treeview.column("Direktori", width=column_width)
         self.file_treeview.column("File", width=column_width)
+
+    def _load_icon(self, icon_path, size=(16, 16)):
+        """Helper function to load and process icons"""
+        if not os.path.exists(icon_path):
+            return None
+            
+        try:
+            with Image.open(icon_path) as img:
+                if img.mode != 'RGBA':
+                    img = img.convert('RGBA')
+                img = img.resize(size, Image.Resampling.LANCZOS)
+                return ImageTk.PhotoImage(img)
+        except Exception as e:
+            print(f"Error loading icon {icon_path}: {e}")
+            return None
