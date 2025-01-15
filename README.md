@@ -206,7 +206,7 @@ Fitur baru: Relokasi file untuk mempermudah pemindahan file dari satu folder ke 
 ## Kontributor
 
 - [M. Mudrikul Hikam](https://www.facebook.com/M.Mudrikul.hikam) (Tim Desainia)
-- [Muhammad Syahril](https://www.linkedin.com/in/muhammad-syahril-148228248/) (Tim Desainia)
+- [Muhammad Syahril](https://www.linkedin.com/in/muhammad-syahril-148228248/) (Tim Desainia, Ide Disk Statistic)
 - [M Huda](https://www.instagram.com/miftakh_hd/) (Tim Desainia)
 - [Riska Twins](https://www.instagram.com/riskarisky_11/) (Tim Desainia)
 - [Cowt Zzy](https://cowtzzy.carrd.co) (Artwork)

@@ -37,14 +37,19 @@ from PIL import Image, ImageTk
 import threading
 from queue import Queue
 import time
+import matplotlib.pyplot as plt
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+import random
+import colorsys  # Tambahkan import ini di bagian atas
 
-class DiskAnalyzer(ttk.LabelFrame):
+class DiskAnalyzer(ttk.Frame):
     def __init__(self, parent, BASE_DIR, main_window):
-        super().__init__(parent, text="Analisa Penyimpanan :", padding=10)
-        self.grid(row=0, column=0, padx=10, pady=10, sticky="nsew")
+        super().__init__(parent)
+        self.grid(row=0, column=0, padx=10, pady=0, sticky="nsew")
+        
         self.BASE_DIR = BASE_DIR
         self.main_window = main_window
-        self.parent = parent  # Tambahkan referensi ke parent window
+        self.parent = parent
         
         # Initialize variables
         self.all_partitions = []
@@ -95,20 +100,36 @@ class DiskAnalyzer(ttk.LabelFrame):
         
         # Configure bottom container grid weights for equal width (50:50)
         self.bottom_container.grid_rowconfigure(0, weight=1)  # Full height
-        self.bottom_container.grid_columnconfigure(0, weight=5)  # Left frame - 50%
-        self.bottom_container.grid_columnconfigure(1, weight=5)  # Right frame - 50%
+        self.bottom_container.grid_columnconfigure(0, weight=3)  # Left frame - 30%
+        self.bottom_container.grid_columnconfigure(1, weight=7)  # Right frame - 70%
         
         # Content frame (left) - configure to expand
-        self.content_frame = ttk.LabelFrame(self.bottom_container, text="Konten")
+        self.content_frame = ttk.LabelFrame(self.bottom_container, text="Konten:", padding=5)
         self.content_frame.grid(row=0, column=0, padx=(0,5), sticky="nsew")
         self.content_frame.grid_rowconfigure(0, weight=1)
         self.content_frame.grid_columnconfigure(0, weight=1)
         
         # Statistics frame (right) - configure to expand
-        self.stats_frame = ttk.LabelFrame(self.bottom_container, text="Statistik")
+        self.stats_frame = ttk.LabelFrame(self.bottom_container, text="Statistik:", padding=5)
         self.stats_frame.grid(row=0, column=1, padx=(5,0), sticky="nsew")
         self.stats_frame.grid_rowconfigure(0, weight=1)
         self.stats_frame.grid_columnconfigure(0, weight=1)
+        
+        # Set background color untuk stats_frame
+        style = ttk.Style()
+        style.configure("Stats.TLabelframe", background="#f0f0f0")
+        style.configure("Stats.TLabelframe.Label", background="#f0f0f0")  # Untuk label frame
+        self.stats_frame.configure(style="Stats.TLabelframe")
+        
+        # Ganti placeholder label dengan matplotlib canvas
+        self.fig = plt.Figure(figsize=(5, 5), dpi=100, facecolor='#f0f0f0')
+        self.ax = self.fig.add_subplot(111)
+        self.canvas = FigureCanvasTkAgg(self.fig, master=self.stats_frame)
+        self.canvas.get_tk_widget().configure(bg='#f0f0f0')
+        self.canvas.get_tk_widget().pack(fill=tk.BOTH, expand=True)
+        
+        # Bind resize event untuk update ukuran chart
+        self.stats_frame.bind('<Configure>', self._update_chart_size)
         
         # Initialize components
         self._load_icons()
@@ -149,7 +170,8 @@ class DiskAnalyzer(ttk.LabelFrame):
             image=self.open_icon if self.open_icon else None,
             compound='left',
             command=self.open_current_folder,
-            padding=5
+            padding=5,
+            state="disabled"  # Set disabled saat inisialisasi
         )
         self.open_folder_btn.pack(side=tk.LEFT, padx=5)
         
@@ -161,6 +183,28 @@ class DiskAnalyzer(ttk.LabelFrame):
         
         # Update content_frame grid weights
         self.content_frame.grid_rowconfigure(1, weight=1)  # TreeView row
+
+        # Add style for colored text in treeview
+        self.style = ttk.Style()
+        self.style.configure(
+            "Disk.Treeview", 
+            rowheight=32,
+            background="white",
+            fieldbackground="white"
+        )
+        
+        # Dictionary untuk menyimpan warna item
+        self.item_colors = {}
+
+        # Tambahkan konstanta untuk warna
+        self.FIXED_SATURATION = 0.6
+        self.FIXED_VALUE = 0.9
+        
+        # Tambahkan variabel untuk tracking item yang dipilih
+        self.selected_item_path = None
+        
+        # Tambahkan binding untuk klik pada treeview
+        self.content_tree.bind('<<TreeviewSelect>>', self._on_tree_select)
 
     def create_navigation_buttons(self):
         """Create navigation buttons with modern style"""
@@ -247,7 +291,7 @@ class DiskAnalyzer(ttk.LabelFrame):
                     continue
                     
         except Exception as e:
-            print(f"Error loading disks: {str(e)}")
+            print(f"Error loading disks: {e}")
 
     def _load_icons(self, size=(32, 32)):
         """Load icon untuk disk dari folder assets"""
@@ -516,6 +560,9 @@ class DiskAnalyzer(ttk.LabelFrame):
         # Bind events
         self.content_tree.bind('<Double-1>', self.on_item_double_click)
         self.bind_tree_scroll()
+        
+        # Add binding for pie chart clicks
+        self.canvas.get_tk_widget().bind('<Button-1>', self._on_pie_click)
 
     def bind_tree_scroll(self):
         """Bind scroll events for treeview"""
@@ -532,6 +579,8 @@ class DiskAnalyzer(ttk.LabelFrame):
         try:
             # Clear existing content first
             self.content_tree.delete(*self.content_tree.get_children())
+            # Disable open button when clearing content
+            self.open_folder_btn["state"] = "disabled"
             
             if not path or not os.path.exists(path):
                 return
@@ -626,22 +675,58 @@ class DiskAnalyzer(ttk.LabelFrame):
             print(f"Scan error: {e}")
 
     def check_scan_queue(self):
-        """Updated queue checking with simplified columns"""
         try:
             if not self.queue.empty():
                 action, data = self.queue.get_nowait()
                 
                 if action in ('results', 'partial'):
                     self.content_tree.delete(*self.content_tree.get_children())
-                    for name, size, is_dir, icon, item_path in data:
-                        size_str = self.format_size(size)
+                    
+                    self.item_colors = {}
+                    sizes = []
+                    colors = []
+                    items = []
+                    
+                    # Store complete data for reference
+                    sorted_data = sorted(data, key=lambda x: x[1], reverse=True)[:20]
+                    self.current_chart_data = []
+                    
+                    # Enable/disable open button based on data availability
+                    if sorted_data:
+                        self.open_folder_btn["state"] = "normal"
+                    else:
+                        self.open_folder_btn["state"] = "disabled"
+                    
+                    # Hitung total size dari 20 item terbesar
+                    max_size = sorted_data[0][1] if sorted_data else 0
+                    
+                    for name, size, is_dir, icon, item_path in sorted_data:
+                        # Generate warna berdasarkan proporsi ukuran relatif terhadap yang terbesar
+                        size_ratio = size / max_size if max_size > 0 else 0
+                        color = self._generate_color(size_ratio)
+                        self.item_colors[item_path] = color
                         
-                        self.content_tree.insert(
+                        # Store complete data tuple for chart
+                        self.current_chart_data.append((name, size, item_path))
+                        
+                        items.append((name, size, icon, item_path))
+                        sizes.append(size)
+                        colors.append(color)
+                    
+                    self._draw_pie_chart(sizes, colors)
+                    
+                    for name, size, icon, item_path in items:
+                        size_str = self.format_size(size)
+                        item_id = self.content_tree.insert(
                             "", "end",
-                            text="",  # Empty for icon column
+                            text="",
                             image=icon,
-                            values=(size_str, name),  # Hanya ukuran dan nama
+                            values=(size_str, name),
                             tags=(item_path,)
+                        )
+                        self.content_tree.tag_configure(
+                            item_path,
+                            foreground=self.item_colors[item_path]
                         )
                     
                     if action == 'results':
@@ -695,3 +780,183 @@ class DiskAnalyzer(ttk.LabelFrame):
         except Exception as e:
             print(f"Error loading icon {icon_path}: {e}")
             return None
+
+    def _update_chart_size(self, event=None):
+        """Update chart size when frame is resized"""
+        try:
+            # Kurangi padding
+            width = self.stats_frame.winfo_width() - 10   # Dari 40 ke 10
+            height = self.stats_frame.winfo_height() - 10  # Dari 40 ke 10
+            
+            # Use smaller dimension for perfect circle
+            size = min(width, height) / 100  # Convert to inches (assuming 100 dpi)
+            self.fig.set_size_inches(size, size)
+            
+            # Force redraw
+            self.canvas.draw()
+                
+        except Exception as e:
+            print(f"Error updating chart size: {e}")
+
+    def _draw_pie_chart(self, sizes, colors):
+        """Draw simple donut chart"""
+        try:
+            self.ax.clear()
+            if sizes:
+                # Draw pie chart
+                wedges, _ = self.ax.pie(
+                    sizes, 
+                    colors=colors,
+                    wedgeprops=dict(
+                        width=0.4,
+                        edgecolor='#f0f0f0',
+                        linewidth=1
+                    ),
+                    startangle=90,
+                    radius=0.98
+                )
+                
+                self.pie_wedges = wedges
+                
+                self.ax.axis('equal')
+                self.fig.patch.set_facecolor('none')
+                self.ax.patch.set_facecolor('none')
+                self.fig.subplots_adjust(left=0.02, right=0.98, top=0.98, bottom=0.02)
+                
+                # Reset selection and center text
+                self.selected_item_path = None
+                # Hapus text di tengah saat tidak ada yang dipilih
+                self.center_text = self.ax.text(0, 0, '', 
+                                              horizontalalignment='center',
+                                              verticalalignment='center',
+                                              fontsize=9)
+                
+                # Store sector data
+                self.sectors = []
+                for i, wedge in enumerate(wedges):
+                    if i < len(self.current_chart_data):
+                        name, size, item_path = self.current_chart_data[i]
+                        self.sectors.append({
+                            'path': item_path,
+                            'size': size,
+                            'name': name,
+                            'original_color': colors[i],
+                            'start': wedge.theta1,
+                            'end': wedge.theta2
+                        })
+                
+                self.canvas.draw()
+            
+        except Exception as e:
+            print(f"Error drawing pie chart: {e}")
+
+    def _update_pie_colors(self):
+        """Update pie colors based on selection"""
+        if not hasattr(self, 'sectors') or not self.sectors:
+            return
+            
+        if self.selected_item_path is None:
+            # Reset semua pie ke warna asli
+            for wedge, sector in zip(self.pie_wedges, self.sectors):
+                wedge.set_facecolor(sector['original_color'])
+            # Hapus text di tengah
+            if hasattr(self, 'center_text'):
+                self.center_text.set_text('')
+        else:
+            # Buat warna baru berdasarkan selection
+            colors = []
+            selected_size = None
+            selected_name = None
+            
+            for sector in self.sectors:
+                if sector['path'] == self.selected_item_path:
+                    colors.append(sector['original_color'])
+                    selected_size = sector['size']
+                    selected_name = sector['name']
+                else:
+                    colors.append('#E0E0E0')
+            
+            # Update wedges dengan warna baru
+            for wedge, color in zip(self.pie_wedges, colors):
+                wedge.set_facecolor(color)
+                
+            # Update text di tengah dengan ukuran dan nama yang dipilih
+            if hasattr(self, 'center_text') and selected_size is not None:
+                size_text = self.format_size(selected_size)
+                name_text = selected_name if len(selected_name) < 20 else selected_name[:17] + '...'
+                center_text = f'{name_text}\n{size_text}'
+                self.center_text.set_text(center_text)
+                
+        self.canvas.draw()
+
+    def _generate_color(self, size_ratio):
+        """
+        Generate warna berdasarkan rasio ukuran:
+        """
+        hue = 30 + (size_ratio * (60 - 180))
+        
+        # Konversi ke range 0-1
+        hue = (hue % 360) / 360
+        
+        rgb = colorsys.hsv_to_rgb(hue, self.FIXED_SATURATION, self.FIXED_VALUE)
+        return f'#{int(rgb[0]*255):02x}{int(rgb[1]*255):02x}{int(rgb[2]*255):02x}'
+
+    def _on_tree_select(self, event):
+        """Handle tree item selection"""
+        selection = self.content_tree.selection()
+        if selection:
+            item_path = self.content_tree.item(selection[0])['tags'][0]
+            self.selected_item_path = item_path
+            self._update_pie_colors()
+    
+    def _update_pie_colors(self):
+        """Update pie colors based on selection"""
+        if not hasattr(self, 'sectors') or not self.sectors:
+            return
+            
+        if self.selected_item_path is None:
+            # Reset semua pie ke warna asli
+            for wedge, sector in zip(self.pie_wedges, self.sectors):
+                wedge.set_facecolor(sector['original_color'])
+            # Hapus text di tengah
+            if hasattr(self, 'center_text'):
+                self.center_text.set_text('')
+        else:
+            # Buat warna baru berdasarkan selection
+            colors = []
+            selected_size = None
+            selected_name = None
+            
+            for sector in self.sectors:
+                if sector['path'] == self.selected_item_path:
+                    colors.append(sector['original_color'])
+                    selected_size = sector['size']
+                    selected_name = sector['name']
+                else:
+                    colors.append('#E0E0E0')
+            
+            # Update wedges dengan warna baru
+            for wedge, color in zip(self.pie_wedges, colors):
+                wedge.set_facecolor(color)
+                
+            # Update text di tengah dengan ukuran dan nama yang dipilih
+            if hasattr(self, 'center_text') and selected_size is not None:
+                size_text = self.format_size(selected_size)
+                name_text = selected_name if len(selected_name) < 20 else selected_name[:17] + '...'
+                center_text = f'{name_text}\n{size_text}'
+                self.center_text.set_text(center_text)
+                
+        self.canvas.draw()
+
+    def _on_pie_click(self, event):
+        """Handle clicks on pie chart area"""
+        try:
+            # Deselect tree items
+            for item in self.content_tree.selection():
+                self.content_tree.selection_remove(item)
+            
+            # Reset pie colors
+            self.selected_item_path = None
+            self._update_pie_colors()
+        except Exception as e:
+            print(f"Error handling pie click: {e}")

@@ -396,7 +396,7 @@ class MainWindow(tk.Tk):
 
         # Create nested notebooks for tools
         self.tools_nested_notebook = ttk.Notebook(self.tools_tab)
-        self.tools_nested_notebook.pack(fill='both', expand=True, pady=(5,5))
+        self.tools_nested_notebook.pack(fill='both', expand=True, pady=(5,0))
 
         # Create nested tabs for tools
         tools_nested_tab_configs = [
