@@ -183,9 +183,6 @@ class ProjectLibrary(ttk.LabelFrame):
         )
         self.restore_button.pack(side=tk.LEFT)
 
-        self.reminder_label = ttk.Label(self.button_frame, text="Buatlah cadangan berkala untuk menghindari kehilangan akses daftar pustaka.", foreground="#999999")
-        self.reminder_label.pack(side=tk.LEFT, padx=10)
-
         # Configure grid to be resizable with weight constraints
         self.columnconfigure(0, weight=1)
         self.rowconfigure(1, weight=1)

@@ -70,9 +70,6 @@ class DatabaseBackup(ttk.LabelFrame):
             image=self.restore_icon, compound='left',
             command=self.restore_database, padding=5, state="disabled")
         self.restore_button.pack(side=tk.LEFT, padx=(10,0), pady=5)
-        
-        self.reminder_label = ttk.Label(self.button_frame, text="Cadangkan berkala untuk menghindari kehilangan Database.", foreground="#999999")
-        self.reminder_label.pack(side=tk.LEFT, pady=10, padx=10)
 
         # Scrollable Treeview for files
         self.file_treeview = ttk.Treeview(self, columns=("No", "Direktori", "File"), show="headings")
