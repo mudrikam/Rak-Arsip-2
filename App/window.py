@@ -274,7 +274,7 @@ class MainWindow(tk.Tk):
         self.status_message = self.loading_messages[0]
         self.update_status(self.status_message)
         self.animate_messages()
-        self.after(4000, self.initialize_ui) # Loading time
+        self.after(50, self.initialize_ui) # Loading time
 
     def animate_messages(self):
         """Animasi pergantian pesan pada status."""
