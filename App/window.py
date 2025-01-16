@@ -88,7 +88,7 @@ class MainWindow(tk.Tk):
         self.create_status_bar()
 
         # Mulai pemuatan dan inisialisasi UI setelah selesai
-        self.after(100, self.start_loading)
+        self.after(4000, self.start_loading)
 
         # Variabel StringVar untuk sinkronisasi
         self.selected_disk = tk.StringVar()
