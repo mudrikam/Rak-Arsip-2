@@ -79,8 +79,8 @@ class DatabaseBackup(ttk.LabelFrame):
         
         # Set fixed column widths - update initial widths
         self.file_treeview.column("No", width=40, minwidth=40, stretch=False, anchor="center")
-        self.file_treeview.column("Direktori", width=200, anchor="w")
-        self.file_treeview.column("File", width=200, anchor="w")
+        self.file_treeview.column("Direktori", width=200, minwidth=200, stretch=False, anchor="w")
+        self.file_treeview.column("File", width=300, stretch=True, anchor="w")
         
         self.file_treeview.pack(side=tk.LEFT, fill="both", expand=True)
         self.scrollbar = ttk.Scrollbar(self, orient="vertical", command=self.file_treeview.yview)
@@ -269,13 +269,13 @@ class DatabaseBackup(ttk.LabelFrame):
     def on_resize(self, event):
         """Adjust column widths dynamically based on window size."""
         width = self.winfo_width()
-        remaining_width = width - 40  # Subtract fixed No column width
-        column_width = remaining_width // 2  # Divide remaining space equally
+        remaining_width = width - 40 - 100  # Subtract No and Direktori column widths
         
-        # No column stays fixed at 40px
+        # Fixed widths for No and Direktori columns
         self.file_treeview.column("No", width=40, minwidth=40, stretch=False)
-        self.file_treeview.column("Direktori", width=column_width)
-        self.file_treeview.column("File", width=column_width)
+        self.file_treeview.column("Direktori", width=200, minwidth=200, stretch=False)
+        # Remaining width goes to File column
+        self.file_treeview.column("File", width=remaining_width, stretch=True)
 
     def _load_icon(self, icon_path, size=(16, 16)):
         """Helper function to load and process icons"""

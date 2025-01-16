@@ -201,31 +201,32 @@ class RelocateFiles(ttk.LabelFrame):
         self.drop_frame = ttk.Frame(self.left_panel)
         self.drop_frame.pack(fill="both", expand=True)
 
-        # Replace Listbox with Text widget
-        self.file_listbox = tk.Text(
-            self.drop_frame,
-            wrap="none",  # Ubah ke none untuk mencegah wrap
-            relief="flat",
-            height=10,
-            cursor="arrow",
-            font=("Segoe UI", 10),
-            padx=5,
-            pady=2  # Tambah padding y
+        # Replace Text widget with Treeview for source files
+        self.file_listbox = ttk.Treeview(
+            self.drop_frame, 
+            columns=("name",),
+            show="tree",  # Only show items without header
+            height=8
         )
         self.file_listbox.pack(fill="both", expand=True)
         
-        # Configure tags for alignment and selection
-        self.file_listbox.tag_configure("item", lmargin1=5, lmargin2=40)  # Adjust margins for items
-        self.file_listbox.tag_configure("selected", background="#0078D7", foreground="white")
+        # Configure treeview appearance
+        self.file_listbox.column("#0", width=50, stretch=False)  # Icon column
+        self.file_listbox.column("name", width=200, stretch=True)  # Filename column
         
-        # Add selection support
-        self.file_listbox.tag_configure("selected", background="#0078D7", foreground="white")
-        self.file_listbox.bind("<Button-1>", self.on_text_click)
-
-        # Add horizontal scrollbar
+        # Configure style for clean look
+        style = ttk.Style()
+        style.configure("Treeview", font=("Segoe UI", 10))
+        style.configure("Treeview", rowheight=32)  # Adjust row height for icons
+        
+        # Add scrollbars
+        v_scroll = ttk.Scrollbar(self.drop_frame, orient="vertical", command=self.file_listbox.yview)
         h_scroll = ttk.Scrollbar(self.drop_frame, orient="horizontal", command=self.file_listbox.xview)
-        h_scroll.pack(fill="x", side="bottom")
-        self.file_listbox.configure(xscrollcommand=h_scroll.set)
+        self.file_listbox.configure(yscrollcommand=v_scroll.set, xscrollcommand=h_scroll.set)
+        
+        # Pack scrollbars
+        v_scroll.pack(side="right", fill="y")
+        h_scroll.pack(side="bottom", fill="x")
 
         # Create overlay label inside drop frame
         self.overlay_label = ttk.Label(
@@ -484,7 +485,7 @@ class RelocateFiles(ttk.LabelFrame):
             self.progress_bar["value"] = 0
 
     def add_file_to_list(self, file_path, thumb):
-        """Helper method to add file with thumbnail to list"""
+        """Helper method to add file with thumbnail to treeview"""
         if file_path not in self.file_paths:
             name = os.path.basename(file_path)
             # Truncate filename if too long (40 chars)
@@ -497,10 +498,8 @@ class RelocateFiles(ttk.LabelFrame):
                 'thumb': thumb
             }
             
-            # Insert file info as single line with proper spacing
-            self.file_listbox.insert(tk.END, " ")  # Small initial space
-            self.file_listbox.image_create(tk.END, image=thumb)
-            self.file_listbox.insert(tk.END, f" {name}\n", "item")
+            # Insert into treeview with icon
+            self.file_listbox.insert("", "end", image=thumb, values=(name,), tags=(file_path,))
             return True
         return False
 
@@ -585,6 +584,25 @@ class RelocateFiles(ttk.LabelFrame):
     def _do_file_operation(self, src_path, dst_path, operation="copy"):
         """Helper for file copy/move operations with proper error handling"""
         try:
+            # Sanitasi nama file tujuan
+            dst_dir = os.path.dirname(dst_path)
+            filename = os.path.basename(dst_path)
+            
+            # Hapus karakter ilegal dari nama file
+            illegal_chars = '<>:"/\\|?*'
+            for char in illegal_chars:
+                filename = filename.replace(char, '_')
+                
+            # Batasi panjang total path (260 karakter untuk Windows)
+            if len(os.path.join(dst_dir, filename)) > 259:
+                # Potong nama file jika terlalu panjang
+                base, ext = os.path.splitext(filename)
+                max_length = 259 - len(dst_dir) - len(ext)
+                filename = base[:max_length] + ext
+                
+            # Update path tujuan dengan nama file yang sudah disanitasi    
+            dst_path = os.path.join(dst_dir, filename)
+            
             if not os.path.exists(src_path):
                 raise FileNotFoundError(f"File sumber tidak ditemukan: {src_path}")
                 
@@ -654,6 +672,12 @@ class RelocateFiles(ttk.LabelFrame):
                         continue
                         
                     filename = info['name']
+                    
+                    # Sanitasi nama file sebelum membuat path tujuan
+                    illegal_chars = '<>:"/\\|?*'
+                    for char in illegal_chars:
+                        filename = filename.replace(char, '_')
+                        
                     dst_path = os.path.join(destination_folder, filename)
                     
                     # Reset resolved path untuk setiap file
@@ -869,8 +893,10 @@ class RelocateFiles(ttk.LabelFrame):
         # Clear stored paths
         self.file_paths.clear()
         
-        # Clear text widget
-        self.file_listbox.delete("1.0", tk.END)
+        # Clear treeview instead of text widget
+        for item in self.file_listbox.get_children():
+            self.file_listbox.delete(item)
+            
         self.update_dropzone_overlay()
         
         # Clear treeview selection
@@ -1114,15 +1140,13 @@ class RelocateFiles(ttk.LabelFrame):
         return True
 
     def redraw_thumbnails(self, event=None):
-        """Redraw all thumbnails in text widget"""
+        """Redraw all thumbnails in treeview"""
         try:
-            self.file_listbox.delete("1.0", tk.END)
+            for item in self.file_listbox.get_children():
+                self.file_listbox.delete(item)
             for file_path, info in self.file_paths.items():
-                thumb = info['thumb']
-                if thumb:
-                    self.file_listbox.insert(tk.END, " ")  # Small initial space
-                    self.file_listbox.image_create(tk.END, image=thumb)
-                    self.file_listbox.insert(tk.END, f" {info['name']}\n", "item")
+                self.file_listbox.insert("", "end", image=info['thumb'], 
+                                       values=(info['name'],), tags=(file_path,))
         except Exception as e:
             print(f"Error redrawing thumbnails: {e}")
 
@@ -1131,37 +1155,16 @@ class RelocateFiles(ttk.LabelFrame):
         return list(self.file_paths.keys())  # Return stored file paths instead of parsing text
 
     def on_text_click(self, event):
-        """Handle text widget clicks for selection"""
-        self.file_listbox.tag_remove("selected", "1.0", tk.END)
-        try:
-            index = self.file_listbox.index(f"@{event.x},{event.y}")
-            line = int(float(index))
-            if line % 2 == 1:  # Only select text lines, not spacing lines
-                self.file_listbox.tag_add("selected", f"{line}.0", f"{line}.end")
-        except:
-            pass
-        self.update_button_states()
+        # Remove old text click handler as we're using treeview selection
+        pass
 
     def get_selected_files(self):
-        """Get selected files from text widget"""
+        """Get selected files from treeview"""
         selected = []
-        try:
-            content = self.file_listbox.get("1.0", tk.END)
-            lines = content.split('\n')
-            ranges = self.file_listbox.tag_ranges("selected")
-            
-            for i in range(0, len(ranges), 2):
-                start_line = int(float(str(ranges[i]).split('.')[0]))
-                if start_line < len(lines):
-                    selected_text = lines[start_line-1].strip()
-                    if selected_text:
-                        # Find matching file path from stored paths
-                        for path, info in self.file_paths.items():
-                            if info['name'] in selected_text:
-                                selected.append(path)
-                                break
-        except Exception as e:
-            print(f"Error getting selected files: {e}")
+        for item in self.file_listbox.selection():
+            file_path = self.file_listbox.item(item)["tags"][0]
+            if file_path:
+                selected.append(file_path)
         return selected
 
 # ...end of class...

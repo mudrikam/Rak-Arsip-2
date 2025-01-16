@@ -41,6 +41,7 @@ import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import random
 import colorsys  # Tambahkan import ini di bagian atas
+import subprocess  # Tambahkan import ini
 
 class DiskAnalyzer(ttk.Frame):
     def __init__(self, parent, BASE_DIR, main_window):
@@ -79,7 +80,7 @@ class DiskAnalyzer(ttk.Frame):
         self.main_container.grid_columnconfigure(0, weight=1)
         
         # Top frame for disks
-        self.disks_container = ttk.LabelFrame(self.main_container, text="Daftar Disk:", padding=5)
+        self.disks_container = ttk.LabelFrame(self.main_container, text="Daftar Disk :", padding=5)
         self.disks_container.grid(row=0, column=0, sticky="ew", pady=(0,10))
         
         # Create horizontal container for disk cards and navigation
@@ -104,13 +105,13 @@ class DiskAnalyzer(ttk.Frame):
         self.bottom_container.grid_columnconfigure(1, weight=7)  # Right frame - 70%
         
         # Content frame (left) - configure to expand
-        self.content_frame = ttk.LabelFrame(self.bottom_container, text="Konten:", padding=5)
+        self.content_frame = ttk.LabelFrame(self.bottom_container, text="Konten :", padding=5)
         self.content_frame.grid(row=0, column=0, padx=(0,5), sticky="nsew")
         self.content_frame.grid_rowconfigure(0, weight=1)
         self.content_frame.grid_columnconfigure(0, weight=1)
         
         # Statistics frame (right) - configure to expand
-        self.stats_frame = ttk.LabelFrame(self.bottom_container, text="Statistik:", padding=5)
+        self.stats_frame = ttk.LabelFrame(self.bottom_container, text="Statistik :", padding=5)
         self.stats_frame.grid(row=0, column=1, padx=(5,0), sticky="nsew")
         self.stats_frame.grid_rowconfigure(0, weight=1)
         self.stats_frame.grid_columnconfigure(0, weight=1)
@@ -148,13 +149,18 @@ class DiskAnalyzer(ttk.Frame):
         self.nav_content_frame.grid(row=0, column=0, sticky="ew", padx=5, pady=5)
         
         # Pastikan nav_content_frame tidak mengecil
-        self.content_frame.grid_rowconfigure(0, weight=0)  # nav_content_frame - tidak mengecil
-        self.content_frame.grid_rowconfigure(1, weight=1)  # tree_container - bisa mengecil
+        self.content_frame.grid_rowconfigure(0, weight=0)  # nav_buttons_frame - tidak mengecil
+        self.content_frame.grid_rowconfigure(1, weight=0)  # path_frame - tidak mengecil
+        self.content_frame.grid_rowconfigure(2, weight=1)  # tree_container - bisa mengecil
         self.content_frame.grid_columnconfigure(0, weight=1)
 
-        # Back dan Open buttons dengan ikon
+        # Frame untuk tombol-tombol
+        nav_buttons_frame = ttk.Frame(self.nav_content_frame)
+        nav_buttons_frame.grid(row=0, column=0, sticky="w")
+
+        # Back dan Open buttons dengan ikon di nav_buttons_frame
         self.back_btn = ttk.Button(
-            self.nav_content_frame,
+            nav_buttons_frame,
             text="Kembali",
             image=self.back_icon if self.back_icon else None,
             compound='left',
@@ -165,21 +171,25 @@ class DiskAnalyzer(ttk.Frame):
         self.back_btn.pack(side=tk.LEFT, padx=(0,5))
         
         self.open_folder_btn = ttk.Button(
-            self.nav_content_frame,
+            nav_buttons_frame,
             text="Buka",
             image=self.open_icon if self.open_icon else None,
             compound='left',
             command=self.open_current_folder,
             padding=5,
-            state="disabled"  # Set disabled saat inisialisasi
+            state="disabled"
         )
         self.open_folder_btn.pack(side=tk.LEFT, padx=5)
+
+        # Frame untuk path label
+        path_frame = ttk.Frame(self.nav_content_frame)
+        path_frame.grid(row=1, column=0, sticky="ew", pady=(5,0))
         
-        self.path_label = ttk.Label(self.nav_content_frame, text="")
-        self.path_label.pack(side=tk.LEFT, padx=5, fill=tk.X, expand=True)
+        self.path_label = ttk.Label(path_frame, text="")
+        self.path_label.pack(side=tk.LEFT, fill=tk.X, expand=True)
 
         # Tree container sekarang akan mengecil saat ruang terbatas
-        self.tree_container.grid(row=1, column=0, sticky="nsew", padx=5, pady=5)
+        self.tree_container.grid(row=2, column=0, sticky="nsew", padx=5, pady=5)
         
         # Update content_frame grid weights
         self.content_frame.grid_rowconfigure(1, weight=1)  # TreeView row
@@ -255,10 +265,40 @@ class DiskAnalyzer(ttk.Frame):
             
             # Get all partitions if not already loaded
             if not self.all_partitions:
-                self.all_partitions = [p for p in psutil.disk_partitions(all=False)
-                                     if not (p.mountpoint == '' or 
-                                           ('cdrom' in p.opts.lower() and 
-                                            not os.path.exists(p.mountpoint)))]
+                # Get local partitions
+                local_partitions = [p for p in psutil.disk_partitions(all=False)
+                                  if not (p.mountpoint == '' or 
+                                        ('cdrom' in p.opts.lower() and 
+                                         not os.path.exists(p.mountpoint)))]
+                
+                # Get network drives using subprocess
+                try:
+                    result = subprocess.check_output(
+                        "net use", 
+                        shell=True,
+                        text=True,
+                        creationflags=subprocess.CREATE_NO_WINDOW
+                    ).splitlines()
+                    
+                    for line in result[2:]:  # Skip header lines
+                        if line.strip() and "OK" in line:
+                            parts = line.split()
+                            if len(parts) >= 2:
+                                drive_letter = parts[1]
+                                if os.path.exists(drive_letter):
+                                    # Create custom partition object for network drive
+                                    net_part = psutil._common.sdiskpart(
+                                        device=parts[-1],
+                                        mountpoint=drive_letter,
+                                        fstype='Network',
+                                        opts='network'
+                                    )
+                                    local_partitions.append(net_part)
+                                    
+                except subprocess.CalledProcessError:
+                    print("Failed to get network drives")
+                    
+                self.all_partitions = local_partitions
             
             # Calculate total pages
             total_disks = len(self.all_partitions)
@@ -282,12 +322,12 @@ class DiskAnalyzer(ttk.Frame):
                     usage = psutil.disk_usage(partition.mountpoint)
                     frame = self.create_disk_frame(partition, usage)
                     if frame and partition.mountpoint == self.active_disk_path:
-                        # Reselect active disk if it's on this page
-                        # Gunakan parent bukan root
                         self.parent.after(100, lambda f=frame, p=partition.mountpoint: 
                                         self.select_disk_frame(f, p))
-                except Exception as e:
-                    print(f"Error processing partition {partition.mountpoint}: {str(e)}")
+                except (PermissionError, OSError) as e:
+                    print(f"Error accessing {partition.mountpoint}: {str(e)}")
+                    # Tetap buat frame untuk drive yang tidak bisa diakses
+                    frame = self.create_disk_frame(partition, None)
                     continue
                     
         except Exception as e:
@@ -343,6 +383,44 @@ class DiskAnalyzer(ttk.Frame):
         except Exception as e:
             print(f"Error loading file icons: {e}")
 
+    def get_network_drive_info(self, drive_letter):
+        """Get network drive share name and UNC path"""
+        try:
+            result = subprocess.check_output(
+                "net use",
+                shell=True,
+                text=True,
+                creationflags=subprocess.CREATE_NO_WINDOW
+            ).splitlines()
+            
+            for line in result[2:]:  # Skip header lines
+                if line.strip() and drive_letter.rstrip('\\') in line:
+                    parts = line.split()
+                    if len(parts) >= 3:
+                        remote_path = parts[-1]
+                        # Try to get share label from mounted network drive
+                        try:
+                            kernel32 = ctypes.windll.kernel32
+                            volume_name_buffer = create_unicode_buffer(1024)
+                            kernel32.GetVolumeInformationW(
+                                str(drive_letter),
+                                volume_name_buffer,
+                                ctypes.sizeof(volume_name_buffer),
+                                None, None, None, None, 0
+                            )
+                            share_label = volume_name_buffer.value
+                            if share_label:
+                                return f"{share_label} ({remote_path})"
+                        except:
+                            pass
+                            
+                        # Fallback: Extract share name from UNC path
+                        share_name = remote_path.split('\\')[-1]
+                        return f"{share_name} ({remote_path})"
+        except:
+            pass
+        return None
+
     def create_disk_frame(self, partition, usage):
         try:
             # Create card frame with horizontal layout
@@ -355,25 +433,49 @@ class DiskAnalyzer(ttk.Frame):
             icon_frame.pack(side=tk.LEFT, fill=tk.Y, padx=(5,0), pady=5)
             icon_frame.pack_propagate(False)
             
-            # Update bagian icon label untuk menggunakan gambar
-            if self.disk_icon:
-                icon_label = tk.Label(icon_frame, image=self.disk_icon, bg='white')
+            # Choose appropriate icon based on drive type
+            is_network = hasattr(partition, 'opts') and 'network' in partition.opts.lower()
+            icon_name = "network.png" if is_network else "disk.png"
+            icon_path = os.path.join(self.BASE_DIR, "Img", "icon", "ui", icon_name)
+            
+            if os.path.exists(icon_path):
+                with Image.open(icon_path) as img:
+                    if img.mode != 'RGBA':
+                        img = img.convert('RGBA')
+                    img = img.resize((32, 32), Image.Resampling.LANCZOS)
+                    icon = ImageTk.PhotoImage(img)
+                    icon_label = tk.Label(icon_frame, image=icon, bg='white')
+                    icon_label.image = icon  # Keep reference
             else:
-                # Fallback ke emoji jika gambar tidak dapat dimuat
                 icon_label = tk.Label(icon_frame, text="💾", font=('Arial', 16), bg='white')
+                
             icon_label.pack(expand=True, padx=3, pady=3)
             
             # Right panel for info
             info_frame = tk.Frame(card, bg='white')
             info_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=5, pady=5)
             
-            # Get volume info dan info penggunaan disk
-            volume_name = self.get_volume_name(partition.mountpoint)
-            total_str = self.format_size(usage.total)
-            used_str = self.format_size(usage.used)
-            free_str = self.format_size(usage.free)
+            # Get volume info with better network drive handling
+            if hasattr(partition, 'opts') and 'network' in partition.opts.lower():
+                net_name = self.get_network_drive_info(partition.mountpoint)
+                volume_name = net_name if net_name else f"Shared Folder ({partition.device})"
+            else:
+                volume_name = self.get_volume_name(partition.mountpoint)
             
-            # Update label untuk menampilkan informasi dalam satu baris
+            # Add drive letter to volume name
+            drive_letter = partition.mountpoint.rstrip('\\')  # Remove trailing backslash
+            volume_name = f"{drive_letter} - {volume_name}"
+            
+            # Handle usage info
+            if usage:
+                total_str = self.format_size(usage.total)
+                used_str = self.format_size(usage.used)
+                free_str = self.format_size(usage.free)
+                info_text = f"{total_str} ({used_str} / {free_str})"
+            else:
+                info_text = "Access Denied"
+                
+            # Update labels
             name_label = tk.Label(info_frame, 
                                 text=f"{volume_name}", 
                                 font=('Arial', 9, 'bold'),
@@ -382,35 +484,33 @@ class DiskAnalyzer(ttk.Frame):
             name_label.pack(anchor=tk.W)
             
             info_label = tk.Label(info_frame, 
-                                text=f"{total_str} ({used_str} / {free_str})", 
+                                text=info_text, 
                                 font=('Arial', 7),
                                 justify=tk.LEFT,
                                 bg='white')
             info_label.pack(anchor=tk.W)
             
-            # Add progress bar
-            progress = tk.Canvas(info_frame, height=5, bg='#E0E0E0', bd=0, highlightthickness=0)
-            progress.pack(fill=tk.X, pady=(5,0))
-            
-            # Calculate used ratio and draw progress bar
-            used_ratio = usage.used / usage.total
-            
-            # Binding untuk update progress bar saat ukuran berubah
-            def update_progress(event=None):
-                try:
-                    width = progress.winfo_width()
-                    if width > 0:
-                        used_width = int(width * used_ratio)
-                        progress.delete('all')  # Hapus konten sebelumnya
-                        if used_width > 0:
-                            progress.create_rectangle(0, 0, used_width, 5, 
-                                                   fill='#2196F3', width=0)
-                except:
-                    pass
+            # Add progress bar only if usage info is available
+            if usage:
+                progress = tk.Canvas(info_frame, height=5, bg='#E0E0E0', bd=0, highlightthickness=0)
+                progress.pack(fill=tk.X, pady=(5,0))
+                
+                used_ratio = usage.used / usage.total
+                
+                def update_progress(event=None):
+                    try:
+                        width = progress.winfo_width()
+                        if width > 0:
+                            used_width = int(width * used_ratio)
+                            progress.delete('all')
+                            if used_width > 0:
+                                progress.create_rectangle(0, 0, used_width, 5, 
+                                                       fill='#2196F3', width=0)
+                    except:
+                        pass
 
-            # Bind resize event
-            progress.bind('<Configure>', update_progress)
-            card.after(100, update_progress)  # Schedule initial draw
+                progress.bind('<Configure>', update_progress)
+                card.after(100, update_progress)
             
             # Store all clickable widgets
             clickable_widgets = [card, icon_frame, info_frame, icon_label, name_label, info_label]
@@ -575,14 +675,22 @@ class DiskAnalyzer(ttk.Frame):
         self.content_tree.bind('<Button-5>', lambda e: self.content_tree.yview_scroll(1, "units"))
 
     def update_details(self, path):
-        """Update path display and history"""
+        """Update path display and history with timeout handling"""
         try:
-            # Clear existing content first
             self.content_tree.delete(*self.content_tree.get_children())
-            # Disable open button when clearing content
             self.open_folder_btn["state"] = "disabled"
             
-            if not path or not os.path.exists(path):
+            if not path:
+                return
+                
+            # Quick check for path existence with timeout
+            try:
+                import socket
+                socket.setdefaulttimeout(2)
+                if not os.path.exists(path):
+                    return
+            except (TimeoutError, OSError):
+                print(f"Timeout checking path: {path}")
                 return
                 
             # Update path tracking
@@ -596,7 +704,7 @@ class DiskAnalyzer(ttk.Frame):
             # Cancel any existing scan
             if self.current_thread and self.current_thread.is_alive():
                 self.queue.put(('cancel', None))
-                self.current_thread.join()
+                self.current_thread.join(timeout=1)  # Wait max 1 second
             
             # Start new scan thread
             self.current_thread = threading.Thread(
@@ -612,42 +720,70 @@ class DiskAnalyzer(ttk.Frame):
             print(f"Error updating details: {e}")
 
     def calculate_folder_size(self, path):
-        """Calculate folder size more accurately"""
+        """Calculate folder size with timeout and check responsiveness"""
         total = 0
         try:
+            # Add timeout for network operations
+            if '\\\\' in path or hasattr(path, 'opts') and 'network' in path.opts.lower():
+                import socket
+                socket.setdefaulttimeout(2)  # 2 second timeout for network ops
+                
             with os.scandir(path) as it:
                 for entry in it:
                     try:
+                        # Allow GUI to update
+                        self.update_idletasks()
+                        
                         if entry.is_file(follow_symlinks=False):
-                            # Get actual file size
-                            total += entry.stat().st_size
+                            try:
+                                # Quick timeout for stat operations
+                                total += entry.stat(follow_symlinks=False).st_size
+                            except (TimeoutError, OSError):
+                                continue
                         elif entry.is_dir(follow_symlinks=False):
-                            # Recursively calculate subfolder size
-                            total += self.calculate_folder_size(entry.path)
+                            try:
+                                # Recursively calculate with timeout
+                                subtotal = self.calculate_folder_size(entry.path)
+                                if subtotal is not None:  # Check if calculation succeeded
+                                    total += subtotal
+                            except (TimeoutError, OSError):
+                                continue
                     except (PermissionError, OSError):
                         continue
-        except (PermissionError, OSError):
-            pass
-        return total
+            return total
+        except Exception:
+            # Suppress error messages for common access issues
+            return 0
 
     def _scan_directory(self, path):
-        """Improved scanning with better accuracy"""
+        """Improved scanning with better network handling"""
         scan_id = self.current_scan_id
         try:
             items = []
+            # Set timeout for network paths
+            if '\\\\' in path:
+                import socket
+                socket.setdefaulttimeout(2)
+                
             for item in os.scandir(path):
                 if scan_id != self.current_scan_id:
                     return
                     
                 try:
+                    # Allow GUI to update periodically
+                    if len(items) % 5 == 0:
+                        self.update_idletasks()
+                        
                     name = item.name
                     is_dir = item.is_dir(follow_symlinks=False)
                     
-                    # More accurate size calculation
-                    if is_dir:
-                        size = self.calculate_folder_size(item.path)
-                    else:
-                        size = item.stat().st_size
+                    try:
+                        if is_dir:
+                            size = self.calculate_folder_size(item.path)
+                        else:
+                            size = item.stat(follow_symlinks=False).st_size
+                    except (TimeoutError, OSError):
+                        size = 0
                     
                     # Get icon
                     ext = os.path.splitext(name)[1].lower().lstrip('.')
@@ -658,13 +794,13 @@ class DiskAnalyzer(ttk.Frame):
                     
                     items.append((name, size, is_dir, icon, item.path))
                     
-                    # Update UI with current sorted items
-                    if len(items) % 10 == 0:  
+                    # Update UI more frequently for responsiveness
+                    if len(items) % 5 == 0:  
                         current = sorted(items, key=lambda x: x[1], reverse=True)[:20]
                         self.queue.put(('partial', current))
                     
-                except Exception as e:
-                    print(f"Error scanning {name}: {e}")
+                except Exception:
+                    # Suppress error messages for file access issues
                     continue
 
             if scan_id == self.current_scan_id:
