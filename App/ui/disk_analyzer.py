@@ -110,6 +110,9 @@ class DiskAnalyzer(ttk.Frame):
         self.content_frame.grid_rowconfigure(0, weight=1)
         self.content_frame.grid_columnconfigure(0, weight=1)
         
+        # Set minimum width untuk content frame
+        self.content_frame.grid_propagate(False)  # Prevent automatic resizing
+        self.content_frame.configure(width=500) 
         # Statistics frame (right) - configure to expand
         self.stats_frame = ttk.LabelFrame(self.bottom_container, text="Statistik :", padding=5)
         self.stats_frame.grid(row=0, column=1, padx=(5,0), sticky="nsew")
@@ -331,7 +334,7 @@ class DiskAnalyzer(ttk.Frame):
                     continue
                     
         except Exception as e:
-            print(f"Error loading disks: {e}")
+            self._handle_error("loading disks", e)
 
     def _load_icons(self, size=(32, 32)):
         """Load icon untuk disk dari folder assets"""
@@ -344,7 +347,7 @@ class DiskAnalyzer(ttk.Frame):
                     img = img.resize(size, Image.Resampling.LANCZOS)
                     self.disk_icon = ImageTk.PhotoImage(img)
         except Exception as e:
-            print(f"Error loading disk icon: {e}")
+            self._handle_error("loading disk icon", e)
             self.disk_icon = None
 
     def _load_file_icons(self, size=(24,24)):
@@ -363,7 +366,7 @@ class DiskAnalyzer(ttk.Frame):
                                 img = img.resize(size, Image.Resampling.LANCZOS)
                                 self.file_icons[ext] = ImageTk.PhotoImage(img)
                         except Exception as e:
-                            print(f"Error loading icon {file}: {e}")
+                            self._handle_error(f"loading icon {file}", e)
                             
             # Load default file and folder icons
             default_icons = {
@@ -381,7 +384,7 @@ class DiskAnalyzer(ttk.Frame):
                         self.file_icons[icon_type] = ImageTk.PhotoImage(img)
                         
         except Exception as e:
-            print(f"Error loading file icons: {e}")
+            self._handle_error("loading file icons", e)
 
     def get_network_drive_info(self, drive_letter):
         """Get network drive share name and UNC path"""
@@ -546,7 +549,7 @@ class DiskAnalyzer(ttk.Frame):
             return card
             
         except Exception as e:
-            print(f"Error creating disk frame: {e}")
+            self._handle_error("creating disk frame", e)
             return None
 
     def get_volume_name(self, path):
@@ -613,7 +616,7 @@ class DiskAnalyzer(ttk.Frame):
                 self.parent.after(50, lambda: self.update_details(path))
             
         except Exception as e:
-            print(f"Error in select_disk_frame: {e}")
+            self._handle_error("selecting disk frame", e)
 
     def setup_content_tree(self):
         """Setup treeview dengan kolom minimal"""
@@ -622,30 +625,68 @@ class DiskAnalyzer(ttk.Frame):
         style.layout("Disk.Treeview", [('Disk.Treeview.treearea', {'sticky': 'nswe'})])
         
         # Configure content_frame expansion
-        self.content_frame.grid_rowconfigure(0, weight=1)
+        self.content_frame.grid_rowconfigure(0, weight=0)  # Navigation buttons - no expand
+        self.content_frame.grid_rowconfigure(1, weight=0)  # Path label - no expand 
+        self.content_frame.grid_rowconfigure(2, weight=1)  # Tree container - expand to fill space
         self.content_frame.grid_columnconfigure(0, weight=1)
         
-        # Create container frame that fills parent
+        # Create three distinct frames
+        # 1. Navigation buttons frame
+        nav_buttons_frame = ttk.Frame(self.content_frame)
+        nav_buttons_frame.grid(row=0, column=0, sticky="ew", padx=5, pady=(5,2))
+        
+        # 2. Path display frame
+        path_frame = ttk.Frame(self.content_frame)
+        path_frame.grid(row=1, column=0, sticky="ew", padx=5, pady=(2,5))
+        
+        # 3. Tree container frame
         self.tree_container = ttk.Frame(self.content_frame)
-        self.tree_container.grid(row=0, column=0, sticky="nsew", padx=5, pady=5)
+        self.tree_container.grid(row=2, column=0, sticky="nsew", padx=5, pady=5)
         
         # Configure tree_container expansion
         self.tree_container.grid_rowconfigure(0, weight=1)
         self.tree_container.grid_columnconfigure(0, weight=1)
+        
+        # Move existing back and open buttons to nav_buttons_frame
+        self.back_btn = ttk.Button(
+            nav_buttons_frame,
+            text="Kembali",
+            image=self.back_icon if hasattr(self, 'back_icon') else None,
+            compound='left',
+            command=self.go_back,
+            padding=5,
+            state="disabled"
+        )
+        self.back_btn.pack(side=tk.LEFT, padx=(0,5))
+        
+        self.open_folder_btn = ttk.Button(
+            nav_buttons_frame,
+            text="Buka",
+            image=self.open_icon if hasattr(self, 'open_icon') else None,
+            compound='left',
+            command=self.open_current_folder,
+            padding=5,
+            state="disabled"
+        )
+        self.open_folder_btn.pack(side=tk.LEFT, padx=5)
+        
+        # Move path label to path_frame
+        self.path_label = ttk.Label(path_frame, text="")
+        self.path_label.pack(side=tk.LEFT, fill=tk.X, expand=True)
         
         # Create simplified treeview with fewer columns
         self.content_tree = ttk.Treeview(
             self.tree_container,
             style="Disk.Treeview",
             selectmode="browse",
-            columns=("size", "name"),  # Hanya ukuran dan nama
+            columns=("size", "name"),
             show="tree"
         )
         
         # Configure column widths
-        self.content_tree.column("#0", width=50, minwidth=50, stretch=False)  # Kolom ikon
-        self.content_tree.column("size", width=70, minwidth=70, stretch=False)  # Kolom ukuran
-        self.content_tree.column("name", width=250, minwidth=100, stretch=True)  # Kolom nama
+        self.content_tree.column("#0", width=50, minwidth=50, stretch=False)
+        self.content_tree.column("size", width=70, minwidth=70, stretch=False)
+        self.content_tree.column("name", width=250, minwidth=100, stretch=True)
         
         vsb = ttk.Scrollbar(self.tree_container, orient="vertical")
         
@@ -663,6 +704,10 @@ class DiskAnalyzer(ttk.Frame):
         
         # Add binding for pie chart clicks
         self.canvas.get_tk_widget().bind('<Button-1>', self._on_pie_click)
+
+        # Configure tree container dengan tinggi tetap
+        self.tree_container.configure(height=1000)  # Set tinggi container 50px
+        self.tree_container.grid_propagate(False)  # Mencegah container mengubah ukuran
 
     def bind_tree_scroll(self):
         """Bind scroll events for treeview"""
@@ -717,7 +762,7 @@ class DiskAnalyzer(ttk.Frame):
             self.check_scan_queue()
             
         except Exception as e:
-            print(f"Error updating details: {e}")
+            self._handle_error("updating details", e)
 
     def calculate_folder_size(self, path):
         """Calculate folder size with timeout and check responsiveness"""
@@ -808,7 +853,7 @@ class DiskAnalyzer(ttk.Frame):
                 self.queue.put(('results', final_items))
                 
         except Exception as e:
-            print(f"Scan error: {e}")
+            self._handle_error("scanning directory", e)
 
     def check_scan_queue(self):
         try:
@@ -871,7 +916,7 @@ class DiskAnalyzer(ttk.Frame):
             self.parent.after(25, self.check_scan_queue)
             
         except Exception as e:
-            print(f"Queue check error: {e}")
+            self._handle_error("checking scan queue", e)
 
     def on_item_double_click(self, event):
         """Handle double click using tags for path"""
@@ -882,7 +927,7 @@ class DiskAnalyzer(ttk.Frame):
             if os.path.isdir(item_path):
                 self.update_details(item_path)
         except Exception as e:
-            print(f"Error handling double click: {e}")
+            self._handle_error("handling double click", e)
 
     def go_back(self):
         """Navigate to previous folder"""
@@ -900,7 +945,7 @@ class DiskAnalyzer(ttk.Frame):
                 else:  # Linux/Mac
                     subprocess.call(['xdg-open', self.current_path])
         except Exception as e:
-            print(f"Error opening folder: {e}")
+            self._handle_error("opening folder", e)
 
     def _load_icon(self, icon_path, size=(16, 16)):
         """Helper function to load and process icons"""
@@ -914,7 +959,7 @@ class DiskAnalyzer(ttk.Frame):
                 img = img.resize(size, Image.Resampling.LANCZOS)
                 return ImageTk.PhotoImage(img)
         except Exception as e:
-            print(f"Error loading icon {icon_path}: {e}")
+            self._handle_error(f"loading icon {icon_path}", e)
             return None
 
     def _update_chart_size(self, event=None):
@@ -932,7 +977,7 @@ class DiskAnalyzer(ttk.Frame):
             self.canvas.draw()
                 
         except Exception as e:
-            print(f"Error updating chart size: {e}")
+            self._handle_error("updating chart size", e)
 
     def _draw_pie_chart(self, sizes, colors):
         """Draw simple donut chart"""
@@ -984,46 +1029,7 @@ class DiskAnalyzer(ttk.Frame):
                 self.canvas.draw()
             
         except Exception as e:
-            print(f"Error drawing pie chart: {e}")
-
-    def _update_pie_colors(self):
-        """Update pie colors based on selection"""
-        if not hasattr(self, 'sectors') or not self.sectors:
-            return
-            
-        if self.selected_item_path is None:
-            # Reset semua pie ke warna asli
-            for wedge, sector in zip(self.pie_wedges, self.sectors):
-                wedge.set_facecolor(sector['original_color'])
-            # Hapus text di tengah
-            if hasattr(self, 'center_text'):
-                self.center_text.set_text('')
-        else:
-            # Buat warna baru berdasarkan selection
-            colors = []
-            selected_size = None
-            selected_name = None
-            
-            for sector in self.sectors:
-                if sector['path'] == self.selected_item_path:
-                    colors.append(sector['original_color'])
-                    selected_size = sector['size']
-                    selected_name = sector['name']
-                else:
-                    colors.append('#E0E0E0')
-            
-            # Update wedges dengan warna baru
-            for wedge, color in zip(self.pie_wedges, colors):
-                wedge.set_facecolor(color)
-                
-            # Update text di tengah dengan ukuran dan nama yang dipilih
-            if hasattr(self, 'center_text') and selected_size is not None:
-                size_text = self.format_size(selected_size)
-                name_text = selected_name if len(selected_name) < 20 else selected_name[:17] + '...'
-                center_text = f'{name_text}\n{size_text}'
-                self.center_text.set_text(center_text)
-                
-        self.canvas.draw()
+            self._handle_error("drawing pie chart", e)
 
     def _generate_color(self, size_ratio):
         """
@@ -1045,6 +1051,24 @@ class DiskAnalyzer(ttk.Frame):
             self.selected_item_path = item_path
             self._update_pie_colors()
     
+    def _on_pie_click(self, event):
+        """Handle clicks on pie chart area"""
+        try:
+            # Deselect tree items
+            for item in self.content_tree.selection():
+                self.content_tree.selection_remove(item)
+            
+            # Reset pie colors
+            self.selected_item_path = None
+            self._update_pie_colors()
+        except Exception as e:
+            self._handle_error("handling pie click", e)
+
+    # Tambahkan method helper untuk error handling
+    def _handle_error(self, operation: str, error: Exception):
+        """Helper method untuk menangani error dengan logging yang konsisten"""
+        print(f"Error {operation}: {str(error)}")
+
     def _update_pie_colors(self):
         """Update pie colors based on selection"""
         if not hasattr(self, 'sectors') or not self.sectors:
@@ -1069,7 +1093,7 @@ class DiskAnalyzer(ttk.Frame):
                     selected_size = sector['size']
                     selected_name = sector['name']
                 else:
-                    colors.append('#E0E0E0')
+                    colors.append('#E0E0E0')  # Warna abu-abu untuk yang tidak dipilih
             
             # Update wedges dengan warna baru
             for wedge, color in zip(self.pie_wedges, colors):
@@ -1083,16 +1107,3 @@ class DiskAnalyzer(ttk.Frame):
                 self.center_text.set_text(center_text)
                 
         self.canvas.draw()
-
-    def _on_pie_click(self, event):
-        """Handle clicks on pie chart area"""
-        try:
-            # Deselect tree items
-            for item in self.content_tree.selection():
-                self.content_tree.selection_remove(item)
-            
-            # Reset pie colors
-            self.selected_item_path = None
-            self._update_pie_colors()
-        except Exception as e:
-            print(f"Error handling pie click: {e}")
