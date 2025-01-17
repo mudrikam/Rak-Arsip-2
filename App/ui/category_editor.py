@@ -104,10 +104,14 @@ class CategoryEditor(ttk.LabelFrame):
         )
         self.add_category_button.pack(side=tk.LEFT, padx=(5, 0))
 
-        # Buat Frame untuk Treeview dan scrollbar
+        # Buat Frame untuk Treeview dan scrollbar dengan tinggi yang bisa diperkecil
         self.treeview_frame = ttk.Frame(self.left_frame)
-        self.treeview_frame.pack(side=tk.TOP, fill=tk.BOTH, expand=True)
-
+        self.treeview_frame.pack(side=tk.TOP, fill=tk.BOTH, expand=True, pady=(0,5))
+        self.treeview_frame.pack_propagate(False)  # Mencegah frame menyesuaikan ukuran child widgets
+        
+        # Set tinggi minimum untuk frame
+        self.treeview_frame.configure(height=100)  # Tinggi minimum 100 pixel
+        
         # Buat Treeview untuk kategori tanpa heading
         self.category_tree = ttk.Treeview(self.treeview_frame, columns=("Category"), show="")
         self.category_tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)

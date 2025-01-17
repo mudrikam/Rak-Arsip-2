@@ -100,10 +100,14 @@ class TemplateCreator(ttk.LabelFrame):
         )
         self.add_template_button.pack(side=tk.LEFT, padx=(5, 0), pady=(0, 0))  # Removed bottom padding
 
-        # Create treeview frame
+        # Create treeview frame with minimum height
         self.treeview_frame = ttk.Frame(self.left_frame)
-        self.treeview_frame.pack(side=tk.TOP, fill=tk.BOTH, expand=True)
-
+        self.treeview_frame.pack(side=tk.TOP, fill=tk.BOTH, expand=True, pady=(0,5))
+        self.treeview_frame.pack_propagate(False)  # Prevent frame from shrinking to fit content
+        
+        # Set minimum height for frame
+        self.treeview_frame.configure(height=100)  # Minimum height of 100 pixels
+        
         # Create treeview for templates
         self.template_tree = ttk.Treeview(self.treeview_frame, columns=("Template"), show="")
         self.template_tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
