@@ -953,27 +953,14 @@ class RelocateFiles(ttk.LabelFrame):
         self._update_progress_text(f"Lokasi: {destination_folder}")
         self.progress_bar["value"] = 0
         
-        # Remove only successfully moved files from listbox
+        # Remove successfully moved files from treeview
         if self.moved_files:
-            # Get content using correct Text widget indices
-            content = self.file_listbox.get("1.0", tk.END)
-            lines = content.split('\n')
-            remaining_lines = []
-            
-            # Filter out moved files
-            for line in lines:
-                if not any(os.path.basename(moved) in line for moved in self.moved_files):
-                    remaining_lines.append(line)
-                    
-            # Clear and reinsert remaining lines
-            self.file_listbox.delete("1.0", tk.END)
-            if remaining_lines:
-                self.file_listbox.insert("1.0", "\n".join(remaining_lines))
-                
-            # Update file_paths dictionary
-            for moved_file in self.moved_files:
-                if moved_file in self.file_paths:
-                    del self.file_paths[moved_file]
+            for item in self.file_listbox.get_children():
+                file_path = self.file_listbox.item(item)["tags"][0]
+                if file_path in self.moved_files:
+                    self.file_listbox.delete(item)
+                    if file_path in self.file_paths:
+                        del self.file_paths[file_path]
         
         # Buat pesan detail
         detail_msg = []
@@ -999,10 +986,14 @@ class RelocateFiles(ttk.LabelFrame):
                 
             tk.messagebox.showinfo("Selesai", "\n".join(detail_msg))
             self.main_window.update_status(f"File berhasil dipindahkan ke {destination_folder}")
+            
+            # Update dropzone overlay after removing files
+            self.update_dropzone_overlay()
         else:
             # Get remaining files for error message
-            content = self.file_listbox.get("1.0", tk.END)
-            remaining_files = [line.strip() for line in content.split('\n') if line.strip()]
+            remaining_files = []
+            for item in self.file_listbox.get_children():
+                remaining_files.append(self.file_listbox.item(item)["values"][0])
             
             if remaining_files:
                 files_msg = "\n".join(remaining_files)
