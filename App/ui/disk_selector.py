@@ -61,7 +61,7 @@ class DiskSelector(ttk.LabelFrame):
         """Add combobox and labels with initial loading state"""
         # Combobox for drive selection
         self.disk_selector = ttk.Combobox(self, state="disabled", font=("Arial", 12), height=10, width=0)
-        self.disk_selector.grid(row=0, column=0, padx=20, pady=10, sticky="new")
+        self.disk_selector.grid(row=0, column=0, padx=10, pady=10, sticky="new")
         self.disk_selector.set("Memindai disk...")
 
         # Frame for labels
@@ -140,14 +140,15 @@ class DiskSelector(ttk.LabelFrame):
         """Get list of available drives and volume names"""
         disks = []
         try:
+            # Try using wmic first
             result = subprocess.check_output(
                 "wmic logicaldisk get caption, volumename", 
                 shell=True, 
                 text=True,
-                creationflags=subprocess.CREATE_NO_WINDOW  # Hide console window
+                creationflags=subprocess.CREATE_NO_WINDOW
             ).splitlines()
 
-            for line in result[1:]:  # Skip header
+            for line in result[1:]:
                 parts = line.strip().split()
                 if not parts:
                     continue
@@ -156,8 +157,27 @@ class DiskSelector(ttk.LabelFrame):
                 volume_name = " ".join(parts[1:]) if len(parts) > 1 else "(No Label)"
                 disks.append(f"{drive_letter}|{volume_name}")
                 
-        except subprocess.CalledProcessError as e:
-            print(f"Error scanning disks: {e}")
+        except (subprocess.CalledProcessError, FileNotFoundError):
+            try:
+                # Fallback to PowerShell
+                ps_command = "Get-WmiObject -Class Win32_LogicalDisk | Select-Object DeviceID, VolumeName | Format-Table -HideTableHeaders"
+                result = subprocess.check_output(
+                    ["powershell", "-Command", ps_command],
+                    text=True,
+                    creationflags=subprocess.CREATE_NO_WINDOW
+                ).splitlines()
+
+                for line in result:
+                    parts = line.strip().split()
+                    if not parts:
+                        continue
+                        
+                    drive_letter = parts[0]
+                    volume_name = " ".join(parts[1:]) if len(parts) > 1 else "(No Label)"
+                    disks.append(f"{drive_letter}|{volume_name}")
+
+            except Exception as e:
+                print(f"Error scanning disks with PowerShell fallback: {e}")
             
         return disks
 
