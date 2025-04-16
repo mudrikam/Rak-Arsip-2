@@ -49,6 +49,7 @@ from App.ui.database_backup import DatabaseBackup
 from App.ui.relocate_files import RelocateFiles
 from App.ui.personalize_settings import PersonalizeSettings  # Add this import
 from App.ui.disk_analyzer import DiskAnalyzer  # Add this import
+from App.ui.ai.image.microstock_tools import MicrostockTools  # Add at top with other imports
 from App.config import CURRENT_VERSION, WINDOW_SIZE  # Update the import to use config
 from PIL import Image, ImageTk
 
@@ -457,39 +458,89 @@ class MainWindow(tk.Tk):
         self.ai_nested_notebook = ttk.Notebook(self.ai_tab)
         self.ai_nested_notebook.pack(fill='both', expand=True, pady=(5,5))
 
-        ai_nested_tab_configs = [
-            ("Segera ditambahkan...!", "ai.png", "ai_sub_tab1"),
-            ("Tunggu updatenya...!", "ai.png", "ai_sub_tab2")
-        ]
+        # Tab configurations with their buttons
+        tab_configs = {
+            'image_tab': {
+                'name': "Image",
+                'icon': "image.png",
+                'buttons': [
+                    ("Microstock Tools", "microstock.png", 0, 0, self.launch_microstock_tools),
+                    ("Klasifikasi Gambar", "classify.png", 0, 1),
+                    ("Ekstrak Metadata", "metadata.png", 0, 2),
+                    ("Deteksi Duplikat", "duplicate.png", 1, 0),
+                    ("Generate Tags", "tags.png", 1, 1),
+                    ("Kompres Gambar", "compress.png", 1, 2),
+                    ("OCR Gambar", "ocr.png", 2, 0),
+                    ("Watermark", "watermark.png", 2, 1),
+                    ("Resize Otomatis", "resize.png", 2, 2),
+                ]
+            },
+            'video_tab': {
+                'name': "Video",
+                'icon': "video.png",
+                'buttons': [
+                    ("Ekstrak Frame", "extract_frame.png", 0, 0),
+                    ("Deteksi Scene", "detect_scene.png", 0, 1),
+                    ("Kompres Video", "compress_video.png", 0, 2),
+                    ("Format Konverter", "format_converter.png", 1, 0),
+                    ("Extract Audio", "extract_audio.png", 1, 1),
+                    ("Watermark Video", "watermark_video.png", 1, 2),
+                    ("Stabilisasi", "stabilize.png", 2, 0),
+                    ("Trim Video", "trim_video.png", 2, 1),
+                    ("Merge Video", "merge_video.png", 2, 2),
+                ]
+            },
+            'document_tab': {
+                'name': "Dokumen",
+                'icon': "document.png",
+                'buttons': [
+                    ("OCR Dokumen", "ocr_document.png", 0, 0),
+                    ("Konversi Format", "convert_format.png", 0, 1),
+                    ("Ekstrak Teks", "extract_text.png", 0, 2),
+                    ("Split PDF", "split_pdf.png", 1, 0),
+                    ("Merge PDF", "merge_pdf.png", 1, 1),
+                    ("Kompresi PDF", "compress_pdf.png", 1, 2),
+                    ("Extract Images", "extract_images.png", 2, 0),
+                    ("Watermark PDF", "watermark_pdf.png", 2, 1),
+                    ("Password PDF", "password_pdf.png", 2, 2),
+                ]
+            }
+        }
 
-        for text, icon_filename, attr_name in ai_nested_tab_configs:
-            icon_path = os.path.join(self.BASE_DIR, "Img", "icon", "ui", icon_filename)
-            tab = self.create_tab(self.ai_nested_notebook, text, icon_path, notebook=self.ai_nested_notebook, nested=True)
-            setattr(self, attr_name, tab)
+        # Create tabs and their buttons
+        for tab_id, config in tab_configs.items():
+            # Create tab
+            icon_path = os.path.join(self.BASE_DIR, "Img", "icon", "ui", config['icon'])
+            tab = self.create_tab(self.ai_nested_notebook, config['name'], icon_path, 
+                                notebook=self.ai_nested_notebook, nested=True)
+            setattr(self, tab_id, tab)
 
-            if attr_name == "ai_sub_tab1":
-                ai_features_label = ttk.Label(
-                    tab,
-                    text=(
-                        "Fitur AI yang ingin ditambahkan:\n\n"
-                        "- Deteksi Gambar dan Video\n"
-                        "- Generate Metadata Otomatis\n"
-                        "- Nama Otomatis\n"
-                        "- Generate Template\n"
-                        "- Sub Kategori Otomatis\n"
-                        "- Moderasi Teks\n"
-                        "- Pengenalan Teks (OCR)\n"
-                        "- Klasifikasi Dokumen\n"
-                        "- Ekstraksi Metadata Otomatis\n"
-                        "- Deteksi Duplikasi\n"
-                        "- Ringkasan Dokumen Otomatis\n"
-                        "- Fitur AI Berguna untuk Arsip Lainnya\n\n"
-                        "Jika kamu punya ide atau saran, \nsilakan beri tahu kami dengan membuat issue di GitHub."
-                    ),
-                    justify="left",
-                    padding=10
-                )
-                ai_features_label.pack(anchor="n", fill="both", expand=True, padx=10, pady=10)
+            # Create responsive frame container
+            container_frame = ttk.Frame(tab)
+            container_frame.pack(fill='both', expand=True, padx=20, pady=20)
+
+            # Configure grid to be responsive
+            for i in range(3):
+                container_frame.columnconfigure(i, weight=1)
+                container_frame.rowconfigure(i, weight=1)
+
+            # Create buttons with icons
+            for button_config in config['buttons']:
+                text, icon_name, row, col = button_config[:4]
+                command = button_config[4] if len(button_config) > 4 else None
+
+                # Load button icon
+                icon_path = os.path.join(self.BASE_DIR, "Img", "icon", "ui", icon_name)
+                icon = self._load_icon(icon_path, size=(24, 24))
+                
+                # Create button
+                btn = ttk.Button(container_frame, text=text, command=command)
+                if icon:
+                    btn.icon = icon  # Keep reference to prevent garbage collection
+                    btn.configure(image=icon, compound='top')
+                
+                btn.grid(row=row, column=col, padx=5, pady=5, sticky="nsew")
+
 
     def _create_settings_tabs(self):
         """Create settings nested tabs"""
@@ -530,5 +581,13 @@ class MainWindow(tk.Tk):
                 self.project_generator._create_project_path()
             except Exception as e:
                 print(f"Could not update project path: {e}")
+
+    def launch_microstock_tools(self):
+        """Launch the microstock tools window"""
+        try:
+            window = tk.Toplevel(self)
+            MicrostockTools(window, self.BASE_DIR, self)
+        except Exception as e:
+            print(f"Error launching Microstock Tools: {e}")
 
 

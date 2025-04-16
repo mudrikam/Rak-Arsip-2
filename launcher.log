@@ -1,0 +1,107 @@
+2025-04-15 15:57:39,541 - ERROR - Application error: can't find package ttk::theme::darkly
+2025-04-15 17:45:49,981 - INFO - File is JPEG, proceeding with JpegScan
+2025-04-15 17:45:49,981 - WARNING - Marker scan hit start of image data
+2025-04-15 17:45:49,983 - INFO - writing...
+2025-04-15 18:22:42,898 - INFO - File is JPEG, proceeding with JpegScan
+2025-04-15 18:22:42,899 - WARNING - Marker scan hit start of image data
+2025-04-15 18:22:42,899 - WARNING - No IPTC data found in C:/Users/mudri/Downloads/wallpaper1 - Copy.jpg
+2025-04-16 00:17:38,982 - ERROR - Worker thread error: None
+2025-04-16 00:22:09,011 - ERROR - Worker thread error: None
+2025-04-16 09:30:27,109 - ERROR - Failed to process young-girl-with-inscription-sign.png: Max retries reached - poor tag quality
+2025-04-16 09:36:51,152 - ERROR - Failed to process DSC02168.jpg: 
+2025-04-16 09:38:43,694 - ERROR - Failed to process The Beauty of Moist Banyan Tree Roots in a Natural Setting.jpg: 
+2025-04-16 09:38:45,228 - ERROR - Failed to process The soft glow of a vintage lantern harmonizes beautifully with the gardens greenery.jpg: 
+2025-04-16 09:39:50,028 - ERROR - Failed to process cut (5 of 5).jpg: 
+2025-04-16 09:39:50,636 - ERROR - Failed to process cut (7 of 21).jpg: 
+2025-04-16 09:42:00,218 - ERROR - Failed to process The view from below reveals an impressive abundance of fresh coconuts in clusters on the coconut tree, creating a striking natural scene.jpg: 
+2025-04-16 09:42:14,063 - ERROR - Failed to process _DSC0520.jpg: 
+2025-04-16 09:43:07,480 - ERROR - Failed to process DSC01318.jpg: Max retries reached - poor tag quality
+2025-04-16 09:44:37,174 - ERROR - Failed to process _DSC0522.jpg: 
+2025-04-16 10:02:04,639 - ERROR - Failed to process DSC01309.jpg: Max retries reached - poor tag quality
+2025-04-16 10:08:23,397 - ERROR - Failed to process Paddy and puddles in wet soil with grass in the foreground.jpg: 
+2025-04-16 10:08:26,097 - ERROR - Failed to process On the damp surface, the stone staircase with wooden steps is adorned with fallen dry leaves, creating a naturally serene ambiance.jpg: 
+2025-04-16 10:10:12,539 - ERROR - Failed to process Viewed from below at an angle to the left, a lush fern plant hangs down among the roots of a banyan tree.jpg: 
+2025-04-16 10:10:16,378 - ERROR - Failed to process Young paddy and wet soil with a bokeh background of terraced rice fields seen from an angled side.jpg: 
+2025-04-16 10:11:08,741 - ERROR - Failed to process cut (5 of 21).jpg: Max retries reached - poor tag quality
+2025-04-16 10:13:21,346 - ERROR - Failed to process cut (7 of 21).jpg: Max retries reached - poor tag quality
+2025-04-16 10:15:49,857 - ERROR - Failed to process Firewood in the backyard with a backdrop of trees and foliage.jpg: 
+2025-04-16 10:18:10,349 - ERROR - Failed to process DSC02141.jpg: 
+2025-04-16 10:18:50,674 - ERROR - Failed to process DSC02143.jpg: Max retries reached - poor tag quality
+2025-04-16 10:19:06,446 - ERROR - Failed to process A rural ambiance with a fish pond featuring tree shadows and falling leaves.jpg: invalid command name ".!toplevel.!frame.!label"
+2025-04-16 10:19:06,692 - ERROR - Failed to process A stack of firewood with beautifully defined and intricate textures..jpg: invalid command name ".!toplevel.!frame.!label"
+2025-04-16 10:19:09,457 - ERROR - Failed to process A scattering of dry, wet leaves over dirty soil, creating a contrasting composition of moisture and dryness.jpg: invalid command name ".!toplevel.!frame.!label"
+2025-04-16 10:45:50,565 - ERROR - Failed to process A close up of young Paddy with a blurred background.jpg: name 'retrying' is not defined
+2025-04-16 10:45:52,583 - ERROR - Failed to process A corner of the terraces with clear water reflecting the surrounding trees and sky.jpg: name 'retrying' is not defined
+2025-04-16 10:45:54,603 - ERROR - Failed to process A close-up of a Morning Glory flower, its vibrant petals glowing softly against a backdrop of fresh green leaves. The intricate details and natural colors radiate.jpg: name 'retrying' is not defined
+2025-04-16 10:45:54,604 - ERROR - Failed to process A glowing classic lantern gracefully lights up the garden, perfectly complemented by an elegant decorative fence.jpg: name 'retrying' is not defined
+2025-04-16 10:45:56,634 - ERROR - Failed to process A close-up of a beautiful Asoka flower, showcasing its vibrant petals with natural textures. The intricate details convey freshness and elegance.jpg: name 'retrying' is not defined
+2025-04-16 10:45:59,639 - ERROR - Failed to process A row of thriving Teh-tehan plants with dense green leaves and natural textures. Ideal as a beautiful and functional living fence.jpg: name 'retrying' is not defined
+2025-04-16 10:46:01,213 - ERROR - Failed to process A fish pond with reflections of trees and clustered dry leaves.jpg: name 'retrying' is not defined
+2025-04-16 10:46:02,872 - ERROR - Failed to process A lush fern plant hanging down among the roots of a banyan tree (landscape).jpg: name 'retrying' is not defined
+2025-04-16 10:46:06,905 - ERROR - Failed to process A rural fish pond with tree shadows scattered among fallen dry leaves.jpg: name 'retrying' is not defined
+2025-04-16 10:46:08,918 - ERROR - Failed to process A rural ambiance with a fish pond featuring tree shadows and falling leaves.jpg: name 'retrying' is not defined
+2025-04-16 10:46:08,919 - ERROR - Failed to process A nostalgic lantern adorns the garden with a vintage touch and captivating foliage.jpg: name 'retrying' is not defined
+2025-04-16 10:46:12,955 - ERROR - Failed to process A stack of firewood with beautifully defined and intricate textures..jpg: name 'retrying' is not defined
+2025-04-16 10:46:15,855 - ERROR - Failed to process Close Up Of A Beautiful Single Purple Ruellia Flower In Natural Light.jpg: name 'retrying' is not defined
+2025-04-16 10:46:17,813 - ERROR - Failed to process A scattering of dry, wet leaves over dirty soil, creating a contrasting composition of moisture and dryness.jpg: name 'retrying' is not defined
+2025-04-16 10:46:21,247 - ERROR - Failed to process Adorned with moss and decorated with fallen dry leaves, the weathered stone staircase adds charm to the garden's scenery.jpg: name 'retrying' is not defined
+2025-04-16 10:46:21,494 - ERROR - Failed to process A Network of Banyan Tree Roots Above the Moist and Fertile Ground in Their Natural Habitat.jpg: name 'retrying' is not defined
+2025-04-16 10:46:24,154 - ERROR - Failed to process cut (1 of 6).jpg: name 'retrying' is not defined
+2025-04-16 10:46:27,338 - ERROR - Failed to process cut (1 of 5).jpg: name 'retrying' is not defined
+2025-04-16 10:46:27,338 - ERROR - Failed to process Close-up of dirty Banyan tree roots with a moist texture beneath a forest canopy.jpg: name 'retrying' is not defined
+2025-04-16 10:46:28,190 - ERROR - Failed to process cut (2 of 6).jpg: name 'retrying' is not defined
+2025-04-16 10:46:29,684 - ERROR - Failed to process cut (2 of 21).jpg: name 'retrying' is not defined
+2025-04-16 10:46:33,543 - ERROR - Failed to process Close-Up of Moist Banyan Tree Roots Growing in a Tropical Environment.jpg: name 'retrying' is not defined
+2025-04-16 10:46:33,545 - ERROR - Failed to process cut (5 of 21).jpg: name 'retrying' is not defined
+2025-04-16 10:46:39,644 - ERROR - Failed to process cut (5 of 6).jpg: name 'retrying' is not defined
+2025-04-16 10:46:40,636 - ERROR - Failed to process cut (6 of 21).jpg: name 'retrying' is not defined
+2025-04-16 10:46:41,941 - ERROR - Failed to process cut (4 of 6).jpg: name 'retrying' is not defined
+2025-04-16 10:46:43,930 - ERROR - Failed to process cut (6 of 6).jpg: name 'retrying' is not defined
+2025-04-16 10:46:45,116 - ERROR - Worker thread error: invalid command name ".!toplevel.!microstocktools.!notebook.!frame.!frame.!frame.!labelframe2.!frame2.!treeview"
+2025-04-16 10:56:11,261 - ERROR - Failed to process cut (12 of 16).jpg: Max retries reached - poor tag quality
+2025-04-16 10:57:00,605 - ERROR - Failed to process cut (6 of 16).jpg: Max retries reached - poor tag quality
+2025-04-16 10:57:29,326 - ERROR - Failed to process cut (6 of 16).jpg: Max retries reached - poor tag quality
+2025-04-16 10:57:29,343 - ERROR - Failed to process cut (12 of 16).jpg: Max retries reached - poor tag quality
+2025-04-16 11:03:21,944 - ERROR - Failed to process _DSC0500.jpg: 
+2025-04-16 11:13:20,437 - ERROR - Failed to process Autumn Serenity Reflecting Trees And Fallen Leaves On A Tranquil Pond Surface.jpg: Max retries reached - poor tag quality
+2025-04-16 11:13:51,672 - ERROR - Failed to process Close Up Of An Empty Bird Nest Constructed From Twigs Surrounded By Fallen Leaves And Greenery.jpg: Max retries reached - poor tag quality
+2025-04-16 11:13:54,503 - ERROR - Failed to process Autumnal Ground Cover Of Fallen Leaves Wettened By Rain Enhancing Textural Detail And Earthy Tones.jpg: Max retries reached - poor tag quality
+2025-04-16 11:14:41,117 - ERROR - Failed to process Tranquil Paddy Field Landscape With Lush Greenery And Mud Terraces In Southeast Asia Scenery.jpg: 
+2025-04-16 11:14:41,617 - ERROR - Failed to process Rustic Wooden Fence Overlooking A Pond With Fallen Autumn Leaves In Soft Focus Background Landscape.jpg: 
+2025-04-16 11:15:18,618 - ERROR - Failed to process Tranquil Paddy Field Landscape With Lush Greenery And Mud Terraces In Southeast Asia Scenery.jpg: Max retries reached - poor tag quality
+2025-04-16 11:15:21,399 - ERROR - Failed to process Autumn Serenity Reflecting Trees And Fallen Leaves On A Tranquil Pond Surface.jpg: Max retries reached - poor tag quality
+2025-04-16 11:31:05,127 - ERROR - Failed to process Close Up Of Vibrant Green Rice Paddy Field Offering A Serene And Natural Aesthetic View.jpg: Max retries reached - poor tag quality
+2025-04-16 11:31:37,947 - ERROR - Failed to process Autumnal Ground Covered With Fallen Leaves And Wet Soil Displaying Natures Changing Season Close Up.jpg: 
+2025-04-16 11:31:42,283 - ERROR - Failed to process Detailed Close Up Of Vibrant Red Ixora Flowers Blossoming In A Lush Green Garden Bush.jpg: 
+2025-04-16 11:31:46,306 - ERROR - Failed to process Close Up View Of Delicate Purple Flowers On A Green Shrub Capturing Natures Beauty And Detail.jpg: 
+2025-04-16 11:32:39,170 - ERROR - Failed to process Illuminated Old Style Lamp With Retro Lightbulb And Yellow Metal Grid In A Dark Background.jpg: 
+2025-04-16 11:32:39,813 - ERROR - Failed to process Industrial Style Light Fixture Surrounded By Greenery In A Modern Interior Space.jpg: 
+2025-04-16 11:32:40,842 - ERROR - Failed to process Overgrown Stone Steps Ascend Into Lush Greenery In A Tranquil Natural Environment With Vegetation.jpg: 
+2025-04-16 11:37:50,430 - ERROR - Failed to process Close Up View Of Delicate Purple Flowers On A Green Shrub Capturing Natures Beauty And Detail.jpg: 
+2025-04-16 11:37:53,018 - ERROR - Failed to process Autumnal Ground Cover Of Fallen Leaves Wettened By Rain Enhancing Textural Detail And Earthy Tones.jpg: 
+2025-04-16 11:38:18,199 - ERROR - Failed to process Overgrown Stone Steps Ascend Into Lush Greenery In A Tranquil Natural Environment With Vegetation.jpg: Max retries reached - poor tag quality
+2025-04-16 11:55:33,453 - ERROR - Failed to process Autumn Serenity Reflecting Trees And Fallen Leaves On A Tranquil Pond Surface.jpg: Max retries reached - poor tag quality
+2025-04-16 11:55:36,633 - ERROR - Failed to process Autumnal Reflections Fallen Leaves Grace The Surface Of A Calm Tranquil Body Of Water.jpg: Max retries reached - poor tag quality
+2025-04-16 11:55:52,309 - ERROR - Failed to process Abandoned Birds Nest Among Fallen Leaves And Greenery A Symbol Of Natural Cycle And New Beginnings.jpg: Max retries reached - poor tag quality
+2025-04-16 11:56:23,409 - ERROR - Failed to process Close Up Of A Single Blooming Ruellia Simplex Flower With Green Leaves In A Garden Nature.jpg: 
+2025-04-16 11:56:23,613 - ERROR - Failed to process Autumnal Ground Cover Of Fallen Leaves Wettened By Rain Enhancing Textural Detail And Earthy Tones.jpg: 
+2025-04-16 11:56:29,952 - ERROR - Failed to process Close Up Of An Empty Bird Nest Constructed From Twigs Surrounded By Fallen Leaves And Greenery.jpg: 
+2025-04-16 11:56:33,298 - ERROR - Failed to process Autumnal Ground Covered With Fallen Leaves And Wet Soil Displaying Natures Changing Season Close Up.jpg: 
+2025-04-16 12:00:31,552 - ERROR - Failed to process Autumn Serenity Reflecting Trees And Fallen Leaves On A Tranquil Pond Surface.jpg: Max retries reached - poor tag quality
+2025-04-16 12:00:39,014 - ERROR - Failed to process Autumnal Reflections Fallen Leaves Grace The Surface Of A Calm Tranquil Body Of Water.jpg: Max retries reached - poor tag quality
+2025-04-16 12:01:14,200 - ERROR - Failed to process Autumnal Ground Cover Of Fallen Leaves Wettened By Rain Enhancing Textural Detail And Earthy Tones.jpg: 
+2025-04-16 12:01:17,509 - ERROR - Failed to process Abandoned Birds Nest Among Fallen Leaves And Greenery A Symbol Of Natural Cycle And New Beginnings.jpg: 
+2025-04-16 12:01:17,509 - ERROR - Failed to process Close Up Of A Single Blooming Ruellia Simplex Flower With Green Leaves In A Garden Nature.jpg: 
+2025-04-16 12:01:22,441 - ERROR - Failed to process Autumnal Ground Covered With Fallen Leaves And Wet Soil Displaying Natures Changing Season Close Up.jpg: 
+2025-04-16 12:03:56,345 - ERROR - Failed to process Autumn Serenity Reflecting Trees And Fallen Leaves On A Tranquil Pond Surface.jpg: Max retries reached - poor tag quality
+2025-04-16 12:03:59,434 - ERROR - Failed to process Autumnal Reflections Fallen Leaves Grace The Surface Of A Calm Tranquil Body Of Water.jpg: Max retries reached - poor tag quality
+2025-04-16 12:04:06,516 - ERROR - Failed to process Abandoned Birds Nest Among Fallen Leaves And Greenery A Symbol Of Natural Cycle And New Beginnings.jpg: Max retries reached - poor tag quality
+2025-04-16 12:04:10,191 - ERROR - Failed to process Close Up Of An Old Weathered Wooden Fence Overlooking A Pond Highlighting Textures And A Rustic.jpg: invalid command name ".!toplevel.!frame.!label"
+2025-04-16 12:04:10,581 - ERROR - Failed to process Close Up Of A Single Blooming Ruellia Simplex Flower With Green Leaves In A Garden Nature.jpg: invalid command name ".!toplevel.!microstocktools.!notebook.!frame.!frame.!frame.!frame.!label"
+2025-04-16 12:04:10,581 - ERROR - Failed to process Close Up Of A Single Blooming Ruellia Simplex Flower With Green Leaves In A Garden Nature.jpg: invalid command name ".!toplevel.!microstocktools.!notebook.!frame.!frame.!frame.!frame.!frame2.!frame.!label4"
+2025-04-16 12:04:12,346 - ERROR - Failed to process Close Up Of An Empty Bird Nest Constructed From Twigs Surrounded By Fallen Leaves And Greenery.jpg: invalid command name ".!toplevel.!frame.!label"
+2025-04-16 12:04:12,919 - ERROR - Failed to process Autumnal Ground Covered With Fallen Leaves And Wet Soil Displaying Natures Changing Season Close Up.jpg: invalid command name ".!toplevel.!microstocktools.!notebook.!frame.!frame.!frame.!frame.!label"
+2025-04-16 12:04:12,920 - ERROR - Failed to process Autumnal Ground Covered With Fallen Leaves And Wet Soil Displaying Natures Changing Season Close Up.jpg: invalid command name ".!toplevel.!microstocktools.!notebook.!frame.!frame.!frame.!frame.!frame2.!frame.!label4"
+2025-04-16 12:04:36,807 - ERROR - Failed to process Autumnal Ground Cover Of Fallen Leaves Wettened By Rain Enhancing Textural Detail And Earthy Tones.jpg: 
+2025-04-16 12:04:36,807 - ERROR - Failed to process Autumnal Ground Cover Of Fallen Leaves Wettened By Rain Enhancing Textural Detail And Earthy Tones.jpg: invalid command name ".!toplevel.!microstocktools.!notebook.!frame.!frame.!frame.!frame.!frame2.!frame.!label4"
+2025-04-16 12:04:36,808 - ERROR - Worker thread error: invalid command name ".!toplevel.!microstocktools.!notebook.!frame.!frame.!frame.!frame.!frame2.!frame.!label4"
