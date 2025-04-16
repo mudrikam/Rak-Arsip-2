@@ -461,10 +461,10 @@ class MainWindow(tk.Tk):
         # Tab configurations with their buttons
         tab_configs = {
             'image_tab': {
-                'name': "Image",
+                'name': "Microstock Tools",
                 'icon': "image.png",
                 'buttons': [
-                    ("Microstock Tools", "microstock.png", 0, 0, self.launch_microstock_tools),
+                    ("Metadata Generator", "microstock.png", 0, 0, self.launch_microstock_tools),
                     ("Klasifikasi Gambar", "classify.png", 0, 1),
                     ("Ekstrak Metadata", "metadata.png", 0, 2),
                     ("Deteksi Duplikat", "duplicate.png", 1, 0),

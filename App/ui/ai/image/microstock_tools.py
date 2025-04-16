@@ -92,6 +92,13 @@ class MicrostockTools(ttk.Frame):
         # Add update debouncing
         self._pending_stats_update = None
 
+        # Initialize speed test result
+        self.network_speed = {'download': 0, 'upload': 0}
+        
+        # Start speed test in background
+        self.speed_label.config(text="Internet Speed | Testing...")
+        threading.Thread(target=self._initial_speed_test, daemon=True).start()
+
         # Start monitoring thread
         self._monitor_metadata_changes()
 
@@ -182,7 +189,7 @@ class MicrostockTools(ttk.Frame):
 
         # Create tabs
         tabs_config = {
-            'generate_tab': ("Generator", "generate.png"),
+            'generate_tab': ("Image Metadata Generator", "generate.png"),
             'batch_tab': ("Batch", "batch.png"),
             'settings_tab': ("Settings", "settings.png")
         }
@@ -254,17 +261,19 @@ class MicrostockTools(ttk.Frame):
         config_frame.grid(row=0, column=0, sticky='new', pady=(0, 8))
         config_frame.columnconfigure(0, weight=1)
 
+        LABEL_WIDTH = 15  # Fixed width for all labels
+
         api_frame = ttk.Frame(config_frame)
         api_frame.pack(fill='x', padx=5, pady=5)
         api_left = ttk.Frame(api_frame)
         api_left.pack(side='left', fill='x', expand=True)
-        ttk.Label(api_left, text="Gemini API Key:").pack(side='left', padx=(0,5))
+        ttk.Label(api_left, text="Gemini API Key:", width=LABEL_WIDTH, anchor='e').pack(side='left', padx=(0,5))
         self.api_key_var = tk.StringVar(value=self.config.get('gemini_api_key', ''))
         self.api_key_entry = ttk.Entry(api_left, textvariable=self.api_key_var)
         self.api_key_entry.pack(side='left', fill='x', expand=True)
         api_right = ttk.Frame(api_frame)
         api_right.pack(side='left', fill='x', padx=(10,0))
-        ttk.Label(api_right, text="Model:").pack(side='left', padx=(0,5))
+        ttk.Label(api_right, text="Model:", width=LABEL_WIDTH, anchor='e').pack(side='left', padx=(0,5))
         self.model_var = tk.StringVar(value=self.config.get('default_gemini_model', 'gemini-2.0-flash'))
         models = self.config.get('gemini_models', ['gemini-2.0-flash'])
         self.model_combo = ttk.Combobox(api_right, textvariable=self.model_var, values=models, state='readonly', width=25)
@@ -275,7 +284,7 @@ class MicrostockTools(ttk.Frame):
         # Add custom and negative prompts after API key config
         custom_prompt_frame = ttk.Frame(config_frame)
         custom_prompt_frame.pack(fill='x', padx=5, pady=5)
-        ttk.Label(custom_prompt_frame, text="Custom Prompt:").pack(side='left', padx=(0,5))
+        ttk.Label(custom_prompt_frame, text="Custom Prompt:", width=LABEL_WIDTH, anchor='e').pack(side='left', padx=(0,5))
         self.custom_prompt_var = tk.StringVar(value=self.config.get('custom_prompt', ''))
         self.custom_prompt_entry = ttk.Entry(custom_prompt_frame, textvariable=self.custom_prompt_var)
         self.custom_prompt_entry.pack(side='left', fill='x', expand=True)
@@ -283,7 +292,7 @@ class MicrostockTools(ttk.Frame):
         
         neg_prompt_frame = ttk.Frame(config_frame)
         neg_prompt_frame.pack(fill='x', padx=5, pady=5)
-        ttk.Label(neg_prompt_frame, text="Negative Prompt:").pack(side='left', padx=(0,5))
+        ttk.Label(neg_prompt_frame, text="Negative Prompt:", width=LABEL_WIDTH, anchor='e').pack(side='left', padx=(0,5))
         self.neg_prompt_var = tk.StringVar(value=self.config.get('negative_prompt', ''))
         self.neg_prompt_entry = ttk.Entry(neg_prompt_frame, textvariable=self.neg_prompt_var)
         self.neg_prompt_entry.pack(side='left', fill='x', expand=True)
@@ -296,7 +305,7 @@ class MicrostockTools(ttk.Frame):
         # Title length inputs
         title_len_frame = ttk.Frame(length_frame)
         title_len_frame.pack(side='left', fill='x', expand=True)
-        ttk.Label(title_len_frame, text="Title Length:").pack(side='left', padx=(0,5))
+        ttk.Label(title_len_frame, text="Title Length:", width=LABEL_WIDTH, anchor='e').pack(side='left', padx=(0,5))
         self.min_title_var = tk.StringVar(value=self.config.get('title_length', {}).get('min', '60'))
         ttk.Entry(title_len_frame, textvariable=self.min_title_var, width=4).pack(side='left')
         ttk.Label(title_len_frame, text="-").pack(side='left', padx=2)
@@ -310,14 +319,14 @@ class MicrostockTools(ttk.Frame):
         # Tags count
         tags_count_frame = ttk.Frame(controls_frame)
         tags_count_frame.pack(side='left', padx=(0,10))
-        ttk.Label(tags_count_frame, text="Tags:").pack(side='left', padx=(0,5))
+        ttk.Label(tags_count_frame, text="Tags:", width=6, anchor='e').pack(side='left', padx=(0,5))
         self.tags_count_var = tk.StringVar(value=self.config.get('tags_count', '50'))
         ttk.Entry(tags_count_frame, textvariable=self.tags_count_var, width=4).pack(side='left')
         
         # Worker count
         worker_frame = ttk.Frame(controls_frame)
         worker_frame.pack(side='left')
-        ttk.Label(worker_frame, text="Workers:").pack(side='left', padx=(0,5))
+        ttk.Label(worker_frame, text="Workers:", width=8, anchor='e').pack(side='left', padx=(0,5))
         self.worker_count_var = tk.StringVar(value=self.config.get('worker_count', '1'))
         worker_entry = ttk.Entry(worker_frame, textvariable=self.worker_count_var, width=3)
         worker_entry.pack(side='left')
@@ -603,8 +612,47 @@ class MicrostockTools(ttk.Frame):
         self.cancel_generation = False
         self.generation_queue = Queue()
         
-        # Start network monitoring
+        # Initial network speed label setup
         self.check_network_speed()
+
+    def check_network_speed(self):
+        """Initial network speed label setup"""
+        self.speed_label.config(text="Internet Speed | Waiting for test...")
+
+    def _initial_speed_test(self):
+        """Run initial speed test once"""
+        try:
+            st = speedtest.Speedtest()
+            st.get_best_server()
+            
+            # Get download speed
+            download_speed = st.download() / 1_000_000  # Convert to Mbps
+            self.network_speed['download'] = download_speed
+            
+            # Get upload speed
+            upload_speed = st.upload() / 1_000_000  # Convert to Mbps
+            self.network_speed['upload'] = upload_speed
+            
+            # Assess speed and create informative message
+            if download_speed >= 100:
+                speed_msg = "EXCELLENT - Perfect for batch processing"
+            elif download_speed >= 50:
+                speed_msg = "GOOD - Fast metadata generation"
+            elif download_speed >= 20:
+                speed_msg = "FAIR - Moderate generation speed"
+            elif download_speed >= 10:
+                speed_msg = "SLOW - Expect longer processing times"
+            else:
+                speed_msg = "POOR - Generation may be very slow"
+            
+            # Update label with speed assessment
+            self.speed_label.config(
+                text=f"Internet Speed | {speed_msg}\n↓{download_speed:.1f}Mbps ↑{upload_speed:.1f}Mbps"
+            )
+            
+        except Exception as e:
+            self.speed_label.config(text="Internet Speed | Test failed - Check your connection")
+            print(f"Speed test error: {e}")
 
     def _clear_images(self):
         """Clear all images from the list and reset UI"""
@@ -652,43 +700,6 @@ class MicrostockTools(ttk.Frame):
         self.quality_status_label.config(text="Quality: N/A")
         
         self.update_status("All images and statistics cleared")
-
-    def check_network_speed(self):
-        """Check network speed using Windows APIs"""
-        def get_network_speed():
-            # Get network interface statistics
-            net_stats = psutil.net_io_counters(pernic=True)
-            active_nic = None
-            max_speed = 0
-            
-            # Find active network interface
-            for nic, stats in net_stats.items():
-                if stats.bytes_sent > 0 or stats.bytes_recv > 0:
-                    if stats.bytes_sent + stats.bytes_recv > max_speed:
-                        max_speed = stats.bytes_sent + stats.bytes_recv
-                        active_nic = nic
-            
-            if active_nic:
-                # Get initial counters
-                stats1 = psutil.net_io_counters(pernic=True)[active_nic]
-                time.sleep(1)  # Wait 1 second
-                stats2 = psutil.net_io_counters(pernic=True)[active_nic]
-                
-                # Calculate current speed in Mbps
-                download = (stats2.bytes_recv - stats1.bytes_recv) * 8 / 1_000_000
-                upload = (stats2.bytes_sent - stats1.bytes_sent) * 8 / 1_000_000
-                
-                self.speed_label.config(
-                    text=f"Internet Speed | Current: ↓{download:.1f}Mbps ↑{upload:.1f}Mbps"
-                )
-            else:
-                self.speed_label.config(text="Internet Speed | No active connection")
-            
-            # Update every second
-            self.after(1000, get_network_speed)
-            
-        # Start monitoring in background
-        self.after(0, get_network_speed)
 
     def generate_content(self):
         """Handle generation start/cancel"""

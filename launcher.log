@@ -105,3 +105,26 @@
 2025-04-16 12:04:36,807 - ERROR - Failed to process Autumnal Ground Cover Of Fallen Leaves Wettened By Rain Enhancing Textural Detail And Earthy Tones.jpg: 
 2025-04-16 12:04:36,807 - ERROR - Failed to process Autumnal Ground Cover Of Fallen Leaves Wettened By Rain Enhancing Textural Detail And Earthy Tones.jpg: invalid command name ".!toplevel.!microstocktools.!notebook.!frame.!frame.!frame.!frame.!frame2.!frame.!label4"
 2025-04-16 12:04:36,808 - ERROR - Worker thread error: invalid command name ".!toplevel.!microstocktools.!notebook.!frame.!frame.!frame.!frame.!frame2.!frame.!label4"
+2025-04-16 12:49:12,363 - ERROR - Failed to process Fallen Leaves On Pond.jpg: 'MicrostockTools' object has no attribute '_stats_update_interval'
+2025-04-16 12:49:12,873 - ERROR - Failed to process Indoor Light Foliage.jpg: 'MicrostockTools' object has no attribute '_stats_update_interval'
+2025-04-16 12:49:14,765 - ERROR - Failed to process Leaves Float Calmly.jpg: 'MicrostockTools' object has no attribute '_stats_update_interval'
+2025-04-16 12:49:18,171 - ERROR - Failed to process Empty Nest On Ground.jpg: 'MicrostockTools' object has no attribute '_stats_update_interval'
+2025-04-16 12:49:18,218 - ERROR - Failed to process Lush Green Rice Field.jpg: 'MicrostockTools' object has no attribute '_stats_update_interval'
+2025-04-16 12:49:20,364 - ERROR - Failed to process Lush Green Hedge Detail.jpg: 'MicrostockTools' object has no attribute '_stats_update_interval'
+2025-04-16 12:49:24,419 - ERROR - Failed to process Fallen Leaves On Ground.jpg: main thread is not in main loop
+2025-04-16 12:49:24,619 - ERROR - Failed to process Lush Fern Fronds.jpg: main thread is not in main loop
+2025-04-16 12:49:25,510 - ERROR - Worker thread error: main thread is not in main loop
+2025-04-16 12:49:27,776 - ERROR - Failed to process Pile Of Pruned Branches.jpg: main thread is not in main loop
+2025-04-16 12:49:28,568 - ERROR - Failed to process Mossy Twig Nest Detail.jpg: main thread is not in main loop
+2025-04-16 12:52:14,309 - ERROR - Failed to process Empty Nest On Ground.jpg: invalid command name ".!toplevel.!frame.!label"
+2025-04-16 12:52:14,310 - ERROR - Worker thread error: invalid command name ".!toplevel.!microstocktools.!notebook.!frame.!frame.!frame.!frame.!frame2.!frame.!label4"
+2025-04-16 12:52:17,738 - ERROR - Failed to process Fallen Leaves On Ground.jpg: main thread is not in main loop
+2025-04-16 13:38:33,269 - ERROR - Failed to process Fallen Leaves On Pond.jpg: Max retries reached - poor tag quality
+2025-04-16 13:39:04,071 - ERROR - Failed to process Indoor Light Foliage.jpg: 
+2025-04-16 13:39:08,555 - ERROR - Failed to process Fallen Leaves On Ground.jpg: 
+2025-04-16 13:39:09,273 - ERROR - Failed to process Leaves Float Calmly.jpg: 
+2025-04-16 13:39:12,454 - ERROR - Failed to process Empty Nest On Ground.jpg: 
+2025-04-16 13:39:33,334 - ERROR - Failed to process Empty Nest On Ground.jpg: Max retries reached - poor tag quality
+2025-04-16 13:39:54,343 - ERROR - Failed to process Fallen Leaves On Ground.jpg: Max retries reached - poor tag quality
+2025-04-16 14:08:18,534 - INFO - Update available: 2.0.3
+2025-04-16 14:08:56,252 - INFO - Update available: 2.0.3
