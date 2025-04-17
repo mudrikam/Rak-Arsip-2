@@ -118,10 +118,14 @@ def create_countdown_dialog(message: str, timeout: int = 30,
         dialog.configure(bg='white')
         dialog.resizable(False, False)
         
-        icon_path = os.path.join(BASE_DIR, "App", "img", "Icon", "rakikon.ico")
-        if os.path.exists(icon_path):
-            dialog.iconbitmap(icon_path)
-        
+        # Load icon if exists, skip if not found
+        try:
+            icon_path = os.path.join(BASE_DIR, "App", "img", "Icon", "rakikon.ico")
+            if os.path.exists(icon_path):
+                dialog.iconbitmap(icon_path)
+        except Exception as icon_err:
+            print(f"Note: Could not load dialog icon: {icon_err}")
+
         result = {'value': None, 'after_id': None}
         
         # Load messages from JSON - sekarang akan selalu berhasil atau keluar
@@ -367,29 +371,40 @@ def check_for_updates(parent_window: Optional[tk.Tk] = None) -> None:
     """Check for updates and show dialog if update is available."""
     try:
         api_url = f"https://api.github.com/repos/{GITHUB_REPO}/releases/latest"
-        with urlopen(api_url) as response:
-            data = json.loads(response.read())
-            latest_version = data['tag_name'].lstrip('v')
-            release_notes = data.get('body', '').strip()
-            
-            if latest_version > CURRENT_VERSION:
-                logging.info(f"Update available: {latest_version}")
-                if create_countdown_dialog(
-                    message="",
-                    latest_version=latest_version,
-                    current_version=CURRENT_VERSION,
-                    release_notes=release_notes
-                ):
-                    import webbrowser
-                    webbrowser.open(f"https://github.com/{GITHUB_REPO}/releases/latest")
+        try:
+            with urlopen(api_url) as response:
+                data = json.loads(response.read())
+                latest_version = data['tag_name'].lstrip('v')
+                release_notes = data.get('body', '').strip()
+                
+                if latest_version > CURRENT_VERSION:
+                    logging.info(f"Update available: {latest_version}")
+                    try:
+                        if parent_window and parent_window.winfo_exists():
+                            if create_countdown_dialog(
+                                message="",
+                                latest_version=latest_version,
+                                current_version=CURRENT_VERSION,
+                                release_notes=release_notes
+                            ):
+                                import webbrowser
+                                webbrowser.open(f"https://github.com/{GITHUB_REPO}/releases/latest")
+                    except Exception as dialog_err:
+                        logging.error(f"Failed to show update dialog: {dialog_err}")
+        except Exception as net_err:
+            logging.error(f"Network error checking updates: {net_err}")
     except Exception as e:
-        logging.error(f"Failed to check for updates: {str(e)}")
+        logging.error(f"Failed to check for updates: {e}")
+    finally:
+        # Schedule next check in 24 hours
+        if parent_window and parent_window.winfo_exists():
+            parent_window.after(24*60*60*1000, lambda: check_for_updates(parent_window))
 
-# Jalankan aplikasi
 def main():
     """Main application entry point."""
     try:
         app = MainWindow()
+        # Initial update check after 1 second
         app.after(1000, lambda: check_for_updates(app))
         app.mainloop()
     except Exception as e:

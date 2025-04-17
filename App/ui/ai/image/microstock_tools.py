@@ -1,6 +1,8 @@
 import tkinter as tk
 from tkinter import ttk
 import os
+import csv
+from datetime import datetime
 
 import logging
 from App.ui.header import HeaderImage
@@ -83,7 +85,7 @@ class MicrostockTools(ttk.Frame):
         
         # Add UI throttling
         self._last_stats_update = 0
-        self._stats_update_interval = 0.1  # 100ms between updates
+        self._stats_update_interval = 1  # 1 second between updates
         
         # Add preview caching
         self._preview_cache = {}
@@ -183,29 +185,95 @@ class MicrostockTools(ttk.Frame):
 
     def setup_ui(self):
         """Setup the tabbed UI"""
+        # Konfigurasi ikon untuk semua tombol
+        self.button_icons = {}
+        icon_names = {
+            'add_file': 'add_file.png',
+            'open': 'open.png', 
+            'reset': 'reset.png',
+            'clear': 'clear.png',
+            'rename': 'rename.png',
+            'save': 'save.png',
+            'ai': 'ai.png',
+            'csv': 'load_csv.png'  # Add csv icon
+        }
+        
+        # Load semua ikon yang diperlukan
+        for icon_id, icon_file in icon_names.items():
+            icon_path = os.path.join(self.BASE_DIR, "Img", "icon", "ui", icon_file)
+            self.button_icons[icon_id] = self._load_icon(icon_path)
+
         # Create main notebook
         self.notebook = ttk.Notebook(self)
         self.notebook.pack(fill='both', expand=True)
 
-        # Create tabs
-        tabs_config = {
-            'generate_tab': ("Image Metadata Generator", "generate.png"),
-            'batch_tab': ("Batch", "batch.png"),
-            'settings_tab': ("Settings", "settings.png")
+        # Konfigurasi tab dengan ikon 
+        tabs_config = [
+            ('generate_tab', 'Image Metadata Generator', 'add_file'),
+            ('settings_tab', 'Settings', 'ai')
+        ]
+
+        # Konfigurasi tombol dengan ikon
+        button_configs = {
+            'load_buttons': [
+                ('Load Images', self._load_multiple_images, 'add_file'),
+                ('Load Folder', self._load_folder_images, 'open'),
+                ('Clear Images', self._clear_images, 'reset'),
+                ('Rename Images', self._rename_images, 'rename'),
+                ('Export Metadata', self._rename_images, 'csv')
+            ],
+            'action_buttons': [
+                ('Clear', self.clear_fields, 'reset'),
+                ('Reset', self.reset_all, 'reset'), 
+                ('Save', self.save_metadata, 'save'),
+                ('Browse Image', self.browse_image, 'open'),
+                ('Generate', self.generate_content, 'ai')
+            ],
+            'settings_buttons': [
+                ('Configure Templates', self.configure_templates, 'open'),
+                ('Preferences', self.configure_preferences, 'ai')
+            ]
         }
 
-        for attr_name, (text, icon_name) in tabs_config.items():
-            icon_path = os.path.join(self.BASE_DIR, "Img", "icon", "ui", icon_name)
-            tab = self.create_tab(self.notebook, text, icon_path)
+        # Create tabs using config
+        for attr_name, text, icon_id in tabs_config:
+            tab = ttk.Frame(self.notebook)
+            if icon_id in self.button_icons:
+                self.notebook.add(tab, text=text, image=self.button_icons[icon_id], compound='left')
+            else:
+                self.notebook.add(tab, text=text)
             setattr(self, attr_name, tab)
             
             # Setup content for each tab
             if attr_name == 'generate_tab':
-                self.setup_generator_tab(tab)
-            elif attr_name == 'batch_tab':
-                self.setup_batch_tab(tab)
+                self.setup_generator_tab(tab, button_configs)
             elif attr_name == 'settings_tab':
-                self.setup_settings_tab(tab)
+                self.setup_settings_tab(tab, button_configs['settings_buttons'])
+
+        # Add context menu and shortcuts to treeview
+        self.tree_context_menu = tk.Menu(self.filelist_tree, tearoff=0)
+        self.tree_context_menu.add_command(label="Open File", command=self._open_selected_file)
+        self.tree_context_menu.add_command(label="Open Folder", command=lambda: self._open_file_location())
+        self.tree_context_menu.add_command(label="Copy Path", command=self._copy_file_path)
+        self.tree_context_menu.add_command(label="Copy Title", command=self._copy_title)
+        self.tree_context_menu.add_command(label="Copy Tags", command=self._copy_tags)
+        self.tree_context_menu.add_separator()
+        self.tree_context_menu.add_command(label="Rename", command=self._rename_images)
+        self.tree_context_menu.add_command(label="Clear", command=self.clear_fields)
+        self.tree_context_menu.add_command(label="Reset", command=self.reset_all)
+        self.tree_context_menu.add_command(label="Save", command=self.save_metadata)
+        self.tree_context_menu.add_command(label="Generate", command=self.generate_content)
+        self.tree_context_menu.add_separator()
+        self.tree_context_menu.add_command(label="Clear Metadata", command=self._clear_metadata)
+        self.tree_context_menu.add_command(label="Remove From List", command=self._remove_from_list)
+
+        # Bind context menu
+        self.filelist_tree.bind("<Button-3>", self._show_context_menu)
+        
+        # Bind shortcuts
+        self.parent.bind("<Control-e>", lambda e: self._open_file_location())
+        self.parent.bind("<Control-c>", self._handle_copy)
+        self.filelist_tree.bind("<Double-Button-1>", lambda e: self._open_file_location())
 
     def create_tab(self, parent, text, icon_path):
         """Create a tab with optional icon"""
@@ -232,7 +300,7 @@ class MicrostockTools(ttk.Frame):
             img = img.resize(size, Image.Resampling.LANCZOS)
             return ImageTk.PhotoImage(img)
 
-    def setup_generator_tab(self, tab):
+    def setup_generator_tab(self, tab, button_configs):
         # Main horizontal split
         main_frame = ttk.Frame(tab)
         main_frame.pack(fill='both', expand=True, padx=10, pady=10)
@@ -269,14 +337,14 @@ class MicrostockTools(ttk.Frame):
         api_left.pack(side='left', fill='x', expand=True)
         ttk.Label(api_left, text="Gemini API Key:", width=LABEL_WIDTH, anchor='e').pack(side='left', padx=(0,5))
         self.api_key_var = tk.StringVar(value=self.config.get('gemini_api_key', ''))
-        self.api_key_entry = ttk.Entry(api_left, textvariable=self.api_key_var)
+        self.api_key_entry = ttk.Entry(api_left, textvariable=self.api_key_var, font=("Arial", 12))
         self.api_key_entry.pack(side='left', fill='x', expand=True)
         api_right = ttk.Frame(api_frame)
         api_right.pack(side='left', fill='x', padx=(10,0))
         ttk.Label(api_right, text="Model:", width=LABEL_WIDTH, anchor='e').pack(side='left', padx=(0,5))
         self.model_var = tk.StringVar(value=self.config.get('default_gemini_model', 'gemini-2.0-flash'))
         models = self.config.get('gemini_models', ['gemini-2.0-flash'])
-        self.model_combo = ttk.Combobox(api_right, textvariable=self.model_var, values=models, state='readonly', width=25)
+        self.model_combo = ttk.Combobox(api_right, textvariable=self.model_var, values=models, state='readonly', width=25, font=("Arial", 12))
         self.model_combo.pack(side='left')
         self.api_key_entry.bind('<FocusOut>', self._on_api_key_change)
         self.model_combo.bind('<<ComboboxSelected>>', self._on_model_change)
@@ -286,7 +354,7 @@ class MicrostockTools(ttk.Frame):
         custom_prompt_frame.pack(fill='x', padx=5, pady=5)
         ttk.Label(custom_prompt_frame, text="Custom Prompt:", width=LABEL_WIDTH, anchor='e').pack(side='left', padx=(0,5))
         self.custom_prompt_var = tk.StringVar(value=self.config.get('custom_prompt', ''))
-        self.custom_prompt_entry = ttk.Entry(custom_prompt_frame, textvariable=self.custom_prompt_var)
+        self.custom_prompt_entry = ttk.Entry(custom_prompt_frame, textvariable=self.custom_prompt_var, font=("Arial", 12))
         self.custom_prompt_entry.pack(side='left', fill='x', expand=True)
         self.custom_prompt_entry.bind('<FocusOut>', self._on_setting_change)
         
@@ -294,7 +362,7 @@ class MicrostockTools(ttk.Frame):
         neg_prompt_frame.pack(fill='x', padx=5, pady=5)
         ttk.Label(neg_prompt_frame, text="Negative Prompt:", width=LABEL_WIDTH, anchor='e').pack(side='left', padx=(0,5))
         self.neg_prompt_var = tk.StringVar(value=self.config.get('negative_prompt', ''))
-        self.neg_prompt_entry = ttk.Entry(neg_prompt_frame, textvariable=self.neg_prompt_var)
+        self.neg_prompt_entry = ttk.Entry(neg_prompt_frame, textvariable=self.neg_prompt_var, font=("Arial", 12))
         self.neg_prompt_entry.pack(side='left', fill='x', expand=True)
         self.neg_prompt_entry.bind('<FocusOut>', self._on_setting_change)
 
@@ -307,10 +375,10 @@ class MicrostockTools(ttk.Frame):
         title_len_frame.pack(side='left', fill='x', expand=True)
         ttk.Label(title_len_frame, text="Title Length:", width=LABEL_WIDTH, anchor='e').pack(side='left', padx=(0,5))
         self.min_title_var = tk.StringVar(value=self.config.get('title_length', {}).get('min', '60'))
-        ttk.Entry(title_len_frame, textvariable=self.min_title_var, width=4).pack(side='left')
+        ttk.Entry(title_len_frame, textvariable=self.min_title_var, width=4, font=("Arial", 12)).pack(side='left')
         ttk.Label(title_len_frame, text="-").pack(side='left', padx=2)
         self.max_title_var = tk.StringVar(value=self.config.get('title_length', {}).get('max', '100'))
-        ttk.Entry(title_len_frame, textvariable=self.max_title_var, width=4).pack(side='left')
+        ttk.Entry(title_len_frame, textvariable=self.max_title_var, width=4, font=("Arial", 12)).pack(side='left')
         
         # Tags count and worker input
         controls_frame = ttk.Frame(length_frame)
@@ -321,14 +389,14 @@ class MicrostockTools(ttk.Frame):
         tags_count_frame.pack(side='left', padx=(0,10))
         ttk.Label(tags_count_frame, text="Tags:", width=6, anchor='e').pack(side='left', padx=(0,5))
         self.tags_count_var = tk.StringVar(value=self.config.get('tags_count', '50'))
-        ttk.Entry(tags_count_frame, textvariable=self.tags_count_var, width=4).pack(side='left')
+        ttk.Entry(tags_count_frame, textvariable=self.tags_count_var, width=4, font=("Arial", 12)).pack(side='left')
         
         # Worker count
         worker_frame = ttk.Frame(controls_frame)
         worker_frame.pack(side='left')
         ttk.Label(worker_frame, text="Workers:", width=8, anchor='e').pack(side='left', padx=(0,5))
         self.worker_count_var = tk.StringVar(value=self.config.get('worker_count', '1'))
-        worker_entry = ttk.Entry(worker_frame, textvariable=self.worker_count_var, width=3)
+        worker_entry = ttk.Entry(worker_frame, textvariable=self.worker_count_var, width=3, font=("Arial", 12))
         worker_entry.pack(side='left')
         
         # Bind worker count validation
@@ -366,14 +434,40 @@ class MicrostockTools(ttk.Frame):
         right_buttons = ttk.Frame(load_buttons_frame)
         right_buttons.pack(side='right')
         
+        # Style untuk semua tombol normal
+        style = ttk.Style()
+        style.configure('Normal.TButton', padding=5)
+
+        # Load buttons
         ttk.Button(left_buttons, text="Load Images", 
+                  image=self.button_icons.get('add_file'),
+                  compound='left',
+                  style='Normal.TButton',
                   command=self._load_multiple_images).pack(side='left', padx=(0,5))
+                  
         ttk.Button(left_buttons, text="Load Folder",
+                  image=self.button_icons.get('open'),
+                  compound='left',
+                  style='Normal.TButton',
                   command=self._load_folder_images).pack(side='left', padx=(0,5))
+                  
         ttk.Button(right_buttons, text="Clear Images",
+                  image=self.button_icons.get('reset'),
+                  compound='left',
+                  style='Normal.TButton',
                   command=self._clear_images).pack(side='left', padx=(0,5))
+                  
         ttk.Button(right_buttons, text="Rename Images",
-                  command=self._rename_images).pack(side='left')
+                  image=self.button_icons.get('rename'),
+                  compound='left',
+                  style='Normal.TButton',
+                  command=self._rename_images).pack(side='left', padx=(0,5))
+        
+        ttk.Button(right_buttons, text="Export Metadata",
+                  image=self.button_icons.get('csv'),
+                  compound='left',
+                  style='Normal.TButton',
+                  command=self._export_metadata_csv).pack(side='left')
 
         # Create frame for treeview + scrollbar first
         tree_frame = ttk.Frame(filelist_frame)
@@ -541,7 +635,11 @@ class MicrostockTools(ttk.Frame):
         ttk.Label(image_frame, text="Selected Image:").pack(anchor='w', padx=5)
         self.image_path_var = tk.StringVar()
         ttk.Entry(image_frame, textvariable=self.image_path_var, state='readonly').pack(fill='x', padx=5)
-        ttk.Button(image_frame, text="Browse Image", command=self.browse_image).pack(anchor='w', padx=5, pady=5)
+        ttk.Button(image_frame, text="Browse Image", 
+                  image=self.button_icons.get('open'),
+                  compound='left',
+                  style='Normal.TButton',
+                  command=self.browse_image).pack(anchor='w', padx=5, pady=5)
         
         # Create preview container with fixed size and prevent auto-resize
         preview_container = ttk.Frame(image_frame, width=300, height=300)
@@ -589,19 +687,40 @@ class MicrostockTools(ttk.Frame):
         # Actions at bottom
         button_frame = ttk.LabelFrame(right_frame, text="Actions")
         button_frame.grid(row=2, column=0, sticky='ew', pady=(8,0))
-        ttk.Button(button_frame, text="Clear", command=self.clear_fields).pack(fill='x', padx=5, pady=(5,2))
-        ttk.Button(button_frame, text="Reset", command=self.reset_all).pack(fill='x', padx=5, pady=2)
-        ttk.Button(button_frame, text="Save", command=self.save_metadata).pack(fill='x', padx=5, pady=2)
-        
-        # Configure style for bigger generate button
+
+        # Style untuk tombol normal
         style = ttk.Style()
+        style.configure('Normal.TButton', padding=5) 
+
+        # Tombol dengan padding normal (5)
+        ttk.Button(button_frame, text="Clear", 
+                  image=self.button_icons.get('clear'),
+                  compound='left',
+                  style='Normal.TButton',
+                  command=self.clear_fields).pack(fill='x', padx=5, pady=(5,2))
+                  
+        ttk.Button(button_frame, text="Reset",
+                  image=self.button_icons.get('reset'),
+                  compound='left', 
+                  style='Normal.TButton',
+                  command=self.reset_all).pack(fill='x', padx=5, pady=2)
+                  
+        ttk.Button(button_frame, text="Save",
+                  image=self.button_icons.get('save'),
+                  compound='left',
+                  style='Normal.TButton', 
+                  command=self.save_metadata).pack(fill='x', padx=5, pady=2)
+        
+        # Configure style for bigger generate button only
         style.configure('Generate.TButton', font=('Arial', 12, 'bold'), padding=10)
         style.configure('Cancel.TButton', font=('Arial', 12, 'bold'), padding=10, foreground='red')
         
         # Generate button with larger padding and custom style
         self.generate_btn = ttk.Button(
             button_frame, 
-            text="Generate", 
+            text="Generate",
+            image=self.button_icons.get('ai'),
+            compound='left',
             command=self.generate_content,
             style='Generate.TButton'
         )
@@ -1925,36 +2044,30 @@ class MicrostockTools(ttk.Frame):
         skipped = len(files) - (total - current_count)
         self.update_status(f"Added {added - skipped} new images. Skipped {skipped} duplicates. Total: {total}")
 
-    def setup_batch_tab(self, tab):
+    def setup_batch_tab(self, tab, buttons):
         """Setup batch tab content"""
-        tools = [
-            ("Batch Process", self.batch_process),
-            ("Export Data", self.export_data)
-        ]
-        self._create_button_grid(tab, tools)
+        self._create_button_grid(tab, buttons)
 
-    def setup_settings_tab(self, tab):
+    def setup_settings_tab(self, tab, buttons):
         """Setup settings tab content"""
-        tools = [
-            ("Configure Templates", self.configure_templates),
-            ("Preferences", self.configure_preferences)
-        ]
-        self._create_button_grid(tab, tools)
+        self._create_button_grid(tab, buttons)
 
     def _create_button_grid(self, parent, buttons):
-        """Create a grid of buttons"""
+        """Create a grid of buttons with icons"""
         frame = ttk.Frame(parent)
         frame.pack(fill='both', expand=True, padx=20, pady=20)
         
-        # Configure grid
-        for i in range(2):  # 2 columns
+        for i in range(2):
             frame.columnconfigure(i, weight=1)
         
-        # Create buttons
-        for i, (text, command) in enumerate(buttons):
+        for i, (text, command, icon_id) in enumerate(buttons):
             row = i // 2
             col = i % 2
-            btn = ttk.Button(frame, text=text, command=command)
+            icon = self.button_icons.get(icon_id)
+            btn = ttk.Button(frame, text=text, command=command,
+                            image=icon if icon else "",
+                            compound='left',
+                            style='Normal.TButton')
             btn.grid(row=row, column=col, padx=5, pady=5, sticky="nsew")
 
     def _on_treeview_hover(self, event):
@@ -2055,12 +2168,218 @@ class MicrostockTools(ttk.Frame):
             
         except Exception as e:
             self.update_status(f"Error renaming images: {str(e)}")
+    def _show_context_menu(self, event):
+        """Show context menu on right click with proper window focus"""
+        try:
+            item = self.filelist_tree.identify_row(event.y)
+            if item:
+                self.filelist_tree.selection_set(item)
+                self.parent.lift()
+                self.parent.focus_force()
+                self.tree_context_menu.tk_popup(event.x_root, event.y_root)
+        finally:
+            self.tree_context_menu.grab_release()
+
+    def _open_selected_file(self):
+        """Open the image file with default viewer"""
+        selected = self.filelist_tree.selection()
+        if not selected:
+            return
+    
+        file_path = self.file_paths.get(selected[0])
+        if file_path and os.path.exists(file_path):
+            try:
+                if os.name == 'nt':
+                    os.startfile(file_path)
+                else:
+                    webbrowser.open(file_path)
+                self.update_status(f"Opening image in default viewer: {os.path.basename(file_path)}")
+            except Exception as e:
+                self.update_status(f"Error opening {os.path.basename(file_path)}: {str(e)}")
+
+    def _copy_title(self):
+        """Copy title to clipboard"""
+        selected = self.filelist_tree.selection()
+        if not selected:
+            return
+            
+        values = self.filelist_tree.item(selected[0])['values']
+        if values and len(values) > 3:
+            title = values[3]
+            self.parent.clipboard_clear()
+            self.parent.clipboard_append(title)
+            self.update_status(f"Title copied: '{title}'")
+
+    def _copy_tags(self):
+        """Copy tags to clipboard"""
+        selected = self.filelist_tree.selection()
+        if not selected:
+            return
+            
+        values = self.filelist_tree.item(selected[0])['values']
+        if values and len(values) > 4:
+            tags = values[4]
+            self.parent.clipboard_clear()
+            self.parent.clipboard_append(tags)
+            truncated = tags[:100] + "..." if len(tags) > 100 else tags
+            self.update_status(f"Tags copied: {truncated}")
+
+    def _copy_file_path(self):
+        """Copy full file path to clipboard"""
+        selected = self.filelist_tree.selection()
+        if not selected:
+            return
+            
+        file_path = self.file_paths.get(selected[0])
+        if file_path:
+            self.parent.clipboard_clear()
+            self.parent.clipboard_append(file_path)
+            self.update_status(f"Path copied: {file_path}")
+
+    def _open_file_location(self):
+        """Open the folder containing the selected file"""
+        selected = self.filelist_tree.selection()
+        if not selected:
+            return
+            
+        file_path = self.file_paths.get(selected[0])
+        if file_path and os.path.exists(file_path):
+            try:
+                folder_path = os.path.dirname(file_path)
+                if os.name == 'nt':
+                    os.startfile(folder_path)
+                else:
+                    webbrowser.open(folder_path)
+                self.update_status(f"Opening folder: {folder_path}")
+            except Exception as e:
+                self.update_status(f"Error opening location: {str(e)}")
+
+    def _handle_copy(self, event):
+        """Handle Ctrl+C to copy both title and tags"""
+        selected = self.filelist_tree.selection()
+        if not selected:
+            return
+            
+        values = self.filelist_tree.item(selected[0])['values']
+        if values and len(values) > 4:
+            copy_text = f"Title: {values[3]}\nTags: {values[4]}"
+            self.parent.clipboard_clear()
+            self.parent.clipboard_append(copy_text)
+            self.update_status("Title and tags copied to clipboard")
+
+    def _clear_metadata(self):
+        """Clear metadata from selected file"""
+        selected = self.filelist_tree.selection()
+        if not selected:
+            return
+            
+        if not messagebox.askyesno("Confirm", "Clear metadata from selected file?", parent=self.parent):
+            return
+            
+        file_path = self.file_paths.get(selected[0])
+        if file_path and os.path.exists(file_path):
+            try:
+                # First clear metadata from file
+                with pyexiv2.Image(file_path) as img:
+                    # Clear all metadata types
+                    img.clear_exif()
+                    img.clear_xmp()
+                    img.clear_iptc()
+                    
+                    # Re-write default software tag
+                    img.modify_exif({
+                        'Exif.Image.Software': 'Rak Arsip'
+                    })
+                
+                # Clear metadata in UI
+                self.title_text.delete(1.0, tk.END)
+                self.tags_text.delete(1.0, tk.END)
+                self.update_title_count()
+                self.update_tags_count()
+                
+                # Update treeview
+                values = list(self.filelist_tree.item(selected[0])['values'])
+                values[3] = ""  # Clear title
+                values[4] = ""  # Clear tags
+                self.filelist_tree.item(selected[0], values=values)
+                
+                self.update_status("Metadata cleared successfully")
+            except Exception as e:
+                self.update_status(f"Error clearing metadata: {str(e)}")
+
+    def _remove_from_list(self):
+        """Remove selected item from list"""
+        selected = self.filelist_tree.selection()
+        if not selected:
+            return
+            
+        if not messagebox.askyesno("Confirm", "Remove selected item from list?", parent=self.parent):
+            return
+            
+        self.filelist_tree.delete(selected[0])
+        if selected[0] in self.file_paths:
+            del self.file_paths[selected[0]]
+        self.update_status("Item removed from list")
+
+    def _export_metadata_csv(self):
+        """Export all treeview data to CSV with save dialog"""
+        try:
+            # Get all items from treeview
+            items = self.filelist_tree.get_children()
+            
+            if not items:
+                self.update_status("No data to export")
+                return
+            
+            # Generate default filename with timestamp
+            now = datetime.now()
+            date_str = now.strftime("%Y-%m-%d-%H-%M")
+            default_filename = f"Metadata-Export-{date_str}-Generated-by-Rak-Arsip-Desainia.csv"
+            
+            # Show save file dialog
+            save_path = filedialog.asksaveasfilename(
+                parent=self.parent,
+                defaultextension=".csv",
+                initialfile=default_filename,
+                filetypes=[("CSV files", "*.csv"), ("All files", "*.*")],
+                title="Export Metadata to CSV"
+            )
+            
+            if not save_path:
+                return  # User cancelled
+                
+            # Write to CSV
+            with open(save_path, 'w', newline='', encoding='utf-8') as f:
+                writer = csv.writer(f)
+                # Write header with combined filename column
+                writer.writerow(['No', 'Filename', 'Title', 'Tags', 'Full Path'])
+                
+                # Write data rows with combined filename and extension
+                for item in items:
+                    values = self.filelist_tree.item(item)['values']
+                    # Combine filename and extension
+                    filename = f"{values[1]}.{values[2]}" if values[2] else values[1]
+                    # Create row with combined filename
+                    row_data = [
+                        values[0],  # No
+                        filename,   # Combined filename.ext
+                        values[3],  # Title  
+                        values[4],  # Tags
+                        self.file_paths.get(item, '')  # Full path
+                    ]
+                    writer.writerow(row_data)
+                    
+            self.update_status(f"Metadata exported to: {save_path}")
+            
+            # Open containing folder
+            os.startfile(os.path.dirname(save_path)) if os.name == 'nt' else webbrowser.open(os.path.dirname(save_path))
+            
+        except Exception as e:
+            self.update_status(f"Error exporting metadata: {str(e)}")
 
     # Existing command methods
     def generate_title(self): print("Generate title")
     def generate_tags(self): print("Generate tags")
-    def batch_process(self): print("Batch process")
-    def export_data(self): print("Export data")
     
     # New command methods
     def configure_templates(self): print("Configure templates")

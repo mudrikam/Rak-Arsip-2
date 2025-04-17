@@ -128,3 +128,31 @@
 2025-04-16 13:39:54,343 - ERROR - Failed to process Fallen Leaves On Ground.jpg: Max retries reached - poor tag quality
 2025-04-16 14:08:18,534 - INFO - Update available: 2.0.3
 2025-04-16 14:08:56,252 - INFO - Update available: 2.0.3
+2025-04-16 14:44:26,609 - ERROR - Failed to process Empty Nest On Ground.jpg: cannot access local variable 'total_files' where it is not associated with a value
+2025-04-16 14:44:28,801 - ERROR - Failed to process Fallen Leaves On Ground.jpg: cannot access local variable 'total_files' where it is not associated with a value
+2025-04-16 14:44:30,480 - ERROR - Failed to process Fallen Leaves On Pond.jpg: cannot access local variable 'total_files' where it is not associated with a value
+2025-04-16 14:44:32,225 - ERROR - Failed to process Indoor Light Foliage.jpg: cannot access local variable 'total_files' where it is not associated with a value
+2025-04-16 14:44:33,767 - ERROR - Failed to process Leaves Float Calmly.jpg: cannot access local variable 'total_files' where it is not associated with a value
+2025-04-16 14:44:35,920 - ERROR - Failed to process Lush Fern Fronds.jpg: cannot access local variable 'total_files' where it is not associated with a value
+2025-04-16 14:44:37,647 - ERROR - Failed to process Lush Green Hedge Detail.jpg: cannot access local variable 'total_files' where it is not associated with a value
+2025-04-16 14:44:39,269 - ERROR - Failed to process Lush Green Rice Field.jpg: cannot access local variable 'total_files' where it is not associated with a value
+2025-04-16 14:44:41,244 - ERROR - Failed to process Mossy Twig Nest Detail.jpg: cannot access local variable 'total_files' where it is not associated with a value
+2025-04-16 14:44:43,621 - ERROR - Failed to process Pile Of Pruned Branches.jpg: cannot access local variable 'total_files' where it is not associated with a value
+2025-04-16 14:44:45,413 - ERROR - Failed to process Pond Reflects Sky Trees.jpg: cannot access local variable 'total_files' where it is not associated with a value
+2025-04-16 14:44:47,094 - ERROR - Failed to process Red Ixora Bloom Detail.jpg: cannot access local variable 'total_files' where it is not associated with a value
+2025-04-16 14:44:48,820 - ERROR - Failed to process Rice Paddy Terrace View.jpg: cannot access local variable 'total_files' where it is not associated with a value
+2025-04-16 14:44:50,907 - ERROR - Failed to process Roots Intertwine Closely.jpg: cannot access local variable 'total_files' where it is not associated with a value
+2025-04-16 14:44:52,530 - ERROR - Failed to process Ruellia Simplex Bloom.jpg: cannot access local variable 'total_files' where it is not associated with a value
+2025-04-16 14:45:06,370 - ERROR - Failed to process Leaves Float Calmly.jpg: cannot access local variable 'total_files' where it is not associated with a value
+2025-04-16 14:45:38,725 - ERROR - Failed to process Empty Nest On Ground.jpg: cannot access local variable 'total_files' where it is not associated with a value
+2025-04-16 14:45:41,804 - ERROR - Failed to process Fallen Leaves On Ground.jpg: cannot access local variable 'total_files' where it is not associated with a value
+2025-04-16 14:45:44,194 - ERROR - Failed to process Fallen Leaves On Pond.jpg: cannot access local variable 'total_files' where it is not associated with a value
+2025-04-16 14:45:46,448 - ERROR - Failed to process Indoor Light Foliage.jpg: cannot access local variable 'total_files' where it is not associated with a value
+2025-04-16 14:45:49,751 - ERROR - Failed to process Leaves Float Calmly.jpg: invalid command name ".!toplevel.!frame.!label"
+2025-04-16 14:45:49,752 - ERROR - Worker thread error: invalid command name ".!toplevel.!microstocktools.!notebook.!frame.!frame.!frame.!frame.!frame2.!frame.!label4"
+2025-04-17 13:02:02,915 - ERROR - Failed to process Blank Flat Brim Cap Mockup On A White Surface For Custom Designs.jpg: 'MicrostockTools' object has no attribute '_stats_update_interval'
+2025-04-17 13:02:06,821 - ERROR - Failed to process Clean Minimalist Studio Shot Shows A Hooded White Zipper Sweatshirt On A Mannequin With Its Hood.jpg: 'MicrostockTools' object has no attribute '_stats_update_interval'
+2025-04-17 13:02:12,791 - ERROR - Failed to process Conceptual Logo Rendered On A Glass Meeting Room Partition Mockup.png: 'MicrostockTools' object has no attribute '_stats_update_interval'
+2025-04-17 13:02:19,462 - ERROR - Failed to process Outdoor Business Sign With Metallic Lettering Displayed Near Building Facade.png: 'MicrostockTools' object has no attribute '_stats_update_interval'
+2025-04-17 13:02:23,527 - ERROR - Failed to process Two Minimalist White Business Cards Rest On Textured Concrete Surfaces Creating Bold Shadows And A.jpg: 'MicrostockTools' object has no attribute '_stats_update_interval'
+2025-04-17 13:02:28,495 - ERROR - Failed to process Two Simple White Business Cards Rest On Concrete Blocks Casting Shadows.jpg: 'MicrostockTools' object has no attribute '_stats_update_interval'
