@@ -80,7 +80,8 @@ class MicrostockTools(ttk.Frame):
             'success_items': set(),
             'fastest_time': float('inf'),
             'slowest_time': 0,
-            'generation_times': []
+            'generation_times': [],
+            'last_total_time': 0  # Add last total processing time tracking
         }
         
         # Add UI throttling
@@ -105,12 +106,14 @@ class MicrostockTools(ttk.Frame):
         self._monitor_metadata_changes()
 
     def load_config(self):
-        """Load configuration including API key"""
+        """Load configuration including API keys"""
         try:
             with open(self.config_path, 'r') as f:
                 self.config = json.load(f)
                 if 'gemini_api_key' not in self.config:
                     self.config['gemini_api_key'] = ''
+                if 'gemini_api_keys' not in self.config:
+                    self.config['gemini_api_keys'] = [self.config['gemini_api_key']]
                 if 'default_gemini_model' not in self.config:
                     self.config['default_gemini_model'] = 'gemini-2.0-flash'
                 if 'custom_prompt' not in self.config:
@@ -127,6 +130,7 @@ class MicrostockTools(ttk.Frame):
             self.update_status(f"Failed to load config: {str(e)}")
             self.config = {
                 'gemini_api_key': '',
+                'gemini_api_keys': [],
                 'default_gemini_model': 'gemini-2.0-flash',
                 'custom_prompt': '',
                 'negative_prompt': '',
@@ -138,7 +142,7 @@ class MicrostockTools(ttk.Frame):
     def save_config(self):
         """Save configuration including API key"""
         try:
-            with open(self.config_path, 'w') as f:
+            with open(self.config_path, 'w') as f, open(self.config_path, 'w') as f:
                 json.dump(self.config, f, indent=4, sort_keys=True)
         except Exception as e:
             self.update_status(f"Failed to save config: {str(e)}")
@@ -336,9 +340,12 @@ class MicrostockTools(ttk.Frame):
         api_left = ttk.Frame(api_frame)
         api_left.pack(side='left', fill='x', expand=True)
         ttk.Label(api_left, text="Gemini API Key:", width=LABEL_WIDTH, anchor='e').pack(side='left', padx=(0,5))
-        self.api_key_var = tk.StringVar(value=self.config.get('gemini_api_key', ''))
-        self.api_key_entry = ttk.Entry(api_left, textvariable=self.api_key_var, font=("Arial", 12))
-        self.api_key_entry.pack(side='left', fill='x', expand=True)
+        
+        # Replace entry with labels - updated styling
+        self.api_key_display = ttk.Label(api_left, font=("Consolas", 12), anchor='w', foreground='#666666')
+        self.api_key_display.pack(side='left', fill='x', expand=True)
+        self._update_api_key_display(self.config.get('gemini_api_key', ''))
+
         api_right = ttk.Frame(api_frame)
         api_right.pack(side='left', fill='x', padx=(10,0))
         ttk.Label(api_right, text="Model:", width=LABEL_WIDTH, anchor='e').pack(side='left', padx=(0,5))
@@ -346,7 +353,6 @@ class MicrostockTools(ttk.Frame):
         models = self.config.get('gemini_models', ['gemini-2.0-flash'])
         self.model_combo = ttk.Combobox(api_right, textvariable=self.model_var, values=models, state='readonly', width=25, font=("Arial", 12))
         self.model_combo.pack(side='left')
-        self.api_key_entry.bind('<FocusOut>', self._on_api_key_change)
         self.model_combo.bind('<<ComboboxSelected>>', self._on_model_change)
 
         # Add custom and negative prompts after API key config
@@ -803,7 +809,8 @@ class MicrostockTools(ttk.Frame):
             'success_items': set(),
             'fastest_time': float('inf'),
             'slowest_time': 0,
-            'generation_times': []
+            'generation_times': [],
+            'last_total_time': 0  # Add last total processing time tracking
         }
         
         # Reset statistics display
@@ -894,8 +901,8 @@ class MicrostockTools(ttk.Frame):
                     self.progress_var.set(0)
             self.generation_thread = None
 
-    def _generate_single(self, image_path, update_ui=False):
-        """Generate metadata for single image"""
+    def _generate_single(self, image_path, update_ui=False, api_key=None):
+        """Generate metadata for single image with specific API key"""
         try:
             start_time = time.time()
             
@@ -904,7 +911,9 @@ class MicrostockTools(ttk.Frame):
                 self.progress_var.set(20)
                 self.update_idletasks()
 
-            genai.configure(api_key=self.api_key_var.get())
+            # Use provided API key or default
+            key_to_use = api_key or self.config['gemini_api_key']
+            genai.configure(api_key=key_to_use)
             model = genai.GenerativeModel(self.model_var.get())
             
             if self.cancel_generation:
@@ -969,6 +978,14 @@ class MicrostockTools(ttk.Frame):
         seconds = int(seconds % 60)
         return f"{minutes:02d}:{seconds:02d}"
 
+    def _format_time_diff(self, current, last):
+        """Format time difference with +/- prefix"""
+        if last is None or current is None:
+            return ""
+        diff = current - last
+        sign = '+' if diff >= 0 else ''
+        return f" ({sign}{self._format_time(abs(diff))})" if last > 0 else ""
+
     def _update_generation_stats(self, current_count, total, filename=None, avg_time=None, gen_time=None):
         """Centralized method to update all generation statistics"""
         # Update progress
@@ -994,13 +1011,17 @@ class MicrostockTools(ttk.Frame):
             self.generation_label.config(text=status)
 
     def _generate_batch(self, items):
-        """Generate metadata for multiple images using worker threads"""
+        """Generate metadata for multiple images using multiple API keys"""
         total = len(items)
         batch_start_time = time.time()
+        # Store current total_time before resetting batch_results
+        last_time = self.batch_results.get('total_time', 0)
+        
         self.batch_results = {
             'success': 0,
             'failed': 0,
             'total_time': 0,
+            'last_total_time': last_time,  # Preserve last time
             'retries': 0,
             'processed': 0,
             'start_time': batch_start_time,
@@ -1035,18 +1056,42 @@ class MicrostockTools(ttk.Frame):
             
         self.after(0, reset_stats)
         
+        # Get available API keys
+        api_keys = self.config.get('gemini_api_keys', [self.config['gemini_api_key']])
+        api_keys = [key for key in api_keys if key.strip()]  # Filter out empty keys
+        
+        if not api_keys:
+            self.update_status("Error: No valid API keys found")
+            return
+        
+        # Calculate workers per API key
+        total_workers = max(1, min(10, int(self.worker_count_var.get())))
+        workers_per_key = max(1, total_workers // len(api_keys))
+        
         def process_items(items_to_process):
             if not items_to_process or self.cancel_generation:
                 return
                 
             retry_items = []
-            with ThreadPoolExecutor(max_workers=workers) as executor:
+            
+            # Create a thread pool for each API key
+            with ThreadPoolExecutor(max_workers=len(api_keys) * workers_per_key) as executor:
                 futures = []
                 
-                for item in items_to_process:
+                # Distribute items across API keys
+                for i, item in enumerate(items_to_process):
                     if self.cancel_generation:
                         break
-                    futures.append(executor.submit(self._process_batch_item, item, total))
+                    # Rotate through API keys
+                    api_key = api_keys[i % len(api_keys)]
+                    futures.append(
+                        executor.submit(
+                            self._process_batch_item, 
+                            item, 
+                            total,
+                            api_key
+                        )
+                    )
                 
                 # Wait for all futures to complete
                 for future in futures:
@@ -1067,9 +1112,14 @@ class MicrostockTools(ttk.Frame):
             # Handle retries if needed
             if retry_items and not self.cancel_generation:
                 self.batch_results['retries'] += len(retry_items)
-                time.sleep(1)
+                time.sleep(1)  # Brief pause before retries
                 process_items(retry_items)
 
+        # Update worker label to show active API keys
+        self.worker_label.config(
+            text=f"Workers: {total_workers} ({len(api_keys)} API keys)"
+        )
+        
         process_items(items)
         
         # Add verification phase
@@ -1085,7 +1135,13 @@ class MicrostockTools(ttk.Frame):
                 
             def update_final_status():
                 total_time = time.time() - self.batch_results['start_time']
+                last_time = self.batch_results.get('last_total_time', 0)
                 self.batch_results['total_time'] = total_time
+                
+                time_diff = self._format_time_diff(total_time, last_time)
+                time_display = f"Total Processing: {self._format_time(total_time)}{time_diff}"
+                if last_time > 0:
+                    time_display += f" Last {self._format_time(last_time)}"
                 
                 quality_status = "✓ All quality checks passed" if not retry_items else f"⚠ {len(retry_items)} items need review"
                 final_status = (
@@ -1094,16 +1150,19 @@ class MicrostockTools(ttk.Frame):
                 )
                 self.progress_var.set(100)
                 self.progress_text.config(text=final_status)
-                self.generation_label.config(
-                    text=f"Finished | Total: {self._format_time(total_time)} | "
-                    f"Avg: {self._format_time(total_time/total)}/file"
-                )
+                self.generation_label.config(text=time_display)
                 self.update_status(f"Batch processing complete - Success: {self.batch_results['success']}/{total} files")
             
             self.after(100, update_final_status)
 
-    def _process_batch_item(self, item, total):
-        """Process single item in batch with thread safety"""
+    def _process_batch_item(self, item, total, api_key):
+        """Process single item in batch with specific API key"""
+        # Find key index for display
+        key_index = self.config.get('gemini_api_keys', []).index(api_key) if api_key in self.config.get('gemini_api_keys', []) else None
+        
+        # Update API key display
+        self.after(0, lambda: self._update_api_key_display(api_key, key_index))
+        
         # Skip if already successful
         if item in self.batch_results['success_items']:
             return {'success': True, 'item': item}
@@ -1117,7 +1176,8 @@ class MicrostockTools(ttk.Frame):
             file_path = self.file_paths[item]
             filename = os.path.basename(file_path)
             
-            self.update_status(f"Processing: {filename}")
+            self.update_status(f"Processing: {filename} (using API key: ...{api_key[-8:]})")
+            
             # Update processed count before UI updates
             current_count = self.batch_results['processed']
             
@@ -1149,7 +1209,7 @@ class MicrostockTools(ttk.Frame):
             self.batch_results['processed'] += 1
 
             start_time = time.time()
-            if self._generate_single(file_path, update_ui=False):
+            if self._generate_single(file_path, update_ui=False, api_key=api_key):
                 max_retries = 3  # Maximum number of retries for bad tags
                 current_try = 0
                 
@@ -1212,7 +1272,7 @@ class MicrostockTools(ttk.Frame):
                             
                             if current_try < max_retries:
                                 self.update_status(f"Retrying {filename} due to poor tag quality (try {current_try + 1})")
-                                if self._generate_single(file_path, update_ui=False):
+                                if self._generate_single(file_path, update_ui=False, api_key=api_key):
                                     continue  # Try again
                                 else:
                                     self.progress_var.set(95)  # Keep progress at 95% during retries
@@ -1648,10 +1708,11 @@ class MicrostockTools(ttk.Frame):
         self.tags_count.config(text=f"{len(tags)}/50 tags")
         return tags  # Return cleaned tags list
 
-    def _on_api_key_change(self, event=None):
+    def _on_api_key_change(self, api_key=None):
         """Save API key to config immediately when changed"""
         try:
-            new_key = self.api_key_var.get().strip()
+            # Use passed api_key or get from config
+            new_key = api_key or self.config.get('gemini_api_key', '')
             if new_key != self.config.get('gemini_api_key', ''):
                 # Update config dictionary
                 if 'checkbox_states' not in self.config:
@@ -1663,7 +1724,9 @@ class MicrostockTools(ttk.Frame):
                 with open(self.config_path, 'w') as f:
                     json.dump(self.config, f, indent=4, sort_keys=True)
                 
-                print(f"API key saved: {new_key[:8]}...")
+                # Update display
+                self._update_api_key_display(new_key)
+                print(f"API key saved and display updated")
                 self.update_status("API key saved to config")
         except Exception as e:
             error_msg = f"Failed to save API key: {str(e)}"
@@ -2049,8 +2112,229 @@ class MicrostockTools(ttk.Frame):
         self._create_button_grid(tab, buttons)
 
     def setup_settings_tab(self, tab, buttons):
-        """Setup settings tab content"""
-        self._create_button_grid(tab, buttons)
+        """Setup settings tab with configuration options"""
+        # Main container
+        main_frame = ttk.Frame(tab)
+        main_frame.pack(fill='both', expand=True, padx=10, pady=10)
+
+        # Left side - API & Models
+        left_frame = ttk.Frame(main_frame)
+        left_frame.pack(side='left', fill='both', expand=True, padx=(0,5))
+
+        # API Keys Section
+        api_frame = ttk.LabelFrame(left_frame, text="Gemini API Keys")
+        api_frame.pack(fill='both', expand=True, pady=(0,10))
+        
+        self.api_keys_text = tk.Text(api_frame, height=10, width=50, font=("Consolas", 10))
+        self.api_keys_text.pack(fill='both', expand=True, padx=5, pady=5)
+        # Load existing API keys
+        api_keys = self.config.get('gemini_api_keys', [])
+        self.api_keys_text.insert('1.0', '\n'.join(api_keys))
+        ttk.Label(api_frame, text="One API key per line").pack(pady=(0,5))
+
+        # Models Section  
+        models_frame = ttk.LabelFrame(left_frame, text="Gemini Models")
+        models_frame.pack(fill='both', expand=True, pady=(0,10))
+        
+        self.models_text = tk.Text(models_frame, height=6, width=50, font=("Consolas", 10))
+        self.models_text.pack(fill='both', expand=True, padx=5, pady=5)
+        # Load existing models
+        models = self.config.get('gemini_models', [])
+        self.models_text.insert('1.0', '\n'.join(models))
+        ttk.Label(models_frame, text="One model name per line").pack(pady=(0,5))
+
+        # Right side - Prompts & Settings
+        right_frame = ttk.Frame(main_frame)
+        right_frame.pack(side='right', fill='both', expand=True, padx=(5,0))
+
+        # Prompts Section
+        prompts_frame = ttk.LabelFrame(right_frame, text="Default Prompts")
+        prompts_frame.pack(fill='both', expand=True, pady=(0,10))
+        
+        # Custom prompt
+        ttk.Label(prompts_frame, text="Custom Prompt:").pack(anchor='w', padx=5, pady=(5,0))
+        self.custom_prompt_text = tk.Text(prompts_frame, height=4, width=50, font=("Arial", 10))
+        self.custom_prompt_text.pack(fill='x', padx=5, pady=2)
+        self.custom_prompt_text.insert('1.0', self.config.get('custom_prompt', ''))
+        
+        # Negative prompt
+        ttk.Label(prompts_frame, text="Negative Prompt:").pack(anchor='w', padx=5, pady=(5,0))
+        self.negative_prompt_text = tk.Text(prompts_frame, height=4, width=50, font=("Arial", 10))
+        self.negative_prompt_text.pack(fill='x', padx=5, pady=2)
+        self.negative_prompt_text.insert('1.0', self.config.get('negative_prompt', ''))
+
+        # Processing Settings
+        settings_frame = ttk.LabelFrame(right_frame, text="Processing Settings")
+        settings_frame.pack(fill='x', pady=(0,10))
+        
+        # Grid for settings
+        settings_grid = ttk.Frame(settings_frame)
+        settings_grid.pack(fill='x', padx=5, pady=5)
+        
+        # Default model
+        ttk.Label(settings_grid, text="Default Model:").grid(row=0, column=0, sticky='e', padx=5, pady=2)
+        self.default_model_var = tk.StringVar(value=self.config.get('default_gemini_model'))
+        default_model_combo = ttk.Combobox(settings_grid, textvariable=self.default_model_var, 
+                                         values=models, state='readonly', width=30)
+        default_model_combo.grid(row=0, column=1, sticky='w', padx=5, pady=2)
+        
+        # Title length
+        ttk.Label(settings_grid, text="Title Length:").grid(row=1, column=0, sticky='e', padx=5, pady=2)
+        title_frame = ttk.Frame(settings_grid)
+        title_frame.grid(row=1, column=1, sticky='w', padx=5, pady=2)
+        
+        self.min_title_setting = tk.StringVar(value=self.config.get('title_length',{}).get('min','20'))
+        self.max_title_setting = tk.StringVar(value=self.config.get('title_length',{}).get('max','30'))
+        ttk.Entry(title_frame, textvariable=self.min_title_setting, width=5).pack(side='left')
+        ttk.Label(title_frame, text=" - ").pack(side='left')
+        ttk.Entry(title_frame, textvariable=self.max_title_setting, width=5).pack(side='left')
+        
+        # Tags count
+        ttk.Label(settings_grid, text="Tags Count:").grid(row=2, column=0, sticky='e', padx=5, pady=2)
+        self.tags_count_setting = tk.StringVar(value=self.config.get('tags_count','50'))
+        ttk.Entry(settings_grid, textvariable=self.tags_count_setting, width=5).grid(row=2, column=1, sticky='w', padx=5, pady=2)
+        
+        # Workers count
+        ttk.Label(settings_grid, text="Workers:").grid(row=3, column=0, sticky='e', padx=5, pady=2)
+        self.workers_count_setting = tk.StringVar(value=self.config.get('worker_count','1'))
+        ttk.Entry(settings_grid, textvariable=self.workers_count_setting, width=5).grid(row=3, column=1, sticky='w', padx=5, pady=2)
+
+        # Action buttons
+        btn_frame = ttk.Frame(right_frame)
+        btn_frame.pack(fill='x', pady=10)
+        
+        ttk.Button(btn_frame, text="Save Settings", 
+                  command=self._save_settings,
+                  style='Normal.TButton').pack(side='right', padx=5)
+                  
+        ttk.Button(btn_frame, text="Reset to Default",
+                  command=self._reset_settings,
+                  style='Normal.TButton').pack(side='right', padx=5)
+        
+        # Add auto-update bindings
+        self.api_keys_text.bind('<KeyRelease>', self._on_settings_change)
+        self.models_text.bind('<KeyRelease>', self._on_settings_change)
+        self.custom_prompt_text.bind('<KeyRelease>', self._on_settings_change)
+        self.negative_prompt_text.bind('<KeyRelease>', self._on_settings_change)
+        
+        # Add variable traces
+        self.min_title_setting.trace_add('write', self._on_settings_change)
+        self.max_title_setting.trace_add('write', self._on_settings_change)
+        self.tags_count_setting.trace_add('write', self._on_settings_change)
+        self.workers_count_setting.trace_add('write', self._on_settings_change)
+        self.default_model_var.trace_add('write', self._on_settings_change)
+
+        # Update custom prompt and negative prompt bindings to synchronize with generation tab
+        def sync_prompts(*args):
+            custom = self.custom_prompt_var.get()
+            negative = self.neg_prompt_var.get()
+            # Update settings tab text widgets
+            current_custom = self.custom_prompt_text.get('1.0', 'end-1c').strip()
+            current_negative = self.negative_prompt_text.get('1.0', 'end-1c').strip()
+            if custom != current_custom:
+                self.custom_prompt_text.delete('1.0', tk.END)
+                self.custom_prompt_text.insert('1.0', custom)
+            if negative != current_negative:
+                self.negative_prompt_text.delete('1.0', tk.END)
+                self.negative_prompt_text.insert('1.0', negative)
+
+        # Add trace to variables from generation tab
+        self.custom_prompt_var.trace_add('write', sync_prompts)
+        self.neg_prompt_var.trace_add('write', sync_prompts)
+
+        # Modify text widget bindings to update generation tab
+        def update_custom_prompt(*args):
+            text = self.custom_prompt_text.get('1.0', 'end-1c').strip()
+            if text != self.custom_prompt_var.get():
+                self.custom_prompt_var.set(text)
+                self._on_setting_change()
+
+        def update_negative_prompt(*args):
+            text = self.negative_prompt_text.get('1.0', 'end-1c').strip()
+            if text != self.neg_prompt_var.get():
+                self.neg_prompt_var.set(text)
+                self._on_setting_change()
+
+        self.custom_prompt_text.bind('<KeyRelease>', update_custom_prompt)
+        self.negative_prompt_text.bind('<KeyRelease>', update_negative_prompt)
+
+    def _save_settings(self):
+        """Save all settings to config"""
+        try:
+            # Get API keys
+            api_keys = [k.strip() for k in self.api_keys_text.get('1.0', 'end-1c').split('\n') if k.strip()]
+            self.config['gemini_api_keys'] = api_keys
+            if api_keys:
+                self.config['gemini_api_key'] = api_keys[0]  # Set first as default
+            
+            # Get models
+            models = [m.strip() for m in self.models_text.get('1.0', 'end-1c').split('\n') if m.strip()]
+            self.config['gemini_models'] = models
+            
+            # Get prompts
+            self.config['custom_prompt'] = self.custom_prompt_text.get('1.0', 'end-1c').strip()
+            self.config['negative_prompt'] = self.negative_prompt_text.get('1.0', 'end-1c').strip()
+            
+            # Get other settings
+            self.config['default_gemini_model'] = self.default_model_var.get()
+            self.config['title_length'] = {
+                'min': self.min_title_setting.get(),
+                'max': self.max_title_setting.get()
+            }
+            self.config['tags_count'] = self.tags_count_setting.get()
+            self.config['worker_count'] = self.workers_count_setting.get()
+            
+            # Save to file
+            self.save_config()
+            
+            # Update display
+            self._update_api_key_display(self.config['gemini_api_key'])
+            
+            self.update_status("Settings saved successfully")
+            
+        except Exception as e:
+            self.update_status(f"Error saving settings: {str(e)}")
+
+    def _reset_settings(self):
+        """Reset settings to default values"""
+        if messagebox.askyesno("Reset Settings", 
+                             "Are you sure you want to reset all settings to default values?",
+                             parent=self.parent):
+            try:
+                # Default values
+                defaults = {
+                    'gemini_api_keys': [],
+                    'gemini_api_key': '',
+                    'gemini_models': ['gemini-2.0-flash'],
+                    'default_gemini_model': 'gemini-2.0-flash',
+                    'custom_prompt': '',
+                    'negative_prompt': '',
+                    'title_length': {'min': '20', 'max': '30'},
+                    'tags_count': '50',
+                    'worker_count': '1'
+                }
+                
+                # Update config
+                self.config.update(defaults)
+                
+                # Update UI
+                self.api_keys_text.delete('1.0', tk.END)
+                self.models_text.delete('1.0', tk.END)
+                self.models_text.insert('1.0', defaults['gemini_models'][0])
+                self.custom_prompt_text.delete('1.0', tk.END)
+                self.negative_prompt_text.delete('1.0', tk.END)
+                self.default_model_var.set(defaults['default_gemini_model'])
+                self.min_title_setting.set(defaults['title_length']['min'])
+                self.max_title_setting.set(defaults['title_length']['max'])
+                self.tags_count_setting.set(defaults['tags_count'])
+                self.workers_count_setting.set(defaults['worker_count'])
+                
+                # Save changes
+                self.save_config()
+                self.update_status("Settings reset to defaults")
+                
+            except Exception as e:
+                self.update_status(f"Error resetting settings: {str(e)}")
 
     def _create_button_grid(self, parent, buttons):
         """Create a grid of buttons with icons"""
@@ -2099,7 +2383,7 @@ class MicrostockTools(ttk.Frame):
             self.filelist_tree.item(item, tags=tags)
 
     def _rename_images(self):
-        """Rename images based on their metadata titles"""
+        """Rename images based on their metadata titles with better error handling"""
         if not self.filelist_tree.get_children():
             self.update_status("No images to rename")
             return
@@ -2124,6 +2408,9 @@ class MicrostockTools(ttk.Frame):
             
         try:
             renamed = 0
+            skipped = 0
+            errors = []
+            
             for item in items_to_rename:
                 file_path = self.file_paths[item]
                 if not os.path.exists(file_path):
@@ -2137,7 +2424,7 @@ class MicrostockTools(ttk.Frame):
                 if not title:
                     continue
                     
-                # Clean title for filename - now preserving spaces
+                # Clean title for filename
                 clean_title = self.clean_title(title)
                 
                 # Create new filename
@@ -2152,22 +2439,118 @@ class MicrostockTools(ttk.Frame):
                     new_path = f"{base} ({counter}){ext}"
                     counter += 1
                 
-                # Rename file
-                os.rename(file_path, new_path)
-                
-                # Update file path in dictionary and treeview
-                self.file_paths[item] = new_path
-                values[1] = os.path.splitext(os.path.basename(new_path))[0]  # Update filename column
-                self.filelist_tree.item(item, values=values)
-                renamed += 1
-                
-            if renamed > 0:
-                self.update_status(f"Successfully renamed {renamed} images")
-            else:
-                self.update_status("No images were renamed")
+                try:
+                    # Check if file is in use
+                    locked_by = self._check_file_usage(file_path)
+                    if locked_by:
+                        # Show detailed message about which process is using the file
+                        result = messagebox.askyesnocancel(
+                            "File In Use",
+                            f"The file '{os.path.basename(file_path)}' is being used by:\n\n"
+                            f"{locked_by}\n\n"
+                            "Would you like to:\n"
+                            "Yes = Try force rename\n"
+                            "No = Skip this file\n"
+                            "Cancel = Stop renaming",
+                            parent=self.parent
+                        )
+                        
+                        if result is None:  # Cancel
+                            self.update_status("Renaming operation cancelled")
+                            return
+                        elif result is False:  # Skip
+                            skipped += 1
+                            continue
+                        # else continue with force rename
+                    
+                    # Try rename with retry logic
+                    max_retries = 3
+                    retry_count = 0
+                    success = False
+                    
+                    while not success and retry_count < max_retries:
+                        try:
+                            if os.path.exists(new_path):
+                                os.remove(new_path)  # Remove destination if exists
+                            os.replace(file_path, new_path)  # Use replace instead of rename
+                            success = True
+                        except PermissionError:
+                            retry_count += 1
+                            if retry_count == max_retries:
+                                raise
+                            time.sleep(0.5)  # Short delay before retry
+                    
+                    # Update file path in dictionary and treeview
+                    self.file_paths[item] = new_path
+                    values[1] = os.path.splitext(os.path.basename(new_path))[0]  # Update filename column
+                    self.filelist_tree.item(item, values=values)
+                    renamed += 1
+                    
+                except Exception as e:
+                    errors.append(f"{os.path.basename(file_path)}: {str(e)}")
+                    continue
+            
+            # Show summary message
+            status_msg = f"Renamed {renamed} images"
+            if skipped > 0:
+                status_msg += f", Skipped {skipped}"
+            if errors:
+                status_msg += f", Failed {len(errors)}"
+                error_details = "\n".join(errors)
+                messagebox.showwarning(
+                    "Rename Results",
+                    f"{status_msg}\n\nErrors:\n{error_details}",
+                    parent=self.parent
+                )
+            
+            self.update_status(status_msg)
             
         except Exception as e:
-            self.update_status(f"Error renaming images: {str(e)}")
+            self.update_status(f"Error during rename operation: {str(e)}")
+
+    def _check_file_usage(self, file_path):
+        """Check which process is using the file"""
+        try:
+            if os.name == 'nt':  # Windows only
+                import psutil
+                import win32file
+                import pywintypes
+                
+                try:
+                    # Try to open file with exclusive access
+                    handle = win32file.CreateFile(
+                        file_path,
+                        win32file.GENERIC_READ,
+                        0,  # No share mode
+                        None,
+                        win32file.OPEN_EXISTING,
+                        win32file.FILE_ATTRIBUTE_NORMAL,
+                        None
+                    )
+                    handle.close()
+                    return None  # File is not in use
+                except pywintypes.error:
+                    # File is in use, find which process
+                    processes_info = []
+                    for proc in psutil.process_iter(['pid', 'name', 'username']):
+                        try:
+                            for item in proc.open_files():
+                                if item.path == file_path:
+                                    processes_info.append(
+                                        f"Process: {proc.name()}\n"
+                                        f"PID: {proc.pid}\n"
+                                        f"User: {proc.username()}"
+                                    )
+                        except (psutil.NoSuchProcess, psutil.AccessDenied):
+                            continue
+                            
+                    return "\n\n".join(processes_info) if processes_info else "Unknown process"
+            return None  # Non-Windows OS
+            
+        except Exception as e:
+            print(f"Error checking file usage: {e}")
+            return None
+
     def _show_context_menu(self, event):
         """Show context menu on right click with proper window focus"""
         try:
@@ -2384,3 +2767,77 @@ class MicrostockTools(ttk.Frame):
     # New command methods
     def configure_templates(self): print("Configure templates")
     def configure_preferences(self): print("Configure preferences")
+
+    def _update_api_key_display(self, key, index=None):
+        """Update API key display with optional index indication"""
+        if not key:
+            self.api_key_display.config(text="No API key configured")
+            return
+            
+        if index is not None:
+            total_keys = len(self.config.get('gemini_api_keys', []))
+            display_text = f"[{index+1}/{total_keys}] {key}"
+        else:
+            display_text = key
+            
+        self.api_key_display.config(text=display_text)
+
+    def _on_settings_change(self, *args):
+        """Auto-save settings and update generator tab when changes occur"""
+        try:
+            # Get all current values
+            api_keys = [k.strip() for k in self.api_keys_text.get('1.0', 'end-1c').split('\n') if k.strip()]
+            models = [m.strip() for m in self.models_text.get('1.0', 'end-1c').split('\n') if m.strip()]
+            
+            # Update config
+            self.config['gemini_api_keys'] = api_keys
+            if api_keys:
+                self.config['gemini_api_key'] = api_keys[0]
+            self.config['gemini_models'] = models
+            self.config['custom_prompt'] = self.custom_prompt_text.get('1.0', 'end-1c').strip()
+            self.config['negative_prompt'] = self.negative_prompt_text.get('1.0', 'end-1c').strip()
+            self.config['title_length'] = {
+                'min': self.min_title_setting.get(),
+                'max': self.max_title_setting.get()
+            }
+            self.config['tags_count'] = self.tags_count_setting.get()
+            self.config['worker_count'] = self.workers_count_setting.get()
+            
+            # Update generator tab
+            self.update_generator_tab_from_config()
+            
+            # Save config
+            self.save_config()
+            
+        except Exception as e:
+            self.update_status(f"Error saving settings: {str(e)}")
+        else:
+            self.update_status("Settings updated")
+
+    def update_generator_tab_from_config(self):
+        """Update generator tab UI elements from config"""
+        try:
+            # Update API key display
+            self._update_api_key_display(self.config.get('gemini_api_key', ''))
+            
+            # Update model combo
+            models = self.config.get('gemini_models', [])
+            self.model_combo['values'] = models
+            if self.config.get('default_gemini_model') in models:
+                self.model_var.set(self.config['default_gemini_model'])
+            elif models:
+                self.model_var.set(models[0])
+                
+            # Update prompts
+            self.custom_prompt_var.set(self.config.get('custom_prompt', ''))
+            self.neg_prompt_var.set(self.config.get('negative_prompt', ''))
+            
+            # Update lengths
+            title_len = self.config.get('title_length', {})
+            self.min_title_var.set(title_len.get('min', '20'))
+            self.max_title_var.set(title_len.get('max', '30'))
+            self.tags_count_var.set(self.config.get('tags_count', '50'))
+            self.worker_count_var.set(self.config.get('worker_count', '1'))
+            
+        except Exception as e:
+            self.update_status(f"Error updating generator tab: {str(e)}")

@@ -156,3 +156,106 @@
 2025-04-17 13:02:19,462 - ERROR - Failed to process Outdoor Business Sign With Metallic Lettering Displayed Near Building Facade.png: 'MicrostockTools' object has no attribute '_stats_update_interval'
 2025-04-17 13:02:23,527 - ERROR - Failed to process Two Minimalist White Business Cards Rest On Textured Concrete Surfaces Creating Bold Shadows And A.jpg: 'MicrostockTools' object has no attribute '_stats_update_interval'
 2025-04-17 13:02:28,495 - ERROR - Failed to process Two Simple White Business Cards Rest On Concrete Blocks Casting Shadows.jpg: 'MicrostockTools' object has no attribute '_stats_update_interval'
+2025-04-17 18:14:44,290 - ERROR - Failed to process A Softly Glowing Lightbulb Illuminates A Patterned Metal Grille And Creates An Atmosphere Of Warmth.jpg: name 'current_count' is not defined
+2025-04-17 18:14:52,717 - ERROR - Failed to process A Stone Staircase Is Engulfed By Vibrant Greenery With Moss And Plants Blanketing Each Step In A.jpg: name 'current_count' is not defined
+2025-04-17 18:15:02,754 - ERROR - Failed to process Empty Nest On Ground.jpg: name 'current_count' is not defined
+2025-04-17 18:15:10,015 - ERROR - Failed to process Fallen Leaves On Ground.jpg: name 'current_count' is not defined
+2025-04-17 18:15:16,572 - ERROR - Failed to process Indoor Light Foliage.jpg: name 'current_count' is not defined
+2025-04-17 18:15:21,812 - ERROR - Failed to process Leaves Float Calmly.jpg: name 'current_count' is not defined
+2025-04-17 18:15:30,064 - ERROR - Failed to process Lush Green Hedge Detail.jpg: name 'current_count' is not defined
+2025-04-17 18:15:33,963 - ERROR - Failed to process Lush Green Rice Field.jpg: name 'current_count' is not defined
+2025-04-17 18:15:43,517 - ERROR - Failed to process Pile Of Pruned Branches.jpg: name 'current_count' is not defined
+2025-04-17 18:15:48,955 - ERROR - Failed to process Pond Reflects Sky Trees.jpg: name 'current_count' is not defined
+2025-04-17 18:15:55,257 - ERROR - Failed to process Rice Paddy Terrace View.jpg: name 'current_count' is not defined
+2025-04-17 18:16:02,967 - ERROR - Failed to process Roots Intertwine Closely.jpg: name 'current_count' is not defined
+2025-04-17 18:16:09,736 - ERROR - Failed to process Rustic Weathered Fence.jpg: name 'current_count' is not defined
+2025-04-17 18:16:17,038 - ERROR - Failed to process Tangled Tree Roots Descend From Above Exposed And Textured Reaching Towards The Earth In A.jpg: name 'current_count' is not defined
+2025-04-17 18:16:23,854 - ERROR - Failed to process Fallen Leaves On Pond.jpg: name 'current_count' is not defined
+2025-04-17 18:16:31,441 - ERROR - Failed to process Lush Fern Fronds.jpg: name 'current_count' is not defined
+2025-04-17 18:16:52,210 - ERROR - Failed to process Fallen Leaves On Pond.jpg: name 'current_count' is not defined
+2025-04-17 18:16:57,942 - ERROR - Failed to process Indoor Light Foliage.jpg: name 'current_count' is not defined
+2025-04-17 18:17:02,259 - ERROR - Failed to process Lush Green Hedge Detail.jpg: name 'current_count' is not defined
+2025-04-17 18:17:09,288 - ERROR - Failed to process Mossy Twig Nest Detail.jpg: name 'current_count' is not defined
+2025-04-17 18:18:16,563 - ERROR - Failed to process Delicate Small Purple Flowers Bloom Amongst Lush Green Foliage Conveying A Sense Of Springtime.jpg: name 'current_count' is not defined
+2025-04-17 18:18:16,788 - ERROR - Failed to process A Softly Glowing Lightbulb Illuminates A Patterned Metal Grille And Creates An Atmosphere Of Warmth.jpg: name 'current_count' is not defined
+2025-04-17 18:18:19,824 - ERROR - Failed to process A Stone Staircase Is Engulfed By Vibrant Greenery With Moss And Plants Blanketing Each Step In A.jpg: name 'current_count' is not defined
+2025-04-17 18:18:23,220 - ERROR - Failed to process Empty Nest On Ground.jpg: name 'current_count' is not defined
+2025-04-17 18:18:24,962 - ERROR - Failed to process Fallen Leaves On Pond.jpg: name 'current_count' is not defined
+2025-04-17 18:18:25,649 - ERROR - Failed to process Fallen Leaves On Ground.jpg: name 'current_count' is not defined
+2025-04-17 18:18:26,074 - ERROR - Failed to process Indoor Light Foliage.jpg: name 'current_count' is not defined
+2025-04-17 18:18:26,555 - ERROR - Failed to process Leaves Float Calmly.jpg: name 'current_count' is not defined
+2025-04-17 18:18:30,110 - ERROR - Failed to process Lush Green Rice Field.jpg: name 'current_count' is not defined
+2025-04-17 18:18:33,224 - ERROR - Failed to process Lush Green Hedge Detail.jpg: name 'current_count' is not defined
+2025-04-17 18:18:35,653 - ERROR - Failed to process Pond Reflects Sky Trees.jpg: name 'current_count' is not defined
+2025-04-17 18:18:38,349 - ERROR - Failed to process Rice Paddy Terrace View.jpg: name 'current_count' is not defined
+2025-04-17 18:18:41,267 - ERROR - Failed to process Pile Of Pruned Branches.jpg: name 'current_count' is not defined
+2025-04-17 18:18:45,375 - ERROR - Failed to process Rustic Weathered Fence.jpg: invalid command name ".!toplevel2.!frame.!label"
+2025-04-17 18:18:46,081 - ERROR - Failed to process Roots Intertwine Closely.jpg: invalid command name ".!toplevel2.!frame.!label"
+2025-04-17 18:18:47,702 - ERROR - Failed to process Tangled Tree Roots Descend From Above Exposed And Textured Reaching Towards The Earth In A.jpg: invalid command name ".!toplevel2.!frame.!label"
+2025-04-17 18:20:50,683 - ERROR - Failed to process Delicate Small Purple Flowers Bloom Amongst Lush Green Foliage Conveying A Sense Of Springtime.jpg: name 'current_count' is not defined
+2025-04-17 18:20:51,107 - ERROR - Failed to process A Softly Glowing Lightbulb Illuminates A Patterned Metal Grille And Creates An Atmosphere Of Warmth.jpg: name 'current_count' is not defined
+2025-04-17 18:20:54,028 - ERROR - Failed to process A Stone Staircase Is Engulfed By Vibrant Greenery With Moss And Plants Blanketing Each Step In A.jpg: name 'current_count' is not defined
+2025-04-17 18:21:06,017 - ERROR - Failed to process Fallen Leaves On Pond.jpg: name 'current_count' is not defined
+2025-04-17 18:21:07,295 - ERROR - Failed to process Empty Nest On Ground.jpg: name 'current_count' is not defined
+2025-04-17 18:21:08,072 - ERROR - Failed to process Indoor Light Foliage.jpg: name 'current_count' is not defined
+2025-04-17 18:21:08,293 - ERROR - Failed to process Leaves Float Calmly.jpg: name 'current_count' is not defined
+2025-04-17 18:21:09,853 - ERROR - Failed to process Fallen Leaves On Ground.jpg: name 'current_count' is not defined
+2025-04-17 18:21:13,113 - ERROR - Failed to process Lush Green Rice Field.jpg: name 'current_count' is not defined
+2025-04-17 18:21:15,086 - ERROR - Failed to process Lush Green Hedge Detail.jpg: name 'current_count' is not defined
+2025-04-17 18:21:17,445 - ERROR - Failed to process Lush Fern Fronds.jpg: name 'current_count' is not defined
+2025-04-17 18:21:19,544 - ERROR - Failed to process Pond Reflects Sky Trees.jpg: name 'current_count' is not defined
+2025-04-17 18:21:20,916 - ERROR - Failed to process Pile Of Pruned Branches.jpg: name 'current_count' is not defined
+2025-04-17 18:21:21,116 - ERROR - Failed to process Rice Paddy Terrace View.jpg: name 'current_count' is not defined
+2025-04-17 18:21:21,166 - ERROR - Failed to process Red Ixora Bloom Detail.jpg: name 'current_count' is not defined
+2025-04-17 18:47:37,075 - ERROR - Failed to process Empty Nest On Ground.jpg: main thread is not in main loop
+2025-04-17 18:47:38,170 - ERROR - Worker thread error: main thread is not in main loop
+2025-04-17 18:47:40,344 - ERROR - Failed to process Fallen Leaves On Ground.jpg: main thread is not in main loop
+2025-04-17 20:00:08,305 - ERROR - Failed to process Delicate Small Purple Flowers Bloom Amongst Lush Green Foliage Conveying A Sense Of Springtime.jpg: 'MicrostockTools' object has no attribute '_stats_update_interval'
+2025-04-17 20:00:11,145 - ERROR - Failed to process A Softly Glowing Lightbulb Illuminates A Patterned Metal Grille And Creates An Atmosphere Of Warmth.jpg: 'MicrostockTools' object has no attribute '_stats_update_interval'
+2025-04-17 20:00:11,145 - ERROR - Worker thread error: 'MicrostockTools' object has no attribute '_stats_update_interval'
+2025-04-17 20:00:12,172 - ERROR - Failed to process Fallen Leaves On Pond.jpg: 'MicrostockTools' object has no attribute '_stats_update_interval'
+2025-04-17 20:00:16,995 - ERROR - Failed to process A Stone Staircase Is Engulfed By Vibrant Greenery With Moss And Plants Blanketing Each Step In A.jpg: 'MicrostockTools' object has no attribute '_stats_update_interval'
+2025-04-17 20:00:17,000 - ERROR - Worker thread error: 'MicrostockTools' object has no attribute '_stats_update_interval'
+2025-04-17 20:00:17,001 - ERROR - Worker thread error: 'MicrostockTools' object has no attribute '_stats_update_interval'
+2025-04-17 20:00:17,463 - ERROR - Failed to process Leaves Float Calmly.jpg: 'MicrostockTools' object has no attribute '_stats_update_interval'
+2025-04-17 20:00:17,580 - ERROR - Failed to process Indoor Light Foliage.jpg: 'MicrostockTools' object has no attribute '_stats_update_interval'
+2025-04-17 20:00:19,574 - ERROR - Failed to process Empty Nest On Ground.jpg: 'MicrostockTools' object has no attribute '_stats_update_interval'
+2025-04-17 20:00:19,579 - ERROR - Worker thread error: 'MicrostockTools' object has no attribute '_stats_update_interval'
+2025-04-17 20:00:22,421 - ERROR - Failed to process Lush Green Rice Field.jpg: 'MicrostockTools' object has no attribute '_stats_update_interval'
+2025-04-17 20:00:26,315 - ERROR - Failed to process Fallen Leaves On Ground.jpg: 'MicrostockTools' object has no attribute '_stats_update_interval'
+2025-04-17 20:00:26,316 - ERROR - Worker thread error: 'MicrostockTools' object has no attribute '_stats_update_interval'
+2025-04-17 20:00:26,316 - ERROR - Worker thread error: 'MicrostockTools' object has no attribute '_stats_update_interval'
+2025-04-17 20:00:26,316 - ERROR - Worker thread error: 'MicrostockTools' object has no attribute '_stats_update_interval'
+2025-04-17 20:00:27,228 - ERROR - Failed to process Lush Green Hedge Detail.jpg: 'MicrostockTools' object has no attribute '_stats_update_interval'
+2025-04-17 20:00:30,334 - ERROR - Failed to process Mossy Twig Nest Detail.jpg: 'MicrostockTools' object has no attribute '_stats_update_interval'
+2025-04-17 20:00:30,511 - ERROR - Failed to process Red Ixora Bloom Detail.jpg: 'MicrostockTools' object has no attribute '_stats_update_interval'
+2025-04-17 20:00:30,726 - ERROR - Failed to process Lush Fern Fronds.jpg: 'MicrostockTools' object has no attribute '_stats_update_interval'
+2025-04-17 20:00:30,727 - ERROR - Worker thread error: 'MicrostockTools' object has no attribute '_stats_update_interval'
+2025-04-17 20:00:30,727 - ERROR - Worker thread error: 'MicrostockTools' object has no attribute '_stats_update_interval'
+2025-04-17 20:00:30,727 - ERROR - Worker thread error: 'MicrostockTools' object has no attribute '_stats_update_interval'
+2025-04-17 20:00:31,033 - ERROR - Failed to process Pond Reflects Sky Trees.jpg: 'MicrostockTools' object has no attribute '_stats_update_interval'
+2025-04-17 20:00:33,088 - ERROR - Worker thread error: 'MicrostockTools' object has no attribute '_stats_update_interval'
+2025-04-17 20:00:33,122 - ERROR - Worker thread error: 'MicrostockTools' object has no attribute '_stats_update_interval'
+2025-04-17 20:00:33,191 - ERROR - Failed to process Pile Of Pruned Branches.jpg: 'MicrostockTools' object has no attribute '_stats_update_interval'
+2025-04-17 20:00:33,237 - ERROR - Failed to process Rice Paddy Terrace View.jpg: 'MicrostockTools' object has no attribute '_stats_update_interval'
+2025-04-17 20:00:35,075 - ERROR - Failed to process Ruellia Simplex Bloom.jpg: 'MicrostockTools' object has no attribute '_stats_update_interval'
+2025-04-17 20:00:35,758 - ERROR - Failed to process Rustic Weathered Fence.jpg: 'MicrostockTools' object has no attribute '_stats_update_interval'
+2025-04-17 20:00:36,482 - ERROR - Failed to process Roots Intertwine Closely.jpg: 'MicrostockTools' object has no attribute '_stats_update_interval'
+2025-04-17 20:00:36,484 - ERROR - Worker thread error: 'MicrostockTools' object has no attribute '_stats_update_interval'
+2025-04-17 20:00:36,484 - ERROR - Worker thread error: 'MicrostockTools' object has no attribute '_stats_update_interval'
+2025-04-17 20:00:38,855 - ERROR - Failed to process Tangled Tree Roots Descend From Above Exposed And Textured Reaching Towards The Earth In A.jpg: 'MicrostockTools' object has no attribute '_stats_update_interval'
+2025-04-17 20:00:38,855 - ERROR - Worker thread error: 'MicrostockTools' object has no attribute '_stats_update_interval'
+2025-04-17 20:00:42,114 - ERROR - Failed to process A Softly Glowing Lightbulb Illuminates A Patterned Metal Grille And Creates An Atmosphere Of Warmth.jpg: 'MicrostockTools' object has no attribute '_stats_update_interval'
+2025-04-17 20:00:42,122 - ERROR - Worker thread error: 'MicrostockTools' object has no attribute '_stats_update_interval'
+2025-04-17 20:00:45,172 - ERROR - Failed to process Delicate Small Purple Flowers Bloom Amongst Lush Green Foliage Conveying A Sense Of Springtime.jpg: 'MicrostockTools' object has no attribute '_stats_update_interval'
+2025-04-17 20:00:49,639 - ERROR - Failed to process Empty Nest On Ground.jpg: 'MicrostockTools' object has no attribute '_stats_update_interval'
+2025-04-17 20:00:50,540 - ERROR - Failed to process Fallen Leaves On Pond.jpg: 'MicrostockTools' object has no attribute '_stats_update_interval'
+2025-04-17 20:00:51,584 - ERROR - Failed to process A Stone Staircase Is Engulfed By Vibrant Greenery With Moss And Plants Blanketing Each Step In A.jpg: 'MicrostockTools' object has no attribute '_stats_update_interval'
+2025-04-17 20:00:51,654 - ERROR - Worker thread error: invalid command name ".!toplevel.!microstocktools.!notebook.!frame.!frame.!frame.!frame.!frame2.!frame.!label4"
+2025-04-17 20:00:52,567 - ERROR - Failed to process Leaves Float Calmly.jpg: invalid command name ".!toplevel.!frame.!label"
+2025-04-17 20:00:53,188 - ERROR - Failed to process Fallen Leaves On Ground.jpg: invalid command name ".!toplevel.!frame.!label"
+2025-04-17 20:00:53,813 - ERROR - Failed to process Lush Fern Fronds.jpg: invalid command name ".!toplevel.!frame.!label"
+2025-04-17 20:59:19,513 - ERROR - Failed to process Lush Green Fern Details.jpg: invalid command name ".!toplevel.!frame.!label"
+2025-04-17 21:02:53,149 - ERROR - Failed to process Tangled Old Tree Roots.jpg: main thread is not in main loop
+2025-04-17 21:02:54,238 - ERROR - Worker thread error: main thread is not in main loop
+2025-04-17 21:02:56,114 - ERROR - Failed to process Wet Fallen Leaves On Ground.jpg: main thread is not in main loop
