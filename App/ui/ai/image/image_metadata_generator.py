@@ -21,7 +21,7 @@ from concurrent.futures import ThreadPoolExecutor
 from functools import partial
 import psutil
 
-class MicrostockTools(ttk.Frame):
+class ImageMetadataGenerator(ttk.Frame):
     def __init__(self, parent, BASE_DIR, main_window):
         super().__init__(parent)
         self.parent = parent
@@ -29,7 +29,7 @@ class MicrostockTools(ttk.Frame):
         self.main_window = main_window
         
         # Configure window
-        self.parent.title("Microstock Tools")
+        self.parent.title("Image Metadata Generator")
         
         # Set minimum size based on screen dimensions
         screen_width = self.parent.winfo_screenwidth()
@@ -41,9 +41,9 @@ class MicrostockTools(ttk.Frame):
         # Start maximized
         self.parent.state('zoomed')
         
-        # Make window independent
-        self.parent.transient()
-        self.parent.grab_set()
+        # Hapus transient() dan grab_set() agar window bisa diminimize
+        # self.parent.transient()
+        # self.parent.grab_set()
         
         # Create status bar first
         self.create_status_bar()

@@ -70,6 +70,7 @@ Logo dan maskot **Rak Arsip** adalah milik eksklusif **Desainia** dan tidak dili
 - Buat _file_ CSV otomatis untuk _template_ folder.
 - Buka folder langsung di _file explorer_.
 - Daftar pustaka untuk akses cepat ke arsip.
+- Tools keren dengan AI
 
 Ada ide atau saran fitur baru?
 

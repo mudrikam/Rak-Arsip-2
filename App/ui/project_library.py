@@ -27,6 +27,7 @@
 # |                        |                                    |
 # ---------------------------------------------------------------
 
+import logging
 import os
 import csv
 import tkinter as tk
@@ -143,6 +144,26 @@ class ProjectLibrary(ttk.LabelFrame):
         self.tree.pack(fill=tk.BOTH, expand=True)
         self.tree.bind("<<TreeviewSelect>>", self.on_row_select)
         self.tree.bind("<Double-Button-1>", self.on_double_click)
+        # Add new binding for Ctrl+C
+        self.tree.bind("<Control-c>", self.copy_to_clipboard)
+        
+        # Add new bindings for Ctrl+X and Ctrl+E
+        self.tree.bind("<Control-x>", self.copy_directory)
+        self.tree.bind("<Control-e>", self.open_explorer)
+        
+        # Configure Treeview style first
+        style = ttk.Style()
+        style.configure("Treeview", 
+            background="white",
+            fieldbackground="white",
+            borderwidth=0,
+            highlightthickness=0)
+        
+        # Configure tag colors - sekarang hanya mengatur warna teks
+        self.tree.tag_configure('normal', foreground='black', background='white')  # Black text on white bg
+        self.tree.tag_configure('hover', foreground='#0078D7', background='white')  # Blue text on white bg
+
+        # Load initial data with normal tag
         self.load_library()
         self.selected_file = None
         self.check_for_upDates()
@@ -190,6 +211,56 @@ class ProjectLibrary(ttk.LabelFrame):
         # Bind the configure event to adjust widget sizes dynamically
         self.bind("<Configure>", self.on_resize)
 
+        # Add binding for Ctrl+F to focus search
+        self.bind_all("<Control-f>", self.focus_search)
+        self.tree.bind("<Control-f>", self.focus_search)
+
+        # Add tooltip window attributes
+        self.tooltip_window = None
+        self.tooltip_image = None
+        self.last_tooltip_path = None
+        self.hover_timer = None
+
+        # Add hover bindings to tree
+        self.tree.bind("<Motion>", self.on_hover)
+        self.tree.bind("<Leave>", self.on_leave)
+        self.tree.bind("<Control-t>", self.show_image_tooltip)
+        self.tree.bind("<B1-Motion>", self.hide_tooltip)
+        self.tree.bind("<Leave>", self.hide_tooltip)
+
+        # Add right-click menu binding
+        self.context_menu = tk.Menu(self, tearoff=0)
+        self.context_menu.add_command(label="Buka Folder", command=self.open_file)
+        self.context_menu.add_command(label="Salin Nama", command=lambda: self.copy_to_clipboard(None))
+        self.context_menu.add_command(label="Salin Lokasi", command=lambda: self.copy_directory(None))
+        self.tree.bind("<Button-3>", self.show_context_menu)
+        
+        # Update context menu with shortcut hints
+        self.context_menu = tk.Menu(self, tearoff=0)
+        self.context_menu.add_command(
+            label="Buka Folder (Double Click)", 
+            command=self.open_file
+        )
+        self.context_menu.add_command(
+            label="Buka di Explorer (Ctrl + E)", 
+            command=lambda: self.open_explorer(None)
+        )
+        self.context_menu.add_separator()
+        self.context_menu.add_command(
+            label="Salin Nama (Ctrl + C)", 
+            command=lambda: self.copy_to_clipboard(None)
+        )
+        self.context_menu.add_command(
+            label="Salin Lokasi (Ctrl + X)", 
+            command=lambda: self.copy_directory(None)
+        )
+        self.context_menu.add_separator()
+        self.context_menu.add_command(
+            label="Tampilkan Thumbnail (Ctrl + T)", 
+            command=lambda: self.show_image_tooltip(None)
+        )
+        self.tree.bind("<Button-3>", self.show_context_menu)
+
     def initialize_library(self):
         """Initialize directory and library file"""
         result = self.library_manager.initialize_library()
@@ -232,7 +303,7 @@ class ProjectLibrary(ttk.LabelFrame):
             if rows:
                 rows.sort(key=lambda x: int(x[0]), reverse=True)
                 for row in rows:
-                    self.tree.insert("", "end", values=row)
+                    self.tree.insert("", "end", values=row, tags=('normal',))
                     
         except Exception as e:
             self.main_window.update_status(f"Error loading library: {str(e)}")
@@ -293,20 +364,34 @@ class ProjectLibrary(ttk.LabelFrame):
                     matching_rows.append(row)
 
         for row in matching_rows:
-            self.tree.insert("", "end", values=row)
+            self.tree.insert("", "end", values=row, tags=('normal',))
             
     def clear_search(self, event=None):
         self.search_var.set("")  # Setel StringVar menjadi kosong
         self.search_library()  # Panggil search_library agar data kembali semula
             
     def on_double_click(self, event):
-        selected_item = self.tree.selection()
-        if selected_item:
-            item = self.tree.item(selected_item[0])
-            self.selected_file = item["values"][3]
-            self.open_file()
-            self.clear_search()
+        """Handle double click on tree item"""
+        try:
+            # Dapatkan item yang diklik berdasarkan koordinat mouse
+            item_id = self.tree.identify_row(event.y)
+            if not item_id:  # Jika click di area kosong
+                return
+                
+            # Select item yang diklik
+            self.tree.selection_set(item_id)
             
+            # Ambil data dan buka file
+            item = self.tree.item(item_id)
+            if item and "values" in item and len(item["values"]) >= 4:
+                self.selected_file = item["values"][3]
+                self.open_file()
+                self.after(100, self.clear_search)
+                
+        except (tk.TclError, IndexError) as e:
+            logging.error(f"Error handling double click: {str(e)}")
+            self.main_window.update_status("Gagal membuka lokasi file")
+
     def backup_library(self):
         try:
             if os.name == 'nt':  # Windows
@@ -458,3 +543,207 @@ class ProjectLibrary(ttk.LabelFrame):
             print(f"Error loading icon {icon_path}: {e}")
             return None
 
+    # Add new method for clipboard functionality
+    def copy_to_clipboard(self, event=None):
+        """Copy selected project name to clipboard"""
+        selected_item = self.tree.selection()
+        if selected_item:
+            item = self.tree.item(selected_item[0])
+            project_name = item["values"][2]  # Get the "Nama" value
+            self.clipboard_clear()
+            self.clipboard_append(project_name)
+            self.main_window.update_status(f"Nama Arsip '{project_name}' telah disalin ke clipboard")
+
+    # Add new method for search focus
+    def focus_search(self, event=None):
+        """Focus the search entry when Ctrl+F is pressed"""
+        self.search_entry.focus_set()
+        self.search_entry.select_range(0, tk.END)
+        # Prevent event from propagating to avoid double handling
+        return "break"
+
+    def find_project_image(self, project_path, project_name):
+        """Search for project thumbnail in multiple image formats"""
+        image_formats = ['.png', '.jpg', '.jpeg', '.gif', '.bmp', '.ico', '.webp']
+        
+        # First try to find exact match with project name
+        for format in image_formats:
+            image_name = f"{project_name}{format}"
+            direct_path = os.path.join(project_path, image_name)
+            if os.path.exists(direct_path):
+                return direct_path
+        
+        # Then look for exact match in subdirectories
+        for root, _, files in os.walk(project_path):
+            for format in image_formats:
+                image_name = f"{project_name}{format}"
+                if image_name in files:
+                    return os.path.join(root, image_name)
+        
+        # If no exact match found, find first image file in directory or subdirectories
+        for root, _, files in os.walk(project_path):
+            for file in files:
+                # Check if file has image extension
+                if any(file.lower().endswith(fmt) for fmt in image_formats):
+                    return os.path.join(root, file)
+                    
+        return None
+
+    def show_image_tooltip(self, event=None, hovered_item=None):
+        """Show tooltip with project thumbnail when Ctrl+T is pressed or after hover"""
+        try:
+            # For Ctrl+T, use selected item
+            if event and event.state & 4 and not hovered_item:  # Check for Ctrl key
+                selected_item = self.tree.selection()
+                if not selected_item:
+                    return "break"
+                item_id = selected_item[0]
+            else:  # For hover, use hovered item
+                item_id = hovered_item
+                if not item_id:
+                    return "break"
+
+            # Verify item still exists
+            if item_id not in self.tree.get_children():
+                return "break"
+
+            item = self.tree.item(item_id)
+            # ...rest of existing code...
+
+            project_path = item["values"][3]  # Get the project path
+            project_name = item["values"][2]  # Get the project name
+        
+            # Hide existing tooltip if showing different image
+            if self.tooltip_window and self.last_tooltip_path != project_path:
+                self.hide_tooltip()
+                
+            if not self.tooltip_window:
+                # Find project image
+                image_path = self.find_project_image(project_path, project_name)
+                if not image_path:
+                    self.main_window.update_status(f"Tidak ada gambar thumbnail untuk '{project_name}'")
+                    return "break"
+                    
+                try:
+                    # Create tooltip window
+                    self.tooltip_window = tk.Toplevel()
+                    self.tooltip_window.overrideredirect(True)
+                    self.tooltip_window.attributes('-topmost', True)
+                    
+                    # Load and resize image
+                    with Image.open(image_path) as img:
+                        img = img.convert('RGBA')
+                        img.thumbnail((200, 200), Image.Resampling.LANCZOS)
+                        self.tooltip_image = ImageTk.PhotoImage(img)
+                    
+                    # Create label with image
+                    label = tk.Label(self.tooltip_window, image=self.tooltip_image)
+                    label.pack()
+                    
+                    # Position tooltip near cursor or row
+                    x = self.tree.winfo_rootx() + event.x + 10
+                    y = self.tree.winfo_rooty() + event.y + 10
+                    self.tooltip_window.geometry(f"+{x}+{y}")
+                    
+                    self.last_tooltip_path = project_path
+                    
+                except Exception as e:
+                    self.main_window.update_status(f"Error loading thumbnail: {str(e)}")
+                    if self.tooltip_window:
+                        self.tooltip_window.destroy()
+                        self.tooltip_window = None
+                        
+        except (tk.TclError, KeyError):
+            # Silently ignore errors when item no longer exists
+            return "break"
+
+    def hide_tooltip(self, event=None):
+        """Hide the tooltip window"""
+        if self.hover_timer:
+            self.tree.after_cancel(self.hover_timer)
+            self.hover_timer = None
+        if self.tooltip_window:
+            self.tooltip_window.destroy()
+            self.tooltip_window = None
+            self.tooltip_image = None
+            self.last_tooltip_path = None
+
+    def open_explorer(self, event=None):
+        """Open file explorer for selected project (Ctrl+E)"""
+        selected_item = self.tree.selection()
+        if selected_item:
+            item = self.tree.item(selected_item[0])
+            file_path = item["values"][3]
+            if os.path.exists(file_path):
+                try:
+                    if os.name == 'nt':  # Windows
+                        os.startfile(file_path)
+                    else:  # macOS and Linux
+                        webbrowser.open(file_path)
+                    self.main_window.update_status(f"Membuka explorer di: {file_path}")
+                except Exception as e:
+                    messagebox.showerror("Error", f"Gagal membuka explorer:\n{e}")
+            else:
+                messagebox.showwarning("Periksa!", "Lokasi folder tidak ditemukan")
+        return "break"
+
+    def copy_directory(self, event=None):
+        """Copy selected project directory path to clipboard"""
+        selected_item = self.tree.selection()
+        if selected_item:
+            item = self.tree.item(selected_item[0])
+            directory = item["values"][3]  # Get the "Lokasi" value
+            self.clipboard_clear()
+            self.clipboard_append(directory)
+            self.main_window.update_status(f"Lokasi '{directory}' telah disalin ke clipboard")
+        return "break"
+
+    def on_hover(self, event):
+        """Handle mouse hover over tree item"""
+        if self.hover_timer:
+            self.tree.after_cancel(self.hover_timer)
+            
+        # Get the item under cursor
+        item_id = self.tree.identify_row(event.y)
+        
+        # Reset all items to normal tag
+        for item in self.tree.get_children():
+            self.tree.item(item, tags=('normal',))
+            
+        if item_id:
+            # Verify item still exists before applying hover
+            if item_id in self.tree.get_children():
+                # Apply hover effect to current item only
+                self.tree.item(item_id, tags=('hover',))
+                
+                # Schedule tooltip with weak reference to prevent stale item access
+                self.hover_timer = self.tree.after(500, 
+                    lambda i=item_id: self.show_image_tooltip(event, i) if i in self.tree.get_children() else None)
+        else:
+            self.hide_tooltip()
+
+    def on_leave(self, event):
+        """Handle mouse leaving tree item"""
+        if self.hover_timer:
+            self.tree.after_cancel(self.hover_timer)
+            self.hover_timer = None
+        
+        # Reset all items to normal tag
+        for item in self.tree.get_children():
+            self.tree.item(item, tags=('normal',))
+            
+        self.hide_tooltip()
+
+    def show_context_menu(self, event):
+        """Show context menu on right click"""
+        # Select row under mouse
+        item_id = self.tree.identify_row(event.y)
+        if item_id:
+            self.tree.selection_set(item_id)
+            self.on_row_select(None)  # Update selected_file
+            # Display context menu
+            try:
+                self.context_menu.tk_popup(event.x_root, event.y_root)
+            finally:
+                self.context_menu.grab_release()
+        return "break"

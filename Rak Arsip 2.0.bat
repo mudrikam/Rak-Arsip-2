@@ -1,5 +1,5 @@
 @echo off
-set "PYTHON_PATH=%~dp0App\Python\pythonw.exe"
+set "PYTHON_PATH=%~dp0App\Python\python.exe"
 if not exist "%PYTHON_PATH%" (
     exit /b 1
 )

@@ -49,7 +49,7 @@ from App.ui.database_backup import DatabaseBackup
 from App.ui.relocate_files import RelocateFiles
 from App.ui.personalize_settings import PersonalizeSettings  # Add this import
 from App.ui.disk_analyzer import DiskAnalyzer  # Add this import
-from App.ui.ai.image.microstock_tools import MicrostockTools  # Add at top with other imports
+from App.ui.ai.image.image_metadata_generator import ImageMetadataGenerator  # Add at top with other imports
 from App.config import CURRENT_VERSION, WINDOW_SIZE  # Update the import to use config
 from PIL import Image, ImageTk
 
@@ -461,10 +461,10 @@ class MainWindow(tk.Tk):
         # Tab configurations with their buttons
         tab_configs = {
             'image_tab': {
-                'name': "Microstock Tools",
+                'name': "Imaging Tools",
                 'icon': "image.png",
                 'buttons': [
-                    ("Metadata Generator", "microstock.png", 0, 0, self.launch_microstock_tools),
+                    ("Metadata Generator", "image_metadata_generator.png", 0, 0, self.launch_image_metadata_generator),
                     ("Klasifikasi Gambar", "classify.png", 0, 1),
                     ("Ekstrak Metadata", "metadata.png", 0, 2),
                     ("Deteksi Duplikat", "duplicate.png", 1, 0),
@@ -582,12 +582,12 @@ class MainWindow(tk.Tk):
             except Exception as e:
                 print(f"Could not update project path: {e}")
 
-    def launch_microstock_tools(self):
-        """Launch the microstock tools window"""
+    def launch_image_metadata_generator(self):
+        """Launch the image metadata generator tools window"""
         try:
             window = tk.Toplevel(self)
-            MicrostockTools(window, self.BASE_DIR, self)
+            ImageMetadataGenerator(window, self.BASE_DIR, self)
         except Exception as e:
-            print(f"Error launching Microstock Tools: {e}")
+            print(f"Error launching Image Metadata Generator Tools: {e}")
 
 
