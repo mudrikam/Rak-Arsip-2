@@ -202,6 +202,19 @@ Perbaikan: perubahan beberapa logika dan penambahan fitur ganti nama template.
 
 Fitur baru: Relokasi file untuk mempermudah pemindahan file dari satu folder ke folder lain secara terstruktur. Terimakasih kepada [Lu'Lu' Maknun](https://www.instagram.com/lulumaknun___/) untuk ide fiturnya.
 
+### Versi 2.0.5 (4-1-2025)
+
+Fitur baru: Image Metadata Generator - memungkinkan pengguna untuk dengan mudah mengekstrak dan mengelola metadata dari file gambar. Fitur ini mencakup:
+
+- Ekstraksi otomatis metadata EXIF dari file gambar
+- Generate metadata otomatis dengan Google Gemini
+- Kemampuan menyimpan metadata dalam format CSV
+
+Perbaikan:
+- Optimasi performa saat membuka folder dengan banyak gambar
+- Perbaikan bug minor pada antarmuka pengguna
+- Peningkatan kecepatan pemrosesan metadata
+
 ---
 
 ## Kontributor

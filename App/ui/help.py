@@ -58,7 +58,7 @@ class LoadHelpFile(ttk.LabelFrame):
         """
         # Set path file bantuan di luar folder App
         help_file_path = os.path.join(os.path.dirname(self.BASE_DIR), "README.md")
-        print(help_file_path)
+        # print(help_file_path)
 
         try:
             # Pastikan file ada

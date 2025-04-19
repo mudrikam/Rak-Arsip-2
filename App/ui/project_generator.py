@@ -446,7 +446,7 @@ class ProjectGenerator(ttk.LabelFrame):
     def load_templates(self):
         """Muat file template ke dalam combobox dan set pilihan default."""
         self.check_and_load_templates()  # Panggil metode untuk memeriksa dan memuat template
-        self.main_window.update_status("Memastikan template default ada di database.")  # Update status bar
+        # self.main_window.update_status("Memastikan template default ada di database.")  # Update status bar
 
     def check_and_load_templates(self):
         """Periksa file template, pastikan default_template ada, dan refresh combobox jika default_template hilang."""
