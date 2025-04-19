@@ -28,6 +28,11 @@ class ImageMetadataGenerator(ttk.Frame):
         self.BASE_DIR = BASE_DIR
         self.main_window = main_window
         
+        # Add temp folder path
+        self.temp_folder = os.path.join(BASE_DIR, "Temp", "Images")
+        if not os.path.exists(self.temp_folder):
+            os.makedirs(self.temp_folder)
+        
         # Configure window
         self.parent.title("Image Metadata Generator")
         
@@ -104,6 +109,16 @@ class ImageMetadataGenerator(ttk.Frame):
 
         # Start monitoring thread
         self._monitor_metadata_changes()
+
+        # Add Ctrl+V binding for paste image
+        self.parent.bind("<Control-v>", lambda e: self._paste_images())
+
+        # Add drag and drop support
+        try:
+            import windnd
+            windnd.hook_dropfiles(self.filelist_tree, func=self._handle_drag_drop)
+        except ImportError:
+            print("windnd not available - drag and drop disabled")
 
     def load_config(self):
         """Load configuration including API keys"""
@@ -199,7 +214,8 @@ class ImageMetadataGenerator(ttk.Frame):
             'rename': 'rename.png',
             'save': 'save.png',
             'ai': 'ai.png',
-            'csv': 'load_csv.png'  # Add csv icon
+            'csv': 'load_csv.png',  # Add csv icon
+            'paste': 'paste.png'  # Add paste icon
         }
         
         # Load semua ikon yang diperlukan
@@ -222,6 +238,7 @@ class ImageMetadataGenerator(ttk.Frame):
             'load_buttons': [
                 ('Load Images', self._load_multiple_images, 'add_file'),
                 ('Load Folder', self._load_folder_images, 'open'),
+                ('Paste Image', self._paste_images, 'paste'),  # Add paste button
                 ('Clear Images', self._clear_images, 'reset'),
                 ('Rename Images', self._rename_images, 'rename'),
                 ('Export Metadata', self._rename_images, 'csv')
@@ -261,6 +278,7 @@ class ImageMetadataGenerator(ttk.Frame):
         self.tree_context_menu.add_command(label="Copy Path", command=self._copy_file_path)
         self.tree_context_menu.add_command(label="Copy Title", command=self._copy_title)
         self.tree_context_menu.add_command(label="Copy Tags", command=self._copy_tags)
+        self.tree_context_menu.add_command(label="Paste Image", command=self._paste_images)  # Add paste menu item
         self.tree_context_menu.add_separator()
         self.tree_context_menu.add_command(label="Rename", command=self._rename_images)
         self.tree_context_menu.add_command(label="Clear", command=self.clear_fields)
@@ -456,6 +474,12 @@ class ImageMetadataGenerator(ttk.Frame):
                   compound='left',
                   style='Normal.TButton',
                   command=self._load_folder_images).pack(side='left', padx=(0,5))
+                  
+        ttk.Button(left_buttons, text="Paste Image",
+                  image=self.button_icons.get('paste'),
+                  compound='left',
+                  style='Normal.TButton',
+                  command=self._paste_images).pack(side='left', padx=(0,5))
                   
         ttk.Button(right_buttons, text="Clear Images",
                   image=self.button_icons.get('reset'),
@@ -780,20 +804,32 @@ class ImageMetadataGenerator(ttk.Frame):
             print(f"Speed test error: {e}")
 
     def _clear_images(self):
-        """Clear all images from the list and reset UI"""
-        # Clear treeview
+        """Clear all images from the list and temp folder"""
+        # Clear tree items first
         for item in self.filelist_tree.get_children():
             self.filelist_tree.delete(item)
             
         # Clear file paths dictionary
         self.file_paths.clear()
         
+        # Clear temp folder
+        try:
+            for file in os.listdir(self.temp_folder):
+                file_path = os.path.join(self.temp_folder, file)
+                try:
+                    if os.path.isfile(file_path):
+                        os.unlink(file_path)
+                except Exception as e:
+                    print(f"Error deleting {file_path}: {e}")
+        except Exception as e:
+            print(f"Error clearing temp folder: {e}")
+            
         # Reset UI elements
         self.image_path_var.set("")
         self.show_image_preview("")
         self.clear_fields()
         
-        # Reset all progress and stats
+        # Reset progress and stats
         self.progress_var.set(0)
         self.progress_text.config(text="Ready")
         self.generation_label.config(text="")
@@ -810,7 +846,7 @@ class ImageMetadataGenerator(ttk.Frame):
             'fastest_time': float('inf'),
             'slowest_time': 0,
             'generation_times': [],
-            'last_total_time': 0  # Add last total processing time tracking
+            'last_total_time': 0
         }
         
         # Reset statistics display
@@ -826,6 +862,40 @@ class ImageMetadataGenerator(ttk.Frame):
         self.quality_status_label.config(text="Quality: N/A")
         
         self.update_status("All images and statistics cleared")
+
+    def _paste_images(self):
+        """Handle pasting images from clipboard"""
+        try:
+            # Get image from clipboard
+            from PIL import ImageGrab
+            img = ImageGrab.grabclipboard()
+            
+            if img is None:
+                self.update_status("No image in clipboard")
+                return
+                
+            # Generate unique filename
+            timestamp = time.strftime("%Y%m%d-%H%M%S")
+            filename = f"pasted-image-{timestamp}.png"
+            filepath = os.path.join(self.temp_folder, filename)
+            
+            # Save image
+            img.save(filepath, "PNG")
+            
+            # Use existing function to add to tree
+            self._add_files_to_tree([filepath])
+            
+            self.update_status(f"Image pasted and saved as {filename}")
+            
+        except Exception as e:
+            self.update_status(f"Error pasting image: {str(e)}")
+
+    def _handle_drag_drop(self, files):
+        """Handle files dropped into treeview"""
+        # Filter only image files
+        image_files = [f.decode('gbk') for f in files if f.decode('gbk').lower().endswith(('.jpg', '.jpeg', '.png', '.gif', '.bmp'))]
+        if image_files:
+            self._add_files_to_tree(image_files)
 
     def generate_content(self):
         """Handle generation start/cancel"""

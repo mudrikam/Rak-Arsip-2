@@ -45,4 +45,5 @@ __pycache__/
 
 # Ignore Rak Arsip batch file
 Launcher.bat
+Launcher.log
 Rak-Arsip-2.0.bat
