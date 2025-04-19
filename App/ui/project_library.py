@@ -254,11 +254,6 @@ class ProjectLibrary(ttk.LabelFrame):
             label="Salin Lokasi (Ctrl + X)", 
             command=lambda: self.copy_directory(None)
         )
-        self.context_menu.add_separator()
-        self.context_menu.add_command(
-            label="Tampilkan Thumbnail (Ctrl + T)", 
-            command=lambda: self.show_image_tooltip(None)
-        )
         self.tree.bind("<Button-3>", self.show_context_menu)
 
     def initialize_library(self):
