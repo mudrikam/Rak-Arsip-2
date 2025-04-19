@@ -141,6 +141,8 @@ class ImageMetadataGenerator(ttk.Frame):
                     self.config['tags_count'] = '50'
                 if 'worker_count' not in self.config:
                     self.config['worker_count'] = '1'
+                if 'default_resize' not in self.config:
+                    self.config['default_resize'] = 'Full'
         except Exception as e:
             self.update_status(f"Failed to load config: {str(e)}")
             self.config = {
@@ -151,7 +153,8 @@ class ImageMetadataGenerator(ttk.Frame):
                 'negative_prompt': '',
                 'title_length': {'min': '60', 'max': '100'},
                 'tags_count': '50',
-                'worker_count': '1'
+                'worker_count': '1',
+                'default_resize': 'Full'
             }
 
     def save_config(self):
@@ -174,6 +177,7 @@ class ImageMetadataGenerator(ttk.Frame):
             }
             self.config['tags_count'] = self.tags_count_var.get()
             self.config['worker_count'] = self.worker_count_var.get()
+            self.config['default_resize'] = self.resize_var.get()
             
             # Save to file
             self.save_config()
@@ -372,6 +376,17 @@ class ImageMetadataGenerator(ttk.Frame):
         self.model_combo = ttk.Combobox(api_right, textvariable=self.model_var, values=models, state='readonly', width=25, font=("Arial", 12))
         self.model_combo.pack(side='left')
         self.model_combo.bind('<<ComboboxSelected>>', self._on_model_change)
+
+        # Add resize control after model combo
+        resize_frame = ttk.Frame(api_right)
+        resize_frame.pack(side='left', padx=(10,0))
+        ttk.Label(resize_frame, text="Submit Size:", width=LABEL_WIDTH, anchor='e').pack(side='left', padx=(0,5))
+        self.resize_var = tk.StringVar(value=self.config.get('default_resize', 'Full'))
+        resize_values = ['Full'] + [f'{i}%' for i in range(10, 100, 10)]
+        self.resize_combo = ttk.Combobox(resize_frame, textvariable=self.resize_var, values=resize_values, 
+                                       state='readonly', width=10, font=("Arial", 12))
+        self.resize_combo.pack(side='left')
+        self.resize_combo.bind('<<ComboboxSelected>>', self._on_resize_change)
 
         # Add custom and negative prompts after API key config
         custom_prompt_frame = ttk.Frame(config_frame)
@@ -657,6 +672,43 @@ class ImageMetadataGenerator(ttk.Frame):
         self.worker_label.pack(fill='x')
         self.retry_label = ttk.Label(self.stats_right, text="Retries: 0", anchor='e')
         self.retry_label.pack(fill='x')
+        self.scale_label = ttk.Label(self.stats_right, text="Adjust Submit Size", anchor='e')
+        self.scale_label.pack(fill='x')
+        self.scale_quality_label = ttk.Label(self.stats_right, text="", anchor='e', foreground='#666666', font=('Arial', 8))
+        self.scale_quality_label.pack(fill='x')
+
+        # Add resize quality descriptions
+        self.resize_quality_messages = {
+            'Full': "No data restrictions, highest image quality     \nMost accurate and stable analysis              \nLowest token usage with almost no retries      ",
+            '90%':  "Very high accuracy with optimal data use        \nRetries are extremely rare                     \nHighly efficient and stable token usage        ",
+            '80%':  "Balanced between data use and accuracy          \nRarely retries needed                          \nToken usage remains efficient                  ",
+            '70%':  "Moderate data usage with good accuracy          \nOccasional retries may occur                   \nStill reasonably efficient token usage         ",
+            '60%':  "Lower data use with decent accuracy             \nMore retries may start to appear               \nToken cost may begin to rise                   ",
+            '50%':  "Half the data usage with fair accuracy          \nIncreased chance of retries                    \nToken consumption may be higher overall        ",
+            '40%':  "Low data use with reduced accuracy              \nRetries expected more frequently               \nCan lead to increased total token usage        ",
+            '30%':  "Very low data with limited accuracy             \nFrequent retries likely                         \nHigh total token usage from multiple attempts  ",
+            '20%':  "Minimal data, accuracy becomes unstable         \nRetries are highly probable                    \nToken cost tends to be inefficient             ",
+            '10%':  "Lowest data and poorest accuracy                \nRetries almost guaranteed on each request      \nToken usage may be extremely high overall      "
+        }
+
+
+        def update_resize_labels(resize_value):
+            """Update both scale labels with resize info and quality message"""
+            self.scale_label.config(text=f"Submit Rescale to: {resize_value}")
+            quality_msg = self.resize_quality_messages.get(resize_value, "")
+            self.scale_quality_label.config(text=quality_msg)
+            # Save to config when value changes
+            self.config['default_resize'] = resize_value
+            self.save_config()
+            
+        # Update resize combo binding - combine label update and config save
+        self.resize_combo.bind('<<ComboboxSelected>>', lambda e: (
+            update_resize_labels(self.resize_var.get()),
+            self._on_resize_change()
+        ))
+
+        # Set initial quality message
+        update_resize_labels(self.resize_var.get())
 
         # Image preview at top right
         image_frame = ttk.LabelFrame(right_frame, text="Image")
@@ -834,7 +886,8 @@ class ImageMetadataGenerator(ttk.Frame):
         self.progress_text.config(text="Ready")
         self.generation_label.config(text="")
         
-        # Reset processing status
+        # Reset processing status while maintaining resize setting
+        current_resize = self.resize_var.get()  # Store current resize setting
         self.batch_results = {
             'success': 0,
             'failed': 0,
@@ -860,6 +913,7 @@ class ImageMetadataGenerator(ttk.Frame):
         self.retry_label.config(text="Retries: 0")
         self.total_files_label.config(text="Total Files: 0")
         self.quality_status_label.config(text="Quality: N/A")
+        self.scale_label.config(text=f"Submit Rescale to: {current_resize}")  # Maintain resize setting display
         
         self.update_status("All images and statistics cleared")
 
@@ -994,8 +1048,34 @@ class ImageMetadataGenerator(ttk.Frame):
                 self.progress_var.set(40)
                 self.update_idletasks()
             
+            # Open and resize image if needed
             image = PIL.Image.open(image_path)
+            resize_value = self.resize_var.get()
             
+            if resize_value != 'Full':
+                # Extract percentage and convert to float
+                scale = float(resize_value.strip('%')) / 100
+                
+                # Calculate new dimensions
+                new_width = int(image.width * scale)
+                new_height = int(image.height * scale)
+                
+                # Create temp filename with scale percentage
+                temp_filename = f"temp_resized_to_{resize_value.strip('%')}_{os.path.basename(image_path)}"
+                temp_path = os.path.join(self.temp_folder, temp_filename)
+                
+                # Update scale label
+                self.scale_label.config(text=f"Submit Rescale to: {resize_value}")
+                
+                # Resize and save
+                resized_img = image.resize((new_width, new_height), PIL.Image.Resampling.LANCZOS)
+                resized_img.save(temp_path, quality=95)
+                
+                # Use resized image for generation
+                image = PIL.Image.open(temp_path)
+            else:
+                self.scale_label.config(text="Adjust Submit Size")
+
             if self.cancel_generation:
                 return False
 
@@ -1725,6 +1805,17 @@ class ImageMetadataGenerator(ttk.Frame):
         except Exception as e:
             self.update_status(f"Failed to save model selection: {str(e)}")
 
+    def _on_resize_change(self, event=None):
+        """Save selected resize value to config"""
+        try:
+            resize_value = self.resize_var.get()
+            self.config['default_resize'] = resize_value
+            self.save_config()
+            self.scale_label.config(text=f"Submit Rescale to: {resize_value}")
+            self.update_status(f"Submit size set to: {resize_value}")
+        except Exception as e:
+            self.update_status(f"Failed to save resize setting: {str(e)}")
+
     def _on_neg_prompt_change(self, event=None):
         """Save negative prompt to config"""
         try:
@@ -2353,6 +2444,7 @@ class ImageMetadataGenerator(ttk.Frame):
             }
             self.config['tags_count'] = self.tags_count_setting.get()
             self.config['worker_count'] = self.workers_count_setting.get()
+            self.config['default_resize'] = self.resize_var.get()
             
             # Save to file
             self.save_config()
@@ -2381,7 +2473,8 @@ class ImageMetadataGenerator(ttk.Frame):
                     'negative_prompt': '',
                     'title_length': {'min': '20', 'max': '30'},
                     'tags_count': '50',
-                    'worker_count': '1'
+                    'worker_count': '1',
+                    'default_resize': 'Full'
                 }
                 
                 # Update config
@@ -2398,6 +2491,7 @@ class ImageMetadataGenerator(ttk.Frame):
                 self.max_title_setting.set(defaults['title_length']['max'])
                 self.tags_count_setting.set(defaults['tags_count'])
                 self.workers_count_setting.set(defaults['worker_count'])
+                self.resize_var.set(defaults['default_resize'])
                 
                 # Save changes
                 self.save_config()
@@ -2872,6 +2966,7 @@ class ImageMetadataGenerator(ttk.Frame):
             }
             self.config['tags_count'] = self.tags_count_setting.get()
             self.config['worker_count'] = self.workers_count_setting.get()
+            self.config['default_resize'] = self.resize_var.get()
             
             # Update generator tab
             self.update_generator_tab_from_config()
@@ -2908,6 +3003,7 @@ class ImageMetadataGenerator(ttk.Frame):
             self.max_title_var.set(title_len.get('max', '30'))
             self.tags_count_var.set(self.config.get('tags_count', '50'))
             self.worker_count_var.set(self.config.get('worker_count', '1'))
+            self.resize_var.set(self.config.get('default_resize', 'Full'))
             
         except Exception as e:
             self.update_status(f"Error updating generator tab: {str(e)}")
