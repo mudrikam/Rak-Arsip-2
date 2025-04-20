@@ -267,7 +267,7 @@ class MainWindow(tk.Tk):
         """
         Perbarui teks di status bar.
         """
-        print(f"Memperbarui status bar dengan pesan: {message}")  # Pernyataan debugging
+        # print(f"Memperbarui status bar dengan pesan: {message}")  # Pernyataan debugging
         self.status_bar.config(text=message)
 
     def start_loading(self):

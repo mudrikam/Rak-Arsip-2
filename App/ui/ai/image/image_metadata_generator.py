@@ -28,6 +28,15 @@ class ImageMetadataGenerator(ttk.Frame):
         self.BASE_DIR = BASE_DIR
         self.main_window = main_window
         
+        # Thread management
+        self.active_threads = []
+        self.thread_running = threading.Event()
+        self.batch_lock = threading.Lock()
+        
+        # Use custom close protocol
+        self.safe_close_pending = False
+        self.parent.protocol("WM_DELETE_WINDOW", self._safe_close)
+        
         # Add temp folder path
         self.temp_folder = os.path.join(BASE_DIR, "Temp", "Images")
         if not os.path.exists(self.temp_folder):
@@ -119,6 +128,117 @@ class ImageMetadataGenerator(ttk.Frame):
             windnd.hook_dropfiles(self.filelist_tree, func=self._handle_drag_drop)
         except ImportError:
             print("windnd not available - drag and drop disabled")
+
+    def _safe_close(self):
+        """Handle window closing safely with checks and warnings"""
+        if self.safe_close_pending:
+            return
+            
+        self.safe_close_pending = True
+        
+        try:
+            # Check if generation is in progress
+            if self.generation_thread and self.generation_thread.is_alive():
+                response = messagebox.askokcancel(
+                    "Generation In Progress",
+                    "Metadata generation is still running.\n\n"
+                    "Closing now may result in:\n"
+                    "- Lost generated metadata\n"
+                    "- Incomplete file processing\n"
+                    "- Temporary files not cleaned up\n\n"
+                    "Are you sure you want to force close?",
+                    icon='warning',
+                    parent=self.parent
+                )
+                if not response:
+                    self.safe_close_pending = False
+                    return
+                    
+                # User confirmed close during generation
+                self.cancel_generation = True
+                self.update_status("Canceling generation before closing...")
+                
+                # Give time for generation to cancel
+                retry = 0
+                while self.generation_thread.is_alive() and retry < 5:
+                    self.update()
+                    time.sleep(1)
+                    retry += 1
+                    
+                if self.generation_thread.is_alive():
+                    messagebox.showerror(
+                        "Force Close Failed",
+                        "Unable to safely stop generation process.\n"
+                        "Please wait for current operation to complete.",
+                        parent=self.parent
+                    )
+                    self.safe_close_pending = False
+                    return
+            
+            # Check for unsaved changes
+            unsaved = False
+            for item in self.filelist_tree.get_children():
+                values = self.filelist_tree.item(item)['values']
+                file_path = self.file_paths.get(item)
+                if file_path:
+                    stored_title, stored_tags = self._get_file_metadata(file_path)
+                    if values[3] != stored_title or values[4] != ', '.join(stored_tags or []):
+                        unsaved = True
+                        break
+            
+            if unsaved:
+                response = messagebox.askokcancel(
+                    "Unsaved Changes",
+                    "There are unsaved metadata changes.\n\n"
+                    "Close without saving?",
+                    icon='warning',
+                    parent=self.parent
+                )
+                if not response:
+                    self.safe_close_pending = False
+                    return
+            
+            # Check for temp files using existing clear method
+            try:
+                self._clear_images()  # This already handles temp file cleanup
+            except Exception as e:
+                messagebox.showwarning(
+                    "Cleanup Warning",
+                    f"Could not fully clean temporary files:\n{str(e)}\n\n"
+                    "The application will close but some temp files may remain.",
+                    parent=self.parent
+                )
+            
+            # Final cleanup
+            try:
+                self.cleanup_threads()
+                self.parent.destroy()
+            except Exception as e:
+                messagebox.showerror(
+                    "Close Error",
+                    f"Error while closing window:\n{str(e)}\n\n"
+                    "The application may need to be force-closed.",
+                    parent=self.parent
+                )
+                
+        except Exception as e:
+            messagebox.showerror(
+                "Unexpected Error",
+                f"An unexpected error occurred while closing:\n{str(e)}\n\n"
+                "Please try closing again or restart the application.",
+                parent=self.parent
+            )
+        finally:
+            self.safe_close_pending = False
+
+    def cleanup_threads(self):
+        """Safely cleanup all threads"""
+        self.cancel_generation = True
+        for thread in self.active_threads:
+            if thread and thread.is_alive():
+                thread.join(timeout=2.0)
+        self.active_threads.clear()
+        self.thread_running.clear()
 
     def load_config(self):
         """Load configuration including API keys"""
@@ -244,6 +364,7 @@ class ImageMetadataGenerator(ttk.Frame):
                 ('Load Folder', self._load_folder_images, 'open'),
                 ('Paste Image', self._paste_images, 'paste'),  # Add paste button
                 ('Clear Images', self._clear_images, 'reset'),
+                ('Clear Metadata', self._clear_metadata, 'clear'),  # Add clear metadata button
                 ('Rename Images', self._rename_images, 'rename'),
                 ('Export Metadata', self._rename_images, 'csv')
             ],
@@ -501,6 +622,12 @@ class ImageMetadataGenerator(ttk.Frame):
                   compound='left',
                   style='Normal.TButton',
                   command=self._clear_images).pack(side='left', padx=(0,5))
+                  
+        ttk.Button(right_buttons, text="Clear Metadata",
+                  image=self.button_icons.get('clear'),
+                  compound='left',
+                  style='Normal.TButton',
+                  command=self._clear_metadata).pack(side='left', padx=(0,5))
                   
         ttk.Button(right_buttons, text="Rename Images",
                   image=self.button_icons.get('rename'),
@@ -821,39 +948,87 @@ class ImageMetadataGenerator(ttk.Frame):
         self.speed_label.config(text="Internet Speed | Waiting for test...")
 
     def _initial_speed_test(self):
-        """Run initial speed test once"""
-        try:
-            st = speedtest.Speedtest()
-            st.get_best_server()
+        """Run initial speed test once with retries"""
+        def run_test():
+            max_retries = 3
+            retry_count = 0
             
-            # Get download speed
-            download_speed = st.download() / 1_000_000  # Convert to Mbps
-            self.network_speed['download'] = download_speed
+            while retry_count < max_retries:
+                try:
+                    st = speedtest.Speedtest()
+                    st.get_best_server()
+                    
+                    # Get download speed
+                    download_speed = st.download() / 1_000_000  # Convert to Mbps
+                    self.network_speed['download'] = download_speed
+                    
+                    # Get upload speed
+                    upload_speed = st.upload() / 1_000_000  # Convert to Mbps
+                    self.network_speed['upload'] = upload_speed
+                    
+                    # Assess speed and create informative message
+                    if download_speed >= 100:
+                        speed_msg = "EXCELLENT - Perfect for batch processing"
+                    elif download_speed >= 50:
+                        speed_msg = "GOOD - Fast metadata generation"
+                    elif download_speed >= 20:
+                        speed_msg = "FAIR - Moderate generation speed"
+                    elif download_speed >= 10:
+                        speed_msg = "SLOW - Expect longer processing times"
+                    else:
+                        speed_msg = "POOR - Generation may be very slow"
+                    
+                    # Update label safely
+                    try:
+                        if hasattr(self, 'speed_label') and self.speed_label.winfo_exists():
+                            self.speed_label.config(
+                                text=f"Internet Speed | {speed_msg}\n↓{download_speed:.1f}Mbps ↑{upload_speed:.1f}Mbps"
+                            )
+                    except (tk.TclError, RuntimeError, AttributeError):
+                        # Widget was destroyed or app is closing, ignore the error
+                        return False
+                    return True
+                    
+                except speedtest.ConfigRetrievalError as e:
+                    if "403" in str(e):  # Specific handling for 403 errors
+                        retry_count += 1
+                        if retry_count < max_retries:
+                            try:
+                                if hasattr(self, 'speed_label') and self.speed_label.winfo_exists():
+                                    self.speed_label.config(text=f"Internet Speed | Retrying test ({retry_count}/{max_retries})...")
+                            except (tk.TclError, RuntimeError, AttributeError):
+                                return False
+                            time.sleep(2)  # Wait before retry
+                            continue
+                        try:
+                            if hasattr(self, 'speed_label') and self.speed_label.winfo_exists():
+                                self.speed_label.config(text="Speed Test Failed - Please restart application")
+                        except (tk.TclError, RuntimeError, AttributeError):
+                            pass
+                        return False
+                except Exception as e:
+                    retry_count += 1
+                    if retry_count < max_retries:
+                        try:
+                            if hasattr(self, 'speed_label') and self.speed_label.winfo_exists():
+                                self.speed_label.config(text=f"Internet Speed | Retrying test ({retry_count}/{max_retries})...")
+                        except (tk.TclError, RuntimeError, AttributeError):
+                            return False
+                        time.sleep(2)
+                        continue
+                    try:
+                        if hasattr(self, 'speed_label') and self.speed_label.winfo_exists():
+                            self.speed_label.config(text="Speed Test Failed - Please restart application")
+                    except (tk.TclError, RuntimeError, AttributeError):
+                        pass
+                    print(f"Speed test error: {e}")
+                    return False
             
-            # Get upload speed
-            upload_speed = st.upload() / 1_000_000  # Convert to Mbps
-            self.network_speed['upload'] = upload_speed
-            
-            # Assess speed and create informative message
-            if download_speed >= 100:
-                speed_msg = "EXCELLENT - Perfect for batch processing"
-            elif download_speed >= 50:
-                speed_msg = "GOOD - Fast metadata generation"
-            elif download_speed >= 20:
-                speed_msg = "FAIR - Moderate generation speed"
-            elif download_speed >= 10:
-                speed_msg = "SLOW - Expect longer processing times"
-            else:
-                speed_msg = "POOR - Generation may be very slow"
-            
-            # Update label with speed assessment
-            self.speed_label.config(
-                text=f"Internet Speed | {speed_msg}\n↓{download_speed:.1f}Mbps ↑{upload_speed:.1f}Mbps"
-            )
-            
-        except Exception as e:
-            self.speed_label.config(text="Internet Speed | Test failed - Check your connection")
-            print(f"Speed test error: {e}")
+            return False
+
+        # Run test in separate thread
+        test_thread = threading.Thread(target=run_test, daemon=True)
+        test_thread.start()
 
     def _clear_images(self):
         """Clear all images from the list and temp folder"""
@@ -2815,44 +2990,91 @@ class ImageMetadataGenerator(ttk.Frame):
             self.update_status("Title and tags copied to clipboard")
 
     def _clear_metadata(self):
-        """Clear metadata from selected file"""
+        """Clear metadata from selected file(s)"""
         selected = self.filelist_tree.selection()
+        tree_items = self.filelist_tree.get_children()
+        
+        if not tree_items:
+            self.update_status("No images loaded to clear metadata from")
+            return
+            
         if not selected:
-            return
+            if not messagebox.askyesno(
+                "Clear All Metadata",
+                "No files selected. Clear metadata from ALL loaded files?",
+                icon='warning',
+                parent=self.parent
+            ):
+                return
+            items_to_clear = tree_items
+        else:
+            choice = messagebox.askquestion(
+                "Clear Metadata",
+                "Clear metadata from:\n\n"
+                "Yes = Selected files only\n"
+                "No = All loaded files",
+                icon='question',
+                parent=self.parent
+            )
+            items_to_clear = selected if choice == 'yes' else tree_items
             
-        if not messagebox.askyesno("Confirm", "Clear metadata from selected file?", parent=self.parent):
-            return
+        try:
+            cleared = 0
+            skipped = 0
+            errors = []
             
-        file_path = self.file_paths.get(selected[0])
-        if file_path and os.path.exists(file_path):
-            try:
-                # First clear metadata from file
-                with pyexiv2.Image(file_path) as img:
-                    # Clear all metadata types
-                    img.clear_exif()
-                    img.clear_xmp()
-                    img.clear_iptc()
+            for item in items_to_clear:
+                file_path = self.file_paths.get(item)
+                if not file_path or not os.path.exists(file_path):
+                    continue
                     
-                    # Re-write default software tag
-                    img.modify_exif({
-                        'Exif.Image.Software': 'Rak Arsip'
-                    })
-                
-                # Clear metadata in UI
+                try:
+                    # Clear metadata from file
+                    with pyexiv2.Image(file_path) as img:
+                        img.clear_exif()
+                        img.clear_xmp()
+                        img.clear_iptc()
+                        
+                        # Re-write default software tag
+                        img.modify_exif({
+                            'Exif.Image.Software': 'Rak Arsip'
+                        })
+                    
+                    # Update treeview
+                    values = list(self.filelist_tree.item(item)['values'])
+                    values[3] = ""  # Clear title
+                    values[4] = ""  # Clear tags
+                    self.filelist_tree.item(item, values=values)
+                    cleared += 1
+                    
+                except Exception as e:
+                    errors.append(f"{os.path.basename(file_path)}: {str(e)}")
+                    skipped += 1
+                    continue
+            
+            # Clear UI if current selection was cleared
+            if self.image_path_var.get() in [self.file_paths.get(item) for item in items_to_clear]:
                 self.title_text.delete(1.0, tk.END)
                 self.tags_text.delete(1.0, tk.END)
                 self.update_title_count()
                 self.update_tags_count()
-                
-                # Update treeview
-                values = list(self.filelist_tree.item(selected[0])['values'])
-                values[3] = ""  # Clear title
-                values[4] = ""  # Clear tags
-                self.filelist_tree.item(selected[0], values=values)
-                
-                self.update_status("Metadata cleared successfully")
-            except Exception as e:
-                self.update_status(f"Error clearing metadata: {str(e)}")
+            
+            # Show results
+            status = f"Metadata cleared: {cleared} files"
+            if skipped:
+                status += f", Skipped: {skipped}"
+            if errors:
+                error_msg = "\n".join(errors)
+                messagebox.showwarning(
+                    "Clear Metadata Results",
+                    f"{status}\n\nErrors occurred:\n{error_msg}",
+                    parent=self.parent
+                )
+            
+            self.update_status(status)
+            
+        except Exception as e:
+            self.update_status(f"Error clearing metadata: {str(e)}")
 
     def _remove_from_list(self):
         """Remove selected item from list"""

@@ -3,13 +3,14 @@ node_modules/
 
 # Ignore log files
 *.log
+launcher.log
+*.Launcher.log
 
 # Ignore build directories
 dist/
 build/
 inno-rak-arsip.iss
 Output/
-
 
 # Ignore environment variable files
 .env
@@ -43,8 +44,10 @@ __pycache__/
 *.pyc
 *.pyo
 
+# Ignore temp directory
+App/Temp/
+!App/Temp/.gitkeep
+
 # Ignore Rak Arsip batch file
-App/Temp/*
 Launcher.bat
-Launcher.log
 Rak-Arsip-2.0.bat
