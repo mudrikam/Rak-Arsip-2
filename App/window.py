@@ -47,9 +47,10 @@ from App.ui.template_creator import TemplateCreator
 from App.ui.splash_screen import SplashScreen
 from App.ui.database_backup import DatabaseBackup
 from App.ui.relocate_files import RelocateFiles
-from App.ui.personalize_settings import PersonalizeSettings  # Add this import
-from App.ui.disk_analyzer import DiskAnalyzer  # Add this import
-from App.ui.ai.image.image_metadata_generator import ImageMetadataGenerator  # Add at top with other imports
+from App.ui.personalize_settings import PersonalizeSettings
+from App.ui.disk_analyzer import DiskAnalyzer
+from App.ui.ai.image.image_metadata_generator import ImageMetadataGenerator
+from App.ui.ai.image.image_background_remover import ImageBacgroundRemover
 from App.config import CURRENT_VERSION, WINDOW_SIZE  # Update the import to use config
 from PIL import Image, ImageTk
 
@@ -275,7 +276,7 @@ class MainWindow(tk.Tk):
         self.status_message = self.loading_messages[0]
         self.update_status(self.status_message)
         self.animate_messages()
-        self.after(3500, self.initialize_ui) # Loading time
+        self.after(35, self.initialize_ui) # Loading time
 
     def animate_messages(self):
         """Animasi pergantian pesan pada status."""
@@ -386,7 +387,7 @@ class MainWindow(tk.Tk):
             'project_tab': ("Arsip", "add_folder.png"),
             'library_tab': ("Pustaka", "library.png"),
             'tools_tab': ("Alat", "tools.png"),  # New tools tab
-            'ai_tab': ("AI", "ai.png"),
+            'ai_tab': ("AI Tools", "ai.png"),
             'setting_tab': ("Setting", "settings.png"),
             'help_tab': ("Bantuan", "help.png")
         }
@@ -465,9 +466,9 @@ class MainWindow(tk.Tk):
                 'icon': "image.png",
                 'buttons': [
                     ("Metadata Generator", "image_metadata_generator.png", 0, 0, self.launch_image_metadata_generator),
-                    ("Klasifikasi Gambar", "classify.png", 0, 1),
-                    ("Ekstrak Metadata", "metadata.png", 0, 2),
-                    ("Deteksi Duplikat", "duplicate.png", 1, 0),
+                    ("Image Converter", "convert.png", 0, 1, self.launch_image_converter),
+                    ("Ekstrak Metadata", "image_metadata_extractor.png", 0, 2, self.launch_image_metadata_extractor),
+                    ("Background Remover", "rmbackground.png", 1, 0, self.launch_image_background_remover),
                     ("Generate Tags", "tags.png", 1, 1),
                     ("Kompres Gambar", "compress.png", 1, 2),
                     ("OCR Gambar", "ocr.png", 2, 0),
@@ -531,7 +532,7 @@ class MainWindow(tk.Tk):
 
                 # Load button icon
                 icon_path = os.path.join(self.BASE_DIR, "Img", "icon", "ui", icon_name)
-                icon = self._load_icon(icon_path, size=(24, 24))
+                icon = self._load_icon(icon_path, size=(32, 32))
                 
                 # Create button
                 btn = ttk.Button(container_frame, text=text, command=command)
@@ -589,5 +590,31 @@ class MainWindow(tk.Tk):
             ImageMetadataGenerator(window, self.BASE_DIR, self)
         except Exception as e:
             print(f"Error launching Image Metadata Generator Tools: {e}")
+
+    def launch_image_metadata_extractor(self):
+        """Launch the image metadata extractor tools window"""
+        try:
+            window = tk.Toplevel(self)
+            from App.ui.ai.image.image_metadata_extractor import ImageMetadataExtractor
+            ImageMetadataExtractor(window, self.BASE_DIR, self)
+        except Exception as e:
+            print(f"Error launching Image Metadata Extractor: {e}")
+
+    def launch_image_converter(self):
+        """Launch the image converter tools window"""
+        try:
+            window = tk.Toplevel(self)
+            from App.ui.image_tools.image_converter_tool import ImageConverterTool
+            ImageConverterTool(window, self.BASE_DIR, self)
+        except Exception as e:
+            print(f"Error launching Image Converter: {e}")
+
+    def launch_image_background_remover(self):
+        """Launch the image background remover tools window"""
+        try:
+            window = tk.Toplevel(self)
+            ImageBacgroundRemover(window, self.BASE_DIR, self)
+        except Exception as e:
+            print(f"Error launching Image Background Remover: {e}")
 
 
