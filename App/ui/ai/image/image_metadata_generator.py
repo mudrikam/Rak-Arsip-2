@@ -1140,9 +1140,9 @@ class ImageMetadataGenerator(ttk.Frame):
     def generate_content(self):
         """Handle generation start/cancel"""
         if self.generation_thread and self.generation_thread.is_alive():
-            # Cancel ongoing generation
+            # Cancel ongoing generation and immediately re-enable button
             self.cancel_generation = True
-            self.generate_btn.config(state='disabled')
+            self.generate_btn.config(text="Generate", style='Generate.TButton', state='normal')
             self.update_status("Canceling generation...")
             return
             
@@ -1270,20 +1270,26 @@ class ImageMetadataGenerator(ttk.Frame):
     def _check_generation_complete(self):
         """Monitor generation thread completion"""
         if self.generation_thread and self.generation_thread.is_alive():
-            self.after(100, self._check_generation_complete)
+            # Only check if not cancelled
+            if not self.cancel_generation:
+                self.after(100, self._check_generation_complete)
         else:
-            # Only reset button if generation was actually started
-            if self.generation_thread:
+            # Reset generation thread without waiting
+            self.generation_thread = None
+            
+            # Only update status if not already cancelled
+            if not self.cancel_generation:
                 self.generate_btn.config(text="Generate", style='Generate.TButton')
                 self.generate_btn.config(state='normal')
-                if self.cancel_generation:
-                    self.update_status("Generation canceled")
-                    self.progress_var.set(0)
-            self.generation_thread = None
+                self.progress_var.set(0)
 
     def _generate_single(self, image_path, update_ui=False, api_key=None):
         """Generate metadata for single image with specific API key"""
         try:
+            # Check cancel flag early and throughout the process
+            if self.cancel_generation:
+                return False
+                
             start_time = time.time()
             
             if update_ui:
@@ -1298,7 +1304,7 @@ class ImageMetadataGenerator(ttk.Frame):
             
             if self.cancel_generation:
                 return False
-                
+
             if update_ui:
                 self.progress_text.config(text="Loading image...")
                 self.progress_var.set(40)
@@ -1343,6 +1349,10 @@ class ImageMetadataGenerator(ttk.Frame):
             # Get base prompt with settings
             prompt = self._build_generation_prompt()
             
+            # Quick exit on cancel right before expensive API call
+            if self.cancel_generation:
+                return False
+                
             # Track generation time
             gen_start = time.time()
             response = model.generate_content([prompt, image])
@@ -1678,10 +1688,47 @@ class ImageMetadataGenerator(ttk.Frame):
                                 'category_name': category_name
                             }
                             
-                            # Now validate the processed tags
-                            if self._validate_tags_quality(result['tags']):
+                            # Validate title length and quality
+                            title_len = len(queue_result['title'])
+                            min_len = int(self.min_title_var.get())
+                            max_len = int(self.max_title_var.get())
+                            title_valid = min_len <= title_len <= max_len
+                            
+                            if not title_valid:
+                                # Check if title needs truncation and would create incomplete phrase
+                                if title_len > max_len:
+                                    truncated = queue_result['title'][:max_len].rsplit(' ', 1)[0]
+                                    last_words = truncated.split()[-2:]  # Get last 2 words
+                                    incomplete_markers = ['with', 'on', 'in', 'at', 'by', 'to', 'of', 'for', 'and', 'or', 'the', 'a', 'an', 'is', 'was', 'are', 'be', 'being', 'been']
+                                    needs_retry = any(word.lower() in incomplete_markers for word in last_words)
+                                    
+                                    if needs_retry:
+                                        # Title would end with incomplete phrase, retry generation
+                                        current_try += 1
+                                        self.batch_results['retries'] += 1
+                                        
+                                        if current_try < max_retries:
+                                            self.update_status(f"Retrying {filename} - Title would end incompletely: '...{' '.join(last_words)}' (try {current_try + 1})")
+                                            if self._generate_single(file_path, update_ui=False, api_key=api_key):
+                                                continue
+                                
+                                # Handle general title length issues
+                                current_try += 1
+                                self.batch_results['retries'] += 1
+                                
+                                if current_try < max_retries:
+                                    self.update_status(f"Retrying {filename} - Title length {title_len} outside bounds {min_len}-{max_len} (try {current_try + 1})")
+                                    if self._generate_single(file_path, update_ui=False, api_key=api_key):
+                                        continue
+                                else:
+                                    self._handle_batch_error(filename, f"Max retries reached - title length {title_len} outside bounds {min_len}-{max_len}")
+                                    break
+                            
+                            # Now validate tags if title is valid
+                            elif self._validate_tags_quality(result['tags']):
                                 def update_success():
                                     try:
+                                        # ...existing code...
                                         gen_time = time.time() - start_time
                                         self.batch_results['generation_times'].append(gen_time)
                                         self.batch_results['fastest_time'] = min(self.batch_results['fastest_time'], gen_time)
@@ -2074,7 +2121,8 @@ class ImageMetadataGenerator(ttk.Frame):
         base_prompt = (
             "Create high-quality image metadata following these guidelines:\n\n"
             "1. Title/Description Requirements:\n"
-            f"- Length: Min {self.min_title_var.get()} to max {self.max_title_var.get()} characters since its CRITICAL\n"
+            f"- Length: Min {self.min_title_var.get()}" 
+            f"- Max Length must be exacly {self.max_title_var.get()}characters, no more then that since its CRITICAL\n"
             "- Write as a natural, descriptive sentence/phrase (not keyword list)\n"
             "- Cover Who, What, When, Where, Why aspects where relevant\n"
             "- Capture mood, emotion, and visual impact\n"
@@ -2238,6 +2286,8 @@ class ImageMetadataGenerator(ttk.Frame):
             logging.debug(f"Tags: {result.get('tags')}")
             logging.debug(f"Category ID: {result.get('category_id')}")
             logging.debug(f"Category Name: {result.get('category_name')}")
+            print(f"Parsed title: {result.get('title')}")
+            print(f"Parsed tags: {', '.join(result.get('tags', []))}")
             print(f"Parsed result: {result.get('category_id')} - {result.get('category_name')}")
             
             return result
@@ -2307,20 +2357,29 @@ class ImageMetadataGenerator(ttk.Frame):
         except Exception as e:
             self.update_status(f"Failed to save custom prompt: {e}")
 
+    def _get_max_title_length(self):
+        """Get current maximum title length from config"""
+        try:
+            return int(self.max_title_var.get())
+        except (ValueError, AttributeError):
+            return 100  # Fallback default
+
     def update_title_count(self, event=None):
         """Update title count and cleanup if over limit while preserving whole words"""
         text = self.title_text.get(1.0, 'end-1c')
+        max_len = self._get_max_title_length()
         
-        if len(text) > 100:
-            # Find the last complete word that fits within 100 chars
-            truncated = text[:100].rsplit(' ', 1)[0]
+        if len(text) > max_len:
+            # Find the last complete word that fits within max length
+            truncated = text[:max_len].rsplit(' ', 1)[0]
             
             # Update text widget with cleaned title
             self.title_text.delete(1.0, tk.END)
             self.title_text.insert(1.0, truncated)
             text = truncated  # Update text for counter
         
-        self.title_char_count.config(text=f"{len(text)}/100 chars")
+        self.title_char_count.config(text=f"{len(text)}/{max_len} chars")
+        # print(f"Title length: {len(text)} chars")
         return text  # Return cleaned title
 
     def update_tags_count(self, event=None):
