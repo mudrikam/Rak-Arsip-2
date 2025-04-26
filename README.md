@@ -237,3 +237,4 @@ Perbaikan:
 - [Cowt Zzy](https://cowtzzy.carrd.co) (Artwork)
 - [Lu'Lu' Maknun](https://www.instagram.com/lulumaknun___/) (Ide fitur Relokasi File)
 - [Pangesti San](https://www.instagram.com/pangestisan/) (Ide fitur ubah nama Template)
+- [Yoga Binhar S. Ars](https://www.facebook.com/yoga.binhar/) (Menyediakan sample format cvs untuk beberapa platform)
