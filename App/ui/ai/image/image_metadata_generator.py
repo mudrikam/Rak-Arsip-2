@@ -1400,10 +1400,31 @@ class ImageMetadataGenerator(ttk.Frame):
                     )
                     
                     self._update_ui_with_result(parsed_result)
-                    total_time = time.time() - start_time
-                    self.generation_label.config(
-                        text=f"Last gen: {gen_time:.1f}s (Total: {total_time:.1f}s)"
-                    )
+                    elapsed_time = time.time() - self.batch_results['start_time']
+                    last_time = self.batch_results.get('last_total_time', 0)
+                    time_diff = elapsed_time - last_time if last_time > 0 else 0
+
+                    # Debug prints untuk pemeriksaan nilai
+                    print("\nDEBUG TIME FORMAT:")
+                    print(f"Elapsed time: {elapsed_time:.2f} seconds")
+                    print(f"Last time: {last_time:.2f} seconds") 
+                    print(f"Time diff: {time_diff:.2f} seconds")
+
+                    # Format waktu untuk display
+                    time_display = f"Total Processing: {self._format_time(elapsed_time)}"
+                    if last_time > 0:  # Pastikan ada last time sebelum menambahkan
+                        time_display += f" (Last {self._format_time(last_time)})"
+                        if time_diff != 0:  # Tambahkan diff jika ada perbedaan
+                            sign = '+' if time_diff > 0 else '-'
+                            diff_str = f" ({sign}{self._format_time(abs(time_diff))})"
+                            speed_indicator = " (Slower)" if time_diff > 0 else " (Faster)"
+                            time_display += f"{diff_str}{speed_indicator}"
+                    
+                    print(f"Final Status: {time_display}")  # Print status lengkap
+                    print(f"Debug time_display: {time_display}")  # Tambahan debug
+                    logging.debug(f"Time display format: {time_display}")
+
+                    self.generation_label.config(text=time_display)
                 return True
 
         except Exception as e:
@@ -1574,23 +1595,64 @@ class ImageMetadataGenerator(ttk.Frame):
                 retry_items = self._verify_batch_results(items)
                 
             def update_final_status():
+                # Calculate times
                 total_time = time.time() - self.batch_results['start_time']
                 last_time = self.batch_results.get('last_total_time', 0)
                 self.batch_results['total_time'] = total_time
+
+                # Debug logs for time calculation
+                print("\nDEBUG UPDATE_FINAL_STATUS:")
+                print(f"Start time: {self.batch_results['start_time']}")
+                print(f"Current time: {time.time()}")
+                print(f"Total time: {total_time:.2f} seconds")
+                print(f"Last time: {last_time:.2f} seconds")
                 
-                time_diff = self._format_time_diff(total_time, last_time)
-                time_display = f"Total Processing: {self._format_time(total_time)}{time_diff}"
+                # Calculate time difference
+                time_diff = total_time - last_time if last_time > 0 else 0
+                print(f"Time difference: {time_diff:.2f} seconds")
+
+                # Build time display string
+                time_display = f"Total Processing: {self._format_time(total_time)}"
+                
                 if last_time > 0:
-                    time_display += f" Last {self._format_time(last_time)}"
+                    time_display += f" (Last {self._format_time(last_time)})"
+                    
+                    if time_diff != 0:
+                        if time_diff > 0:
+                            time_display += f" (+{self._format_time(time_diff)})"
+                            time_display += " (Slower)"
+                        else:
+                            time_display += f" (-{self._format_time(abs(time_diff))})"
+                            time_display += " (Faster)"
                 
+                # Debug prints for verification
+                print(f"Base display: {time_display}")
+                print(f"After adding last time: {time_display}")
+                print(f"After adding diff/speed: {time_display}")
+
+                # Debug quality status
                 quality_status = "✓ All quality checks passed" if not retry_items else f"⚠ {len(retry_items)} items need review"
+                print(f"Quality status: {quality_status}")
+                
                 final_status = (
                     f"Complete: {self.batch_results['success']}/{total} files "
                     f"({self.batch_results['success']/total*100:.1f}%) - {quality_status}"
                 )
+                print(f"Final Status: {final_status}")
+                print(f"Final Time Display: {time_display}")
+                
+                # Log to file
+                logging.debug("=== UPDATE_FINAL_STATUS DEBUG ===")
+                logging.debug(f"Time values: total={total_time:.2f}, last={last_time:.2f}, diff={time_diff:.2f}")
+                logging.debug(f"Time display: {time_display}")
+                logging.debug(f"Status: {final_status}")
+                
+                # Update UI elements
                 self.progress_var.set(100)
                 self.progress_text.config(text=final_status)
-                self.generation_label.config(text=time_display)
+                self.generation_label.config(text=time_display)  
+                self.total_time_label.config(text=time_display)
+                print(f"Final time display format: {time_display}")
                 self.update_status(f"Batch processing complete - Success: {self.batch_results['success']}/{total} files")
             
             self.after(100, update_final_status)
@@ -1764,8 +1826,16 @@ class ImageMetadataGenerator(ttk.Frame):
                                         elapsed_time = time.time() - self.batch_results['start_time']
                                         self.batch_results['total_time'] = elapsed_time
                                         avg_time = elapsed_time / self.batch_results['success']
+                                        
+                                        # Get the last total time and format display
+                                        last_time = self.batch_results.get('last_total_time', 0)
+                                        time_diff = self._format_time_diff(elapsed_time, last_time)
+                                        time_display = f"Total Processing: {self._format_time(elapsed_time)}{time_diff}"
+                                        if last_time > 0:
+                                            time_display += f" (Last: {self._format_time(last_time)})"
+                                            
                                         self.avg_time_label.config(text=f"Avg Generation: {self._format_time(avg_time)}")
-                                        self.total_time_label.config(text=f"Total Processing: {self._format_time(elapsed_time)}")
+                                        self.total_time_label.config(text=time_display)
                                         self.fastest_time_label.config(text=f"Fastest: {self._format_time(self.batch_results['fastest_time'])}")
                                         self.slowest_time_label.config(text=f"Slowest: {self._format_time(self.batch_results['slowest_time'])}")
                                         success_count = self.batch_results['success']
@@ -2027,14 +2097,28 @@ class ImageMetadataGenerator(ttk.Frame):
                 else:
                     quality_status = "Quality: Waiting..."
                 
-                # Prepare all updates
+                # Format time display with comparison indicators
+                elapsed_time = time.time() - self.batch_results['start_time'] 
+                last_time = self.batch_results.get('last_total_time', 0)
+                time_diff = elapsed_time - last_time if last_time > 0 else 0
+
+                time_display = f"Total Processing: {self._format_time(elapsed_time)}"
+                if last_time > 0:
+                    time_display += f" (Last {self._format_time(last_time)})"
+                    if time_diff != 0:
+                        diff_str = f"({'+' if time_diff > 0 else ''}{self._format_time(time_diff)})"
+                        speed_indicator = " (Slower)" if time_diff > 0 else " (Faster)"
+                        time_display += f" {diff_str}{speed_indicator}"
+
+                # Prepare all updates with consistent time display
                 updates = [
                     (self.total_files_label, f"Total Files: {total} (Sucessful Retries: {total-(success+failed)})"),
                     (self.success_label, f"Successful Tries: {success}/{total} ({success/total*100:.1f}%)" if total else "Success: 0"),
                     (self.failed_label, f"Failure Rate: {failed}/{total} ({failed/total*100:.1f}%)" if total else "Processed: 0"),
                     (self.worker_label, f"Workers: {self.worker_count_var.get()}"),
                     (self.retry_label, f"Retries: {retries}"),
-                    (self.quality_status_label, f"Quality: {quality_status}")
+                    (self.quality_status_label, f"Quality: {quality_status}"),
+                    (self.total_time_label, time_display)  # Add formatted time display with comparison
                 ]
                 
                 # Update all labels in one batch
