@@ -1,5 +1,16 @@
 # **Rak Arsip** 2.0
 
+[![License](https://img.shields.io/github/license/mudrikam/Rak-Arsip-2)](LICENSE)
+[![Python](https://img.shields.io/badge/python-3.8%2B-blue)](https://www.python.org/)
+[![Code Size](https://img.shields.io/github/languages/code-size/mudrikam/Rak-Arsip-2)](https://github.com/mudrikam/Rak-Arsip-2)
+[![Release](https://img.shields.io/github/v/release/mudrikam/Rak-Arsip-2?include_prereleases)](https://github.com/mudrikam/Rak-Arsip-2/releases)
+[![Issues](https://img.shields.io/github/issues/mudrikam/Rak-Arsip-2)](https://github.com/mudrikam/Rak-Arsip-2/issues)
+[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
+[![Downloads](https://img.shields.io/github/downloads/mudrikam/Rak-Arsip-2/total)](https://github.com/mudrikam/Rak-Arsip-2/releases)
+[![Last Commit](https://img.shields.io/github/last-commit/mudrikam/Rak-Arsip-2)](https://github.com/mudrikam/Rak-Arsip-2/commits/main)
+[![Stars](https://img.shields.io/github/stars/mudrikam/Rak-Arsip-2)](https://github.com/mudrikam/Rak-Arsip-2/stargazers)
+
+
 **_Assalamualaikum Warahmatullahi Wabarakatuh_**
 
 **Bismillah**, selamat datang di **Rak Arsip**, aplikasi manajemen arsip (folder) berbasis GNU GPL yang membantu mengorganisasi dan menyimpan dokumen secara efisien.
