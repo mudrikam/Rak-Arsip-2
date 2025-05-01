@@ -1677,12 +1677,17 @@ class ImageMetadataGenerator(ttk.Frame):
                 return result
                 
             try:
-                file_path = self.file_paths[item]
+                # Check if this is a retry item with stored mapping
+                if 'retry_mapping' in self.batch_results and item in self.batch_results['retry_mapping']:
+                    file_path = self.batch_results['retry_mapping'][item]
+                else:
+                    file_path = self.file_paths[item]
+                
                 filename = os.path.basename(file_path)
                 
                 self.update_status(f"Processing: {filename} (using API key: ...{api_key[-8:]})")
                 
-                # Update processed count before UI updates
+                # Rest of the method remains unchanged
                 current_count = self.batch_results['processed']
                 
                 # Thread-safe UI updates consolidated 
@@ -1989,6 +1994,7 @@ class ImageMetadataGenerator(ttk.Frame):
         total = len(items)
         verified_count = 0
         retry_items = []
+        retry_mapping = {}  # Added mapping to maintain file path relationships
         
         self.progress_var.set(0)
         self.progress_text.config(text="Verifying metadata quality...")
@@ -2023,6 +2029,8 @@ class ImageMetadataGenerator(ttk.Frame):
                 
             if needs_retry:
                 retry_items.append(item)
+                # Store file path mapping for this item to maintain relationship during retry
+                retry_mapping[item] = self.file_paths.get(item)
             else:
                 verified_count += 1
                 self.batch_results['success_items'].add(item)  # Mark as successful
@@ -2032,7 +2040,9 @@ class ImageMetadataGenerator(ttk.Frame):
             self.progress_var.set(progress)
             self.progress_text.config(text=f"Verifying: {verified_count}/{total} files")
             self.update()
-            
+        
+        # Store retry mapping in batch_results for use during retry processing
+        self.batch_results['retry_mapping'] = retry_mapping
         return retry_items
 
     def _update_metadata_and_ui(self, result, file_path):
